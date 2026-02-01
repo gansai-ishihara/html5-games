@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML5 Games - ゲームポータル</title>
+    <meta name="description" content="無料で遊べるHTML5ブラウザゲーム集">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 30px 20px;
+            border-bottom: 2px solid #4a4a6a;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #a0a0b0;
+            font-size: 1.2em;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            gap: 30px;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 300px;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            border-color: #667eea;
+        }
+
+        .game-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5em;
+        }
+
+        .game-info {
+            padding: 20px;
+        }
+
+        .game-info h2 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: #7dd3fc;
+        }
+
+        .game-info p {
+            color: #a0a0b0;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .play-button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .play-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .footer {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 30px 20px;
+            text-align: center;
+            margin-top: 60px;
+            border-top: 2px solid #4a4a6a;
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+            }
+            
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎮 HTML5 Games</h1>
+        <p>ブラウザで遊べる無料ゲーム集</p>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="games-grid">
+                <!-- クリッカーゲーム -->
+                <div class="game-card">
+                    <div class="game-icon">🎮</div>
+                    <div class="game-info">
+                        <h2>クリッカー</h2>
+                        <p>ボタンをクリックしてスコアを稼ぐシンプルなゲーム。何回クリックできるかな？</p>
+                        <a href="games/clicker.html" class="play-button">プレイする →</a>
+                    </div>
+                </div>
+
+                <!-- 反射神経テスト -->
+                <div class="game-card">
+                    <div class="game-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">⚡</div>
+                    <div class="game-info">
+                        <h2>反射神経テスト</h2>
+                        <p>緑色に変わったら即クリック！あなたの反応速度は何ミリ秒？</p>
+                        <a href="games/reaction.html" class="play-button">プレイする →</a>
+                    </div>
+                </div>
+
+                <!-- 神経衰弱 -->
+                <div class="game-card">
+                    <div class="game-icon" style="background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);">🧠</div>
+                    <div class="game-info">
+                        <h2>神経衰弱</h2>
+                        <p>同じ絵柄のカードを見つけよう。記憶力と集中力が試される！</p>
+                        <a href="games/memory.html" class="play-button">プレイする →</a>
+                    </div>
+                </div>
+
+                <!-- タイピング速度テスト -->
+                <div class="game-card">
+                    <div class="game-icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">⌨️</div>
+                    <div class="game-info">
+                        <h2>タイピング速度テスト</h2>
+                        <p>60秒でどれだけ速く正確にタイピングできる？WPMを測定しよう！</p>
+                        <a href="games/typing.html" class="play-button">プレイする →</a>
+                    </div>
+                </div>
+
+                <!-- エイム練習 -->
+                <div class="game-card">
+                    <div class="game-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">🎯</div>
+                    <div class="game-info">
+                        <h2>エイム練習</h2>
+                        <p>出現する的を素早くクリック！反射神経とマウス操作の正確性を鍛えよう。</p>
+                        <a href="games/aim.html" class="play-button">プレイする →</a>
+                    </div>
+                </div>
+
+                <!-- 色判別ゲーム -->
+                <div class="game-card">
+                    <div class="game-icon" style="background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);">🎨</div>
+                    <div class="game-info">
+                        <h2>色判別ゲーム</h2>
+                        <p>文字の「色」を答えるストループテスト。脳トレに最適！</p>
+                        <a href="games/color.html" class="play-button">プレイする →</a>
+                    </div>
+                </div>
+
+                <!-- 暗算チャレンジ -->
+                <div class="game-card">
+                    <div class="game-icon" style="background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);">🧮</div>
+                    <div class="game-info">
+                        <h2>暗算チャレンジ</h2>
+                        <p>制限時間内に計算問題を解こう。難易度は徐々にアップ！</p>
+                        <a href="games/math.html" class="play-button">プレイする →</a>
+                    </div>
+                </div>
+
+                <!-- 数字記憶ゲーム -->
+                <div class="game-card">
+                    <div class="game-icon" style="background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);">🔢</div>
+                    <div class="game-info">
+                        <h2>数字記憶ゲーム</h2>
+                        <p>表示される数字を覚えて入力！どこまで記憶できる？</p>
+                        <a href="games/sequence.html" class="play-button">プレイする →</a>
+                    </div>
+                </div>
+
+                <!-- もぐらたたき -->
+                <div class="game-card">
+                    <div class="game-icon" style="background: linear-gradient(135deg, #fccb90 0%, #d57eeb 100%);">🔨</div>
+                    <div class="game-info">
+                        <h2>もぐらたたき</h2>
+                        <p>出てくるモグラを素早くクリック！コンボを繋げてハイスコアを狙おう。</p>
+                        <a href="games/whack.html" class="play-button">プレイする →</a>
+                    </div>
+                </div>
+
+                <!-- バランスゲーム -->
+                <div class="game-card">
+                    <div class="game-icon" style="background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);">⚖️</div>
+                    <div class="game-info">
+                        <h2>バランスゲーム</h2>
+                        <p>マウスや傾きでボールを操作！障害物を避けて進もう。</p>
+                        <a href="games/balance.html" class="play-button">プレイする →</a>
+                    </div>
+                </div>
+
+                <!-- 弾避けゲーム -->
+                <div class="game-card">
+                    <div class="game-icon" style="background: linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%);">💥</div>
+                    <div class="game-info">
+                        <h2>弾避けゲーム</h2>
+                        <p>飛んでくる弾を避け続けよう！生存時間を競うサバイバルゲーム。</p>
+                        <a href="games/dodge.html" class="play-button">プレイする →</a>
+                    </div>
+                </div>
+
+                <!-- スネークゲーム -->
+                <div class="game-card">
+                    <div class="game-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">🐍</div>
+                    <div class="game-info">
+                        <h2>スネークゲーム</h2>
+                        <p>クラシックなヘビゲーム。餌を食べて成長しよう！</p>
+                        <a href="games/snake.html" class="play-button">プレイする →</a>
+                    </div>
+                </div>
+
+                <!-- テトリス -->
+                <div class="game-card">
+                    <div class="game-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">🟦</div>
+                    <div class="game-info">
+                        <h2>テトリス</h2>
+                        <p>落ちてくるブロックを消していく定番パズルゲーム！</p>
+                        <a href="games/tetris.html" class="play-button">プレイする →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <!-- AdSense用スペース（上部） -->
+            <div class="ad-space">
+                <!-- Google AdSense -->
+                <div>
+                    広告スペース<br>
+                    300x600<br>
+                    (Skyscraper)
+                </div>
+            </div>
+
+            <!-- AdSense用スペース（下部） -->
+            <div class="ad-space">
+                <!-- Google AdSense -->
+                <div>
+                    広告スペース<br>
+                    300x250<br>
+                    (Medium Rectangle)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2026 HTML5 Games. All rights reserved.</p>
+        <p style="margin-top: 10px; font-size: 0.9em;">すべてのゲームはブラウザで直接動作します。ダウンロード不要！</p>
+    </div>
+</body>
+</html>

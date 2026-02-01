@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>バランスゲーム - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #a0a0b0;
+            margin-bottom: 20px;
+        }
+
+        #gameCanvas {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            display: block;
+            margin: 20px auto;
+            border: 2px solid #4a4a6a;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        .share-button {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            border-color: #1da1f2;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>⚖️ バランスゲーム</h1>
+                <div class="instructions">
+                    スマホ: 傾けてボールを操作<br>
+                    PC: マウスで左右に動かす
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="score">0</div>
+                        <div class="stat-label">スコア</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="distance">0</div>
+                        <div class="stat-label">距離 (m)</div>
+                    </div>
+                </div>
+
+                <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+                <div class="controls">
+                    <button id="startButton">スタート</button>
+                    <button id="shareButton" class="share-button" style="display:none;">🐦 結果をシェア</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                広告スペース<br>300x250
+            </div>
+            <div class="ad-space">
+                広告スペース<br>300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+        const shareButton = document.getElementById('shareButton');
+
+        let gameActive = false;
+        let score = 0;
+        let distance = 0;
+        let tilt = 0;
+        let mouseX = canvas.width / 2;
+        let useGyro = false;
+
+        // ボール
+        const ball = {
+            x: canvas.width / 2,
+            y: 50,
+            radius: 15,
+            vx: 0,
+            vy: 0
+        };
+
+        // 障害物
+        let obstacles = [];
+        let nextObstacleY = -200;
+
+        function startGame() {
+            gameActive = true;
+            score = 0;
+            distance = 0;
+            ball.x = canvas.width / 2;
+            ball.y = 50;
+            ball.vx = 0;
+            ball.vy = 0;
+            obstacles = [];
+            nextObstacleY = -200;
+            
+            startButton.style.display = 'none';
+            shareButton.style.display = 'none';
+            
+            // ジャイロセンサー対応
+            if (window.DeviceOrientationEvent) {
+                useGyro = true;
+                window.addEventListener('deviceorientation', handleOrientation);
+            }
+            
+            gameLoop();
+        }
+
+        function handleOrientation(event) {
+            if (gameActive && event.gamma !== null) {
+                tilt = event.gamma / 45; // -1 to 1
+            }
+        }
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!gameActive || useGyro) return;
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+        });
+
+        function gameLoop() {
+            if (!gameActive) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 背景スクロール効果
+            ctx.fillStyle = '#1e1e2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // ボールの動き
+            if (useGyro) {
+                ball.vx += tilt * 0.5;
+            } else {
+                const targetX = mouseX;
+                ball.vx += (targetX - ball.x) * 0.02;
+            }
+            
+            ball.vx *= 0.95; // 摩擦
+            ball.x += ball.vx;
+            
+            // 壁判定
+            if (ball.x - ball.radius < 0) {
+                ball.x = ball.radius;
+                ball.vx = 0;
+            }
+            if (ball.x + ball.radius > canvas.width) {
+                ball.x = canvas.width - ball.radius;
+                ball.vx = 0;
+            }
+            
+            // スコア加算
+            distance += 0.1;
+            score = Math.floor(distance);
+            document.getElementById('score').textContent = score;
+            document.getElementById('distance').textContent = score;
+            
+            // 障害物生成
+            if (nextObstacleY > canvas.height) {
+                const gap = 200 + Math.random() * 100;
+                const holeWidth = 150 - Math.min(score / 10, 50);
+                const holeX = holeWidth / 2 + Math.random() * (canvas.width - holeWidth);
+                
+                obstacles.push({
+                    y: 0,
+                    holeX: holeX,
+                    holeWidth: holeWidth
+                });
+                
+                nextObstacleY = gap;
+            }
+            nextObstacleY -= 3;
+            
+            // 障害物描画・移動
+            obstacles = obstacles.filter(obs => {
+                obs.y += 3;
+                
+                // 描画
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(0, obs.y, obs.holeX - obs.holeWidth / 2, 20);
+                ctx.fillRect(obs.holeX + obs.holeWidth / 2, obs.y, canvas.width - (obs.holeX + obs.holeWidth / 2), 20);
+                
+                // 衝突判定
+                if (ball.y + ball.radius > obs.y && ball.y - ball.radius < obs.y + 20) {
+                    if (ball.x < obs.holeX - obs.holeWidth / 2 || ball.x > obs.holeX + obs.holeWidth / 2) {
+                        endGame();
+                    }
+                }
+                
+                return obs.y < canvas.height;
+            });
+            
+            // ボール描画
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#7dd3fc';
+            ctx.fill();
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            gameActive = false;
+            
+            if (useGyro) {
+                window.removeEventListener('deviceorientation', handleOrientation);
+            }
+            
+            startButton.style.display = 'inline-block';
+            startButton.textContent = 'もう一度';
+            shareButton.style.display = 'inline-block';
+            
+            ctx.fillStyle = '#e0e0e0';
+            ctx.font = 'bold 40px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('ゲーム終了！', canvas.width / 2, canvas.height / 2);
+        }
+
+        startButton.addEventListener('click', startGame);
+
+        shareButton.addEventListener('click', () => {
+            const text = `バランスゲーム: ${score}m到達！⚖️`;
+            const url = window.location.href;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        });
+    </script>
+</body>
+</html>

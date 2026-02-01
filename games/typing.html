@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>タイピング速度テスト - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .header a:hover {
+            color: #38bdf8;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 700px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        #textDisplay {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            border-radius: 10px;
+            font-size: 1.3em;
+            line-height: 1.8;
+            margin: 20px 0;
+            min-height: 120px;
+            text-align: left;
+        }
+
+        .correct {
+            color: #2ecc71;
+        }
+
+        .incorrect {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.2);
+        }
+
+        .current {
+            background: rgba(125, 211, 252, 0.3);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        #inputBox {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            border-radius: 10px;
+            color: #e0e0e0;
+            margin: 20px 0;
+        }
+
+        #inputBox:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 10px rgba(125, 211, 252, 0.3);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        .share-button {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            border-color: #1da1f2;
+            color: white;
+        }
+
+        .share-button:hover {
+            background: linear-gradient(135deg, #0d8bd9 0%, #0a6fb5 100%);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+            .game-container {
+                width: 100%;
+            }
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>⌨️ タイピング速度テスト</h1>
+                <div id="textDisplay">スタートを押して始めてください</div>
+                <input type="text" id="inputBox" placeholder="ここに入力..." disabled>
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="wpm">0</div>
+                        <div class="stat-label">WPM</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="accuracy">100</div>
+                        <div class="stat-label">正確性 (%)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="time">60</div>
+                        <div class="stat-label">残り時間 (秒)</div>
+                    </div>
+                </div>
+                <button id="startButton">スタート</button>
+                <button id="shareButton" class="share-button" style="display:none;">🐦 結果をシェア</button>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                <!-- Google AdSense -->
+                広告スペース<br>
+                300x250
+            </div>
+            <div class="ad-space">
+                <!-- Google AdSense -->
+                広告スペース<br>
+                300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const texts = [
+            "The quick brown fox jumps over the lazy dog",
+            "A journey of a thousand miles begins with a single step",
+            "To be or not to be that is the question",
+            "All that glitters is not gold",
+            "Practice makes perfect and patience is a virtue"
+        ];
+
+        let currentText = '';
+        let currentIndex = 0;
+        let startTime;
+        let timerInterval;
+        let timeLeft = 60;
+        let totalChars = 0;
+        let correctChars = 0;
+
+        const textDisplay = document.getElementById('textDisplay');
+        const inputBox = document.getElementById('inputBox');
+        const startButton = document.getElementById('startButton');
+        const shareButton = document.getElementById('shareButton');
+        const wpmDisplay = document.getElementById('wpm');
+        const accuracyDisplay = document.getElementById('accuracy');
+        const timeDisplay = document.getElementById('time');
+
+        startButton.addEventListener('click', startGame);
+        inputBox.addEventListener('input', handleInput);
+
+        function startGame() {
+            currentText = texts[Math.floor(Math.random() * texts.length)];
+            currentIndex = 0;
+            timeLeft = 60;
+            totalChars = 0;
+            correctChars = 0;
+            
+            inputBox.value = '';
+            inputBox.disabled = false;
+            inputBox.focus();
+            startButton.style.display = 'none';
+            shareButton.style.display = 'none';
+            
+            updateDisplay();
+            startTime = Date.now();
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timeDisplay.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function handleInput(e) {
+            const typed = inputBox.value;
+            totalChars = typed.length;
+            
+            if (typed === currentText) {
+                // 完了 - 次のテキスト
+                correctChars = typed.length;
+                currentText = texts[Math.floor(Math.random() * texts.length)];
+                currentIndex = 0;
+                inputBox.value = '';
+            }
+            
+            updateDisplay();
+            updateStats();
+        }
+
+        function updateDisplay() {
+            const typed = inputBox.value;
+            let html = '';
+            
+            for (let i = 0; i < currentText.length; i++) {
+                if (i < typed.length) {
+                    if (typed[i] === currentText[i]) {
+                        html += `<span class="correct">${currentText[i]}</span>`;
+                        if (i === typed.length - 1) correctChars++;
+                    } else {
+                        html += `<span class="incorrect">${currentText[i]}</span>`;
+                    }
+                } else if (i === typed.length) {
+                    html += `<span class="current">${currentText[i]}</span>`;
+                } else {
+                    html += currentText[i];
+                }
+            }
+            
+            textDisplay.innerHTML = html;
+        }
+
+        function updateStats() {
+            const elapsed = (Date.now() - startTime) / 1000 / 60; // 分
+            const words = totalChars / 5; // 平均的な単語長
+            const wpm = Math.round(words / elapsed);
+            const accuracy = totalChars > 0 ? Math.round((correctChars / totalChars) * 100) : 100;
+            
+            wpmDisplay.textContent = wpm || 0;
+            accuracyDisplay.textContent = accuracy;
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            inputBox.disabled = true;
+            startButton.style.display = 'inline-block';
+            startButton.textContent = 'もう一度';
+            shareButton.style.display = 'inline-block';
+            
+            textDisplay.textContent = `ゲーム終了！ WPM: ${wpmDisplay.textContent}, 正確性: ${accuracyDisplay.textContent}%`;
+        }
+
+        shareButton.addEventListener('click', () => {
+            const text = `タイピング速度テスト結果：${wpmDisplay.textContent} WPM、正確性 ${accuracyDisplay.textContent}% 🎮`;
+            const url = window.location.href;
+            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+            window.open(twitterUrl, '_blank');
+        });
+    </script>
+</body>
+</html>

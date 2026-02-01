@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神経衰弱 - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .header a:hover {
+            color: #38bdf8;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        .stats div {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+
+        #gameBoard {
+            display: grid;
+            grid-template-columns: repeat(4, 100px);
+            grid-gap: 10px;
+            margin: 30px auto;
+            width: fit-content;
+        }
+
+        .card {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+        }
+
+        .card.flipped {
+            background: rgba(255, 255, 255, 0.9);
+            color: #2d2d44;
+        }
+
+        .card.matched {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            cursor: default;
+            animation: match 0.5s ease;
+        }
+
+        @keyframes match {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2) rotate(10deg); }
+        }
+
+        .card.hide {
+            opacity: 0;
+        }
+
+        #newGameButton {
+            margin-top: 20px;
+            padding: 12px 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+
+        #newGameButton:hover {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        .win-message {
+            font-size: 1.5em;
+            color: #2ecc71;
+            font-weight: bold;
+            margin-top: 20px;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+            #gameBoard {
+                grid-template-columns: repeat(4, 70px);
+            }
+            .card {
+                width: 70px;
+                height: 70px;
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>🧠 神経衰弱</h1>
+                <div class="stats">
+                    <div>手数: <span id="moves">0</span></div>
+                    <div>マッチ: <span id="matches">0</span> / 8</div>
+                    <div>時間: <span id="time">0</span>秒</div>
+                </div>
+                <div id="gameBoard"></div>
+                <button id="newGameButton">新しいゲーム</button>
+                <div id="winMessage"></div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                <!-- Google AdSense -->
+                広告スペース<br>
+                300x250
+            </div>
+            <div class="ad-space">
+                <!-- Google AdSense -->
+                広告スペース<br>
+                300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const emojis = ['🎮', '🎯', '🎲', '🎪', '🎨', '🎭', '🎸', '🎹'];
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let startTime;
+        let timerInterval;
+
+        const gameBoard = document.getElementById('gameBoard');
+        const movesDisplay = document.getElementById('moves');
+        const matchesDisplay = document.getElementById('matches');
+        const timeDisplay = document.getElementById('time');
+        const newGameButton = document.getElementById('newGameButton');
+        const winMessage = document.getElementById('winMessage');
+
+        function initGame() {
+            // カードをシャッフル
+            cards = [...emojis, ...emojis]
+                .sort(() => Math.random() - 0.5)
+                .map((emoji, index) => ({
+                    id: index,
+                    emoji: emoji,
+                    flipped: false,
+                    matched: false
+                }));
+
+            matchedPairs = 0;
+            moves = 0;
+            flippedCards = [];
+            movesDisplay.textContent = '0';
+            matchesDisplay.textContent = '0';
+            timeDisplay.textContent = '0';
+            winMessage.textContent = '';
+            
+            renderBoard();
+            startTimer();
+        }
+
+        function renderBoard() {
+            gameBoard.innerHTML = '';
+            cards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.dataset.index = index;
+                
+                if (card.flipped || card.matched) {
+                    cardElement.classList.add('flipped');
+                    cardElement.textContent = card.emoji;
+                }
+                
+                if (card.matched) {
+                    cardElement.classList.add('matched');
+                }
+                
+                cardElement.addEventListener('click', () => flipCard(index));
+                gameBoard.appendChild(cardElement);
+            });
+        }
+
+        function flipCard(index) {
+            const card = cards[index];
+            
+            // 既にめくられているか、2枚選択済みなら無視
+            if (card.flipped || card.matched || flippedCards.length === 2) {
+                return;
+            }
+            
+            card.flipped = true;
+            flippedCards.push(index);
+            renderBoard();
+            
+            if (flippedCards.length === 2) {
+                moves++;
+                movesDisplay.textContent = moves;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [index1, index2] = flippedCards;
+            const card1 = cards[index1];
+            const card2 = cards[index2];
+            
+            if (card1.emoji === card2.emoji) {
+                // マッチ
+                card1.matched = true;
+                card2.matched = true;
+                matchedPairs++;
+                matchesDisplay.textContent = matchedPairs;
+                flippedCards = [];
+                renderBoard();
+                
+                if (matchedPairs === 8) {
+                    clearInterval(timerInterval);
+                    winMessage.innerHTML = `🎉 クリア！<br>${moves}手、${timeDisplay.textContent}秒`;
+                    winMessage.className = 'win-message';
+                }
+            } else {
+                // ミスマッチ - 1秒後に戻す
+                setTimeout(() => {
+                    card1.flipped = false;
+                    card2.flipped = false;
+                    flippedCards = [];
+                    renderBoard();
+                }, 1000);
+            }
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                timeDisplay.textContent = elapsed;
+            }, 1000);
+        }
+
+        newGameButton.addEventListener('click', initGame);
+
+        // ゲーム開始
+        initGame();
+    </script>
+</body>
+</html>

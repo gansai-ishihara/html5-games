@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暗算チャレンジ - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 600px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        #question {
+            font-size: 4em;
+            font-weight: bold;
+            margin: 40px 0;
+            color: #7dd3fc;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #answerInput {
+            width: 80%;
+            padding: 20px;
+            font-size: 2em;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            border-radius: 15px;
+            color: #e0e0e0;
+            margin: 20px 0;
+        }
+
+        #answerInput:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(125, 211, 252, 0.4);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        .share-button {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            border-color: #1da1f2;
+            color: white;
+        }
+
+        .feedback {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 10px 0;
+            height: 30px;
+        }
+
+        .correct {
+            color: #2ecc71;
+        }
+
+        .incorrect {
+            color: #e74c3c;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+            .game-container {
+                width: 100%;
+            }
+            #question {
+                font-size: 2.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>🧮 暗算チャレンジ</h1>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="score">0</div>
+                        <div class="stat-label">スコア</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="correct">0</div>
+                        <div class="stat-label">正解数</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="timeLeft">60</div>
+                        <div class="stat-label">残り時間</div>
+                    </div>
+                </div>
+
+                <div id="question">スタート!</div>
+                <div class="feedback" id="feedback"></div>
+                <input type="number" id="answerInput" placeholder="答えを入力" disabled>
+
+                <button id="startButton">スタート</button>
+                <button id="shareButton" class="share-button" style="display:none;">🐦 結果をシェア</button>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                広告スペース<br>300x250
+            </div>
+            <div class="ad-space">
+                広告スペース<br>300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let gameActive = false;
+        let score = 0;
+        let correct = 0;
+        let timeLeft = 60;
+        let currentAnswer = 0;
+        let difficulty = 1;
+        let timerInterval;
+
+        const question = document.getElementById('question');
+        const answerInput = document.getElementById('answerInput');
+        const feedback = document.getElementById('feedback');
+        const startButton = document.getElementById('startButton');
+        const shareButton = document.getElementById('shareButton');
+
+        function startGame() {
+            gameActive = true;
+            score = 0;
+            correct = 0;
+            timeLeft = 60;
+            difficulty = 1;
+            
+            answerInput.disabled = false;
+            answerInput.value = '';
+            answerInput.focus();
+            startButton.style.display = 'none';
+            shareButton.style.display = 'none';
+            feedback.textContent = '';
+            
+            updateDisplay();
+            nextQuestion();
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timeLeft').textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function nextQuestion() {
+            if (!gameActive) return;
+            
+            const maxNum = 10 + (difficulty * 5);
+            const a = Math.floor(Math.random() * maxNum) + 1;
+            const b = Math.floor(Math.random() * maxNum) + 1;
+            const operators = ['+', '-', '×'];
+            const operator = operators[Math.floor(Math.random() * operators.length)];
+            
+            switch(operator) {
+                case '+':
+                    question.textContent = `${a} + ${b}`;
+                    currentAnswer = a + b;
+                    break;
+                case '-':
+                    const larger = Math.max(a, b);
+                    const smaller = Math.min(a, b);
+                    question.textContent = `${larger} - ${smaller}`;
+                    currentAnswer = larger - smaller;
+                    break;
+                case '×':
+                    const aSmall = Math.floor(Math.random() * (5 + difficulty)) + 1;
+                    const bSmall = Math.floor(Math.random() * (5 + difficulty)) + 1;
+                    question.textContent = `${aSmall} × ${bSmall}`;
+                    currentAnswer = aSmall * bSmall;
+                    break;
+            }
+            
+            answerInput.value = '';
+            answerInput.focus();
+        }
+
+        answerInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        function checkAnswer() {
+            if (!gameActive) return;
+            
+            const userAnswer = parseInt(answerInput.value);
+            
+            if (userAnswer === currentAnswer) {
+                correct++;
+                score += 10 * difficulty;
+                feedback.textContent = '正解！';
+                feedback.className = 'feedback correct';
+                
+                if (correct % 5 === 0) {
+                    difficulty++;
+                }
+            } else {
+                feedback.textContent = `不正解 (答え: ${currentAnswer})`;
+                feedback.className = 'feedback incorrect';
+            }
+            
+            updateDisplay();
+            
+            setTimeout(() => {
+                feedback.textContent = '';
+                nextQuestion();
+            }, 800);
+        }
+
+        function updateDisplay() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('correct').textContent = correct;
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            
+            answerInput.disabled = true;
+            question.textContent = 'ゲーム終了！';
+            feedback.textContent = '';
+            
+            startButton.style.display = 'inline-block';
+            startButton.textContent = 'もう一度';
+            shareButton.style.display = 'inline-block';
+        }
+
+        startButton.addEventListener('click', startGame);
+
+        shareButton.addEventListener('click', () => {
+            const text = `暗算チャレンジ: スコア ${score}点、正解数 ${correct}問 🧮`;
+            const url = window.location.href;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        });
+    </script>
+</body>
+</html>

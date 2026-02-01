@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数字記憶ゲーム - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 600px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .instructions {
+            font-size: 1.1em;
+            color: #a0a0b0;
+            margin-bottom: 30px;
+        }
+
+        #display {
+            font-size: 5em;
+            font-weight: bold;
+            margin: 50px 0;
+            color: #7dd3fc;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #inputBox {
+            width: 80%;
+            padding: 20px;
+            font-size: 2em;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            border-radius: 15px;
+            color: #e0e0e0;
+            margin: 20px auto;
+            display: none;
+        }
+
+        #inputBox:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(125, 211, 252, 0.4);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        .share-button {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            border-color: #1da1f2;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+            .game-container {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>🔢 数字記憶ゲーム</h1>
+                <div class="instructions">表示される数字を覚えて入力してください</div>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="level">1</div>
+                        <div class="stat-label">レベル (桁数)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="score">0</div>
+                        <div class="stat-label">スコア</div>
+                    </div>
+                </div>
+
+                <div id="display">スタート!</div>
+                <input type="text" id="inputBox" placeholder="数字を入力">
+
+                <button id="startButton">スタート</button>
+                <button id="submitButton" style="display:none;">送信</button>
+                <button id="shareButton" class="share-button" style="display:none;">🐦 結果をシェア</button>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                広告スペース<br>300x250
+            </div>
+            <div class="ad-space">
+                広告スペース<br>300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let gameActive = false;
+        let level = 1;
+        let score = 0;
+        let currentSequence = '';
+        let phase = 'waiting'; // waiting, showing, input
+
+        const display = document.getElementById('display');
+        const inputBox = document.getElementById('inputBox');
+        const startButton = document.getElementById('startButton');
+        const submitButton = document.getElementById('submitButton');
+        const shareButton = document.getElementById('shareButton');
+
+        function startGame() {
+            gameActive = true;
+            level = 1;
+            score = 0;
+            updateDisplay();
+            startButton.style.display = 'none';
+            shareButton.style.display = 'none';
+            showSequence();
+        }
+
+        function showSequence() {
+            phase = 'showing';
+            inputBox.style.display = 'none';
+            submitButton.style.display = 'none';
+            
+            // ランダムな数字列を生成
+            currentSequence = '';
+            for (let i = 0; i < level; i++) {
+                currentSequence += Math.floor(Math.random() * 10);
+            }
+            
+            display.textContent = '覚えてください...';
+            
+            setTimeout(() => {
+                // 数字を1つずつ表示
+                let index = 0;
+                const showInterval = setInterval(() => {
+                    if (index < currentSequence.length) {
+                        display.textContent = currentSequence[index];
+                        index++;
+                    } else {
+                        clearInterval(showInterval);
+                        startInput();
+                    }
+                }, 1000);
+            }, 1000);
+        }
+
+        function startInput() {
+            phase = 'input';
+            display.textContent = '入力してください';
+            inputBox.style.display = 'block';
+            inputBox.value = '';
+            inputBox.focus();
+            submitButton.style.display = 'inline-block';
+        }
+
+        submitButton.addEventListener('click', checkAnswer);
+        
+        inputBox.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        function checkAnswer() {
+            if (phase !== 'input') return;
+            
+            const userInput = inputBox.value;
+            
+            if (userInput === currentSequence) {
+                // 正解
+                score += level * 10;
+                level++;
+                display.textContent = '正解！';
+                display.style.color = '#2ecc71';
+                
+                setTimeout(() => {
+                    display.style.color = '#7dd3fc';
+                    updateDisplay();
+                    showSequence();
+                }, 1500);
+            } else {
+                // 不正解 - ゲーム終了
+                display.textContent = `不正解！ (正解: ${currentSequence})`;
+                display.style.color = '#e74c3c';
+                endGame();
+            }
+            
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            document.getElementById('level').textContent = level;
+            document.getElementById('score').textContent = score;
+        }
+
+        function endGame() {
+            gameActive = false;
+            inputBox.style.display = 'none';
+            submitButton.style.display = 'none';
+            
+            setTimeout(() => {
+                display.textContent = 'ゲーム終了！';
+                display.style.color = '#7dd3fc';
+                startButton.style.display = 'inline-block';
+                startButton.textContent = 'もう一度';
+                shareButton.style.display = 'inline-block';
+            }, 2000);
+        }
+
+        startButton.addEventListener('click', startGame);
+
+        shareButton.addEventListener('click', () => {
+            const maxLevel = level - 1;
+            const text = `数字記憶ゲーム: レベル ${maxLevel} (${maxLevel}桁)、スコア ${score}点 🔢`;
+            const url = window.location.href;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        });
+    </script>
+</body>
+</html>
