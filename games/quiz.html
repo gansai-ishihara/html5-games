@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クイズゲーム - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        .quiz-area {
+            min-height: 400px;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .question {
+            font-size: 1.5em;
+            text-align: center;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .answers {
+            display: grid;
+            gap: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .answer-btn {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #e0e0e0;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .answer-btn:hover {
+            background: rgba(125, 211, 252, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .answer-btn.correct {
+            background: rgba(46, 204, 113, 0.3);
+            border-color: #2ecc71;
+        }
+
+        .answer-btn.wrong {
+            background: rgba(231, 76, 60, 0.3);
+            border-color: #e74c3c;
+        }
+
+        .timer-bar {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2ecc71 0%, #f39c12 50%, #e74c3c 100%);
+            transition: width 0.1s linear;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        .share-button {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            border-color: #1da1f2;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>🧠 クイズゲーム</h1>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="score">0</div>
+                        <div class="stat-label">スコア</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="question">0/10</div>
+                        <div class="stat-label">問題数</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="correct">0</div>
+                        <div class="stat-label">正解数</div>
+                    </div>
+                </div>
+
+                <div class="quiz-area" id="quizArea">
+                    <div class="timer-bar">
+                        <div class="timer-fill" id="timerFill" style="width: 100%"></div>
+                    </div>
+                    <div class="question" id="questionText"></div>
+                    <div class="answers" id="answersContainer"></div>
+                </div>
+
+                <div class="controls">
+                    <button id="startButton">スタート</button>
+                    <button id="shareButton" class="share-button" style="display:none;">🐦 結果をシェア</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                広告スペース<br>300x250
+            </div>
+            <div class="ad-space">
+                広告スペース<br>300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const startButton = document.getElementById('startButton');
+        const shareButton = document.getElementById('shareButton');
+        const questionText = document.getElementById('questionText');
+        const answersContainer = document.getElementById('answersContainer');
+        const timerFill = document.getElementById('timerFill');
+
+        let gameActive = false;
+        let score = 0;
+        let currentQuestion = 0;
+        let correctCount = 0;
+        let timeLeft = 15;
+        let timerInterval = null;
+
+        const questions = [
+            {
+                q: "日本の首都はどこ？",
+                answers: ["東京", "大阪", "京都", "名古屋"],
+                correct: 0
+            },
+            {
+                q: "地球で最も大きい海は？",
+                answers: ["大西洋", "インド洋", "太平洋", "北極海"],
+                correct: 2
+            },
+            {
+                q: "世界で最も高い山は？",
+                answers: ["富士山", "エベレスト", "キリマンジャロ", "マッキンリー"],
+                correct: 1
+            },
+            {
+                q: "1年は何日？（平年）",
+                answers: ["364日", "365日", "366日", "367日"],
+                correct: 1
+            },
+            {
+                q: "光の速さは約何km/秒？",
+                answers: ["100,000", "200,000", "300,000", "400,000"],
+                correct: 2
+            },
+            {
+                q: "世界で最も人口が多い国は？",
+                answers: ["インド", "中国", "アメリカ", "ロシア"],
+                correct: 0
+            },
+            {
+                q: "オリンピックは何年ごと？",
+                answers: ["2年", "4年", "5年", "8年"],
+                correct: 1
+            },
+            {
+                q: "太陽系で最も大きい惑星は？",
+                answers: ["土星", "天王星", "木星", "海王星"],
+                correct: 2
+            },
+            {
+                q: "日本の国鳥は？",
+                answers: ["鶴", "雉", "鷹", "鳩"],
+                correct: 1
+            },
+            {
+                q: "ビタミンCを多く含む果物は？",
+                answers: ["バナナ", "りんご", "レモン", "ぶどう"],
+                correct: 2
+            }
+        ];
+
+        function startGame() {
+            gameActive = true;
+            score = 0;
+            currentQuestion = 0;
+            correctCount = 0;
+            
+            updateDisplay();
+            showQuestion();
+            
+            startButton.style.display = 'none';
+            shareButton.style.display = 'none';
+        }
+
+        function showQuestion() {
+            if (currentQuestion >= questions.length) {
+                endGame();
+                return;
+            }
+
+            const q = questions[currentQuestion];
+            questionText.textContent = q.q;
+            answersContainer.innerHTML = '';
+            
+            q.answers.forEach((answer, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.textContent = `${String.fromCharCode(65 + index)}. ${answer}`;
+                btn.onclick = () => checkAnswer(index);
+                answersContainer.appendChild(btn);
+            });
+
+            timeLeft = 15;
+            updateTimer();
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft -= 0.1;
+                updateTimer();
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    checkAnswer(-1); // タイムアウト
+                }
+            }, 100);
+        }
+
+        function updateTimer() {
+            const percent = (timeLeft / 15) * 100;
+            timerFill.style.width = percent + '%';
+        }
+
+        function checkAnswer(selected) {
+            clearInterval(timerInterval);
+            
+            const q = questions[currentQuestion];
+            const buttons = answersContainer.querySelectorAll('.answer-btn');
+            
+            buttons.forEach((btn, index) => {
+                btn.disabled = true;
+                if (index === q.correct) {
+                    btn.classList.add('correct');
+                } else if (index === selected) {
+                    btn.classList.add('wrong');
+                }
+            });
+
+            if (selected === q.correct) {
+                const timeBonus = Math.floor(timeLeft * 10);
+                score += 100 + timeBonus;
+                correctCount++;
+            }
+
+            updateDisplay();
+
+            setTimeout(() => {
+                currentQuestion++;
+                showQuestion();
+            }, 2000);
+        }
+
+        function updateDisplay() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('question').textContent = `${currentQuestion}/${questions.length}`;
+            document.getElementById('correct').textContent = correctCount;
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            
+            questionText.textContent = `ゲーム終了！\n${correctCount}/${questions.length}問正解`;
+            answersContainer.innerHTML = '';
+            timerFill.style.width = '0%';
+            
+            startButton.style.display = 'inline-block';
+            startButton.textContent = 'もう一度';
+            shareButton.style.display = 'inline-block';
+        }
+
+        startButton.addEventListener('click', startGame);
+
+        shareButton.addEventListener('click', () => {
+            const text = `クイズゲーム: ${correctCount}/${questions.length}問正解 スコア${score}点🧠`;
+            const url = window.location.href;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リズムゲーム - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        #gameCanvas {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            display: block;
+            margin: 20px auto;
+            border: 2px solid #4a4a6a;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        .share-button {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            border-color: #1da1f2;
+            color: white;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #a0a0b0;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>🎵 リズムゲーム</h1>
+                <div class="instructions">対応するキー（D F J K）をタイミングよく押そう！</div>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="score">0</div>
+                        <div class="stat-label">スコア</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="combo">0</div>
+                        <div class="stat-label">コンボ</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="accuracy">100%</div>
+                        <div class="stat-label">正確度</div>
+                    </div>
+                </div>
+
+                <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+                <div class="controls">
+                    <button id="startButton">スタート</button>
+                    <button id="shareButton" class="share-button" style="display:none;">🐦 結果をシェア</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                広告スペース<br>300x250
+            </div>
+            <div class="ad-space">
+                広告スペース<br>300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+        const shareButton = document.getElementById('shareButton');
+
+        let gameActive = false;
+        let score = 0;
+        let combo = 0;
+        let maxCombo = 0;
+        let hits = 0;
+        let totalNotes = 0;
+
+        const lanes = [
+            { key: 'd', x: 100, color: '#e74c3c', pressed: false },
+            { key: 'f', x: 220, color: '#3498db', pressed: false },
+            { key: 'j', x: 340, color: '#2ecc71', pressed: false },
+            { key: 'k', x: 460, color: '#f39c12', pressed: false }
+        ];
+
+        const targetY = 500;
+        const laneWidth = 80;
+        let notes = [];
+        let frameCount = 0;
+
+        const pattern = [
+            { lane: 0, time: 30 },
+            { lane: 1, time: 50 },
+            { lane: 2, time: 70 },
+            { lane: 3, time: 90 },
+            { lane: 0, time: 110 },
+            { lane: 2, time: 130 },
+            { lane: 1, time: 150 },
+            { lane: 3, time: 170 },
+            { lane: 0, time: 190 },
+            { lane: 1, time: 200 },
+            { lane: 2, time: 210 },
+            { lane: 3, time: 220 },
+            { lane: 0, time: 250 },
+            { lane: 3, time: 270 },
+            { lane: 1, time: 290 },
+            { lane: 2, time: 310 },
+            { lane: 0, time: 330 },
+            { lane: 1, time: 340 },
+            { lane: 2, time: 350 },
+            { lane: 3, time: 360 },
+        ];
+
+        function startGame() {
+            gameActive = true;
+            score = 0;
+            combo = 0;
+            maxCombo = 0;
+            hits = 0;
+            totalNotes = 0;
+            frameCount = 0;
+            notes = [];
+            
+            updateDisplay();
+            
+            startButton.style.display = 'none';
+            shareButton.style.display = 'none';
+            
+            gameLoop();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            
+            const lane = lanes.find(l => l.key === e.key.toLowerCase());
+            if (lane) {
+                lane.pressed = true;
+                checkHit(lane);
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const lane = lanes.find(l => l.key === e.key.toLowerCase());
+            if (lane) lane.pressed = false;
+        });
+
+        function checkHit(lane) {
+            const hitWindow = 50;
+            let hit = false;
+            
+            notes.forEach((note, i) => {
+                if (note.lane === lane && Math.abs(note.y - targetY) < hitWindow) {
+                    const distance = Math.abs(note.y - targetY);
+                    let points = 0;
+                    let judgment = '';
+                    
+                    if (distance < 15) {
+                        points = 100;
+                        judgment = 'PERFECT!';
+                    } else if (distance < 30) {
+                        points = 50;
+                        judgment = 'GOOD';
+                    } else {
+                        points = 25;
+                        judgment = 'OK';
+                    }
+                    
+                    combo++;
+                    maxCombo = Math.max(maxCombo, combo);
+                    score += points * (1 + combo * 0.1);
+                    hits++;
+                    
+                    notes.splice(i, 1);
+                    hit = true;
+                    
+                    updateDisplay();
+                }
+            });
+        }
+
+        function gameLoop() {
+            if (!gameActive) return;
+
+            frameCount++;
+
+            // ノート生成
+            pattern.forEach(p => {
+                if (p.time === frameCount) {
+                    notes.push({
+                        lane: lanes[p.lane],
+                        y: 0,
+                        speed: 5
+                    });
+                    totalNotes++;
+                }
+            });
+
+            // ノート移動
+            notes.forEach((note, i) => {
+                note.y += note.speed;
+                
+                // ミス判定
+                if (note.y > targetY + 100) {
+                    notes.splice(i, 1);
+                    combo = 0;
+                    totalNotes++;
+                    updateDisplay();
+                }
+            });
+
+            // ゲーム終了チェック
+            if (frameCount > pattern[pattern.length - 1].time + 200 && notes.length === 0) {
+                endGame();
+                return;
+            }
+
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function draw() {
+            // 背景
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // レーン
+            lanes.forEach(lane => {
+                ctx.fillStyle = lane.pressed ? 
+                    `${lane.color}44` : 'rgba(255, 255, 255, 0.05)';
+                ctx.fillRect(lane.x - laneWidth/2, 0, laneWidth, canvas.height);
+                
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(lane.x - laneWidth/2, 0, laneWidth, canvas.height);
+                
+                // キー表示
+                ctx.fillStyle = '#e0e0e0';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(lane.key.toUpperCase(), lane.x, 580);
+            });
+
+            // ターゲットライン
+            ctx.strokeStyle = '#7dd3fc';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(0, targetY);
+            ctx.lineTo(canvas.width, targetY);
+            ctx.stroke();
+
+            // ノート
+            notes.forEach(note => {
+                ctx.fillStyle = note.lane.color;
+                ctx.fillRect(
+                    note.lane.x - laneWidth/2 + 5,
+                    note.y - 20,
+                    laneWidth - 10,
+                    40
+                );
+                
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(
+                    note.lane.x - laneWidth/2 + 5,
+                    note.y - 20,
+                    laneWidth - 10,
+                    40
+                );
+            });
+
+            // コンボ表示
+            if (combo > 5) {
+                ctx.fillStyle = '#f39c12';
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${combo} COMBO!`, canvas.width / 2, 100);
+            }
+        }
+
+        function updateDisplay() {
+            document.getElementById('score').textContent = Math.floor(score);
+            document.getElementById('combo').textContent = combo;
+            const accuracy = totalNotes > 0 ? ((hits / totalNotes) * 100).toFixed(1) : 100;
+            document.getElementById('accuracy').textContent = accuracy + '%';
+        }
+
+        function endGame() {
+            gameActive = false;
+            
+            startButton.style.display = 'inline-block';
+            startButton.textContent = 'もう一度';
+            shareButton.style.display = 'inline-block';
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#e0e0e0';
+            ctx.font = 'bold 40px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('曲終了！', canvas.width / 2, canvas.height / 2 - 40);
+            ctx.font = '24px Arial';
+            ctx.fillText(`最大コンボ: ${maxCombo}`, canvas.width / 2, canvas.height / 2 + 10);
+        }
+
+        startButton.addEventListener('click', startGame);
+
+        shareButton.addEventListener('click', () => {
+            const accuracy = document.getElementById('accuracy').textContent;
+            const text = `リズムゲーム: ${Math.floor(score)}点 正確度${accuracy} 最大コンボ${maxCombo}🎵`;
+            const url = window.location.href;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        });
+    </script>
+</body>
+</html>

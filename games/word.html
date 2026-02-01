@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>単語当てゲーム - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        .game-area {
+            min-height: 400px;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .hint {
+            font-size: 1.3em;
+            margin-bottom: 30px;
+            color: #a0a0b0;
+        }
+
+        .word-display {
+            font-size: 3em;
+            font-weight: bold;
+            letter-spacing: 15px;
+            margin: 30px 0;
+            font-family: monospace;
+        }
+
+        .hangman {
+            margin: 20px auto;
+            width: 200px;
+            height: 250px;
+        }
+
+        #hangmanCanvas {
+            background: transparent;
+        }
+
+        .keyboard {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 8px;
+            max-width: 600px;
+            margin: 30px auto;
+        }
+
+        .key-btn {
+            padding: 15px 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .key-btn:hover:not(:disabled) {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.1);
+        }
+
+        .key-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .key-btn.correct {
+            background: rgba(46, 204, 113, 0.3);
+            border-color: #2ecc71;
+        }
+
+        .key-btn.wrong {
+            background: rgba(231, 76, 60, 0.3);
+            border-color: #e74c3c;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        .share-button {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            border-color: #1da1f2;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+            .keyboard {
+                grid-template-columns: repeat(7, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>📝 単語当てゲーム</h1>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="score">0</div>
+                        <div class="stat-label">スコア</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="round">0</div>
+                        <div class="stat-label">ラウンド</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="lives">6</div>
+                        <div class="stat-label">残り</div>
+                    </div>
+                </div>
+
+                <div class="game-area">
+                    <div class="hint" id="hint">ヒント: ---</div>
+                    
+                    <div class="hangman">
+                        <canvas id="hangmanCanvas" width="200" height="250"></canvas>
+                    </div>
+                    
+                    <div class="word-display" id="wordDisplay">_ _ _ _ _</div>
+                    
+                    <div class="keyboard" id="keyboard"></div>
+                </div>
+
+                <div class="controls">
+                    <button id="startButton">スタート</button>
+                    <button id="shareButton" class="share-button" style="display:none;">🐦 結果をシェア</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                広告スペース<br>300x250
+            </div>
+            <div class="ad-space">
+                広告スペース<br>300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const startButton = document.getElementById('startButton');
+        const shareButton = document.getElementById('shareButton');
+        const wordDisplay = document.getElementById('wordDisplay');
+        const hint = document.getElementById('hint');
+        const keyboard = document.getElementById('keyboard');
+        const canvas = document.getElementById('hangmanCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let gameActive = false;
+        let score = 0;
+        let round = 0;
+        let lives = 6;
+        let currentWord = '';
+        let currentHint = '';
+        let guessedLetters = [];
+        let displayWord = [];
+
+        const words = [
+            { word: "コンピュータ", hint: "電子機器" },
+            { word: "プログラム", hint: "ソフトウェア" },
+            { word: "インターネット", hint: "通信網" },
+            { word: "キーボード", hint: "入力装置" },
+            { word: "スマートフォン", hint: "携帯端末" },
+            { word: "チョコレート", hint: "甘いお菓子" },
+            { word: "アイスクリーム", hint: "冷たいデザート" },
+            { word: "サッカー", hint: "球技スポーツ" },
+            { word: "ギター", hint: "弦楽器" },
+            { word: "レストラン", hint: "飲食店" }
+        ];
+
+        const hiragana = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽゃゅょっー".split('');
+
+        function startGame() {
+            gameActive = true;
+            score = 0;
+            round = 0;
+            
+            createKeyboard();
+            nextRound();
+            
+            startButton.style.display = 'none';
+            shareButton.style.display = 'none';
+        }
+
+        function createKeyboard() {
+            keyboard.innerHTML = '';
+            hiragana.forEach(char => {
+                const btn = document.createElement('button');
+                btn.className = 'key-btn';
+                btn.textContent = char;
+                btn.onclick = () => guessLetter(char, btn);
+                keyboard.appendChild(btn);
+            });
+        }
+
+        function nextRound() {
+            if (round >= 5) {
+                endGame();
+                return;
+            }
+
+            round++;
+            lives = 6;
+            guessedLetters = [];
+            
+            const wordData = words[Math.floor(Math.random() * words.length)];
+            currentWord = wordData.word;
+            currentHint = wordData.hint;
+            displayWord = currentWord.split('').map(() => '_');
+            
+            updateDisplay();
+            drawHangman();
+            
+            // キーボードリセット
+            keyboard.querySelectorAll('.key-btn').forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('correct', 'wrong');
+            });
+        }
+
+        function guessLetter(letter, btn) {
+            if (!gameActive || guessedLetters.includes(letter)) return;
+            
+            guessedLetters.push(letter);
+            btn.disabled = true;
+            
+            if (currentWord.includes(letter)) {
+                btn.classList.add('correct');
+                currentWord.split('').forEach((char, index) => {
+                    if (char === letter) {
+                        displayWord[index] = letter;
+                    }
+                });
+                
+                if (!displayWord.includes('_')) {
+                    score += lives * 20;
+                    updateDisplay();
+                    setTimeout(nextRound, 1500);
+                }
+            } else {
+                btn.classList.add('wrong');
+                lives--;
+                drawHangman();
+                
+                if (lives === 0) {
+                    displayWord = currentWord.split('');
+                    updateDisplay();
+                    setTimeout(nextRound, 2000);
+                }
+            }
+            
+            updateDisplay();
+        }
+
+        function drawHangman() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#7dd3fc';
+            ctx.lineWidth = 3;
+            
+            const parts = [
+                () => { // 台
+                    ctx.beginPath();
+                    ctx.moveTo(20, 230);
+                    ctx.lineTo(180, 230);
+                    ctx.stroke();
+                },
+                () => { // 縦棒
+                    ctx.beginPath();
+                    ctx.moveTo(50, 230);
+                    ctx.lineTo(50, 20);
+                    ctx.stroke();
+                },
+                () => { // 横棒
+                    ctx.beginPath();
+                    ctx.moveTo(50, 20);
+                    ctx.lineTo(130, 20);
+                    ctx.stroke();
+                },
+                () => { // ロープ
+                    ctx.beginPath();
+                    ctx.moveTo(130, 20);
+                    ctx.lineTo(130, 50);
+                    ctx.stroke();
+                },
+                () => { // 頭
+                    ctx.beginPath();
+                    ctx.arc(130, 70, 20, 0, Math.PI * 2);
+                    ctx.stroke();
+                },
+                () => { // 体
+                    ctx.beginPath();
+                    ctx.moveTo(130, 90);
+                    ctx.lineTo(130, 150);
+                    ctx.stroke();
+                    // 手
+                    ctx.moveTo(130, 110);
+                    ctx.lineTo(100, 130);
+                    ctx.moveTo(130, 110);
+                    ctx.lineTo(160, 130);
+                    // 足
+                    ctx.moveTo(130, 150);
+                    ctx.lineTo(100, 190);
+                    ctx.moveTo(130, 150);
+                    ctx.lineTo(160, 190);
+                    ctx.stroke();
+                }
+            ];
+            
+            for (let i = 0; i < 6 - lives; i++) {
+                parts[i]();
+            }
+        }
+
+        function updateDisplay() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('round').textContent = round;
+            document.getElementById('lives').textContent = lives;
+            wordDisplay.textContent = displayWord.join(' ');
+            hint.textContent = `ヒント: ${currentHint}`;
+        }
+
+        function endGame() {
+            gameActive = false;
+            
+            wordDisplay.textContent = `ゲーム終了！`;
+            hint.textContent = `最終スコア: ${score}点`;
+            keyboard.innerHTML = '';
+            
+            startButton.style.display = 'inline-block';
+            startButton.textContent = 'もう一度';
+            shareButton.style.display = 'inline-block';
+        }
+
+        startButton.addEventListener('click', startGame);
+
+        shareButton.addEventListener('click', () => {
+            const text = `単語当てゲーム: ${score}点獲得！📝`;
+            const url = window.location.href;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        });
+    </script>
+</body>
+</html>
