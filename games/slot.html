@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スロットマシン - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        .slot-machine {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px auto;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .reels {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .reel {
+            background: white;
+            width: 120px;
+            height: 140px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4em;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .result {
+            text-align: center;
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin: 20px 0;
+            min-height: 40px;
+            font-weight: bold;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover:not(:disabled) {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        #spinButton {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            border-color: #2ecc71;
+            color: white;
+            font-size: 1.3em;
+            padding: 15px 50px;
+        }
+
+        .share-button {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            border-color: #1da1f2;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+            .reels {
+                gap: 10px;
+            }
+            .reel {
+                width: 80px;
+                height: 100px;
+                font-size: 3em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>🎰 スロットマシン</h1>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="credits">100</div>
+                        <div class="stat-label">コイン</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="totalWin">0</div>
+                        <div class="stat-label">総獲得</div>
+                    </div>
+                </div>
+
+                <div class="slot-machine">
+                    <div class="reels">
+                        <div class="reel" id="reel1">🍒</div>
+                        <div class="reel" id="reel2">🍋</div>
+                        <div class="reel" id="reel3">🍊</div>
+                    </div>
+                    
+                    <div class="result" id="result"></div>
+                    
+                    <div style="text-align: center;">
+                        <button id="spinButton">スピン (10コイン)</button>
+                    </div>
+                </div>
+
+                <div style="text-align: center; color: #a0a0b0; margin: 20px 0;">
+                    <p>🍒🍒🍒 = 100コイン</p>
+                    <p>🍋🍋🍋 / 🍊🍊🍊 / 🍇🍇🍇 = 50コイン</p>
+                    <p>🔔🔔🔔 / ⭐⭐⭐ = 30コイン</p>
+                    <p>2つ揃い = 10コイン</p>
+                </div>
+
+                <div class="controls">
+                    <button id="resetButton">リセット</button>
+                    <button id="shareButton" class="share-button" style="display:none;">🐦 結果をシェア</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                広告スペース<br>300x250
+            </div>
+            <div class="ad-space">
+                広告スペース<br>300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const spinButton = document.getElementById('spinButton');
+        const resetButton = document.getElementById('resetButton');
+        const shareButton = document.getElementById('shareButton');
+        const result = document.getElementById('result');
+
+        const symbols = ['🍒', '🍋', '🍊', '🍇', '🔔', '⭐', '7️⃣'];
+        let credits = 100;
+        let totalWin = 0;
+        let isSpinning = false;
+
+        function spin() {
+            if (isSpinning || credits < 10) return;
+            
+            credits -= 10;
+            isSpinning = true;
+            spinButton.disabled = true;
+            result.textContent = '';
+            
+            updateDisplay();
+            
+            // アニメーション
+            let spins = 20;
+            const interval = setInterval(() => {
+                document.getElementById('reel1').textContent = symbols[Math.floor(Math.random() * symbols.length)];
+                document.getElementById('reel2').textContent = symbols[Math.floor(Math.random() * symbols.length)];
+                document.getElementById('reel3').textContent = symbols[Math.floor(Math.random() * symbols.length)];
+                
+                spins--;
+                if (spins === 0) {
+                    clearInterval(interval);
+                    finishSpin();
+                }
+            }, 100);
+        }
+
+        function finishSpin() {
+            const reel1 = symbols[Math.floor(Math.random() * symbols.length)];
+            const reel2 = symbols[Math.floor(Math.random() * symbols.length)];
+            const reel3 = symbols[Math.floor(Math.random() * symbols.length)];
+            
+            document.getElementById('reel1').textContent = reel1;
+            document.getElementById('reel2').textContent = reel2;
+            document.getElementById('reel3').textContent = reel3;
+            
+            checkWin(reel1, reel2, reel3);
+            
+            isSpinning = false;
+            spinButton.disabled = credits < 10;
+            
+            if (credits < 10) {
+                result.textContent = 'ゲームオーバー！';
+                shareButton.style.display = 'inline-block';
+            }
+        }
+
+        function checkWin(r1, r2, r3) {
+            let win = 0;
+            
+            if (r1 === r2 && r2 === r3) {
+                // 3つ揃い
+                if (r1 === '🍒') {
+                    win = 100;
+                    result.textContent = '🎉 JACKPOT! +100コイン';
+                } else if (['🍋', '🍊', '🍇'].includes(r1)) {
+                    win = 50;
+                    result.textContent = '✨ BIG WIN! +50コイン';
+                } else {
+                    win = 30;
+                    result.textContent = '⭐ WIN! +30コイン';
+                }
+            } else if (r1 === r2 || r2 === r3 || r1 === r3) {
+                // 2つ揃い
+                win = 10;
+                result.textContent = '👍 小当たり! +10コイン';
+            } else {
+                result.textContent = 'ハズレ...';
+            }
+            
+            credits += win;
+            totalWin += win;
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            document.getElementById('credits').textContent = credits;
+            document.getElementById('totalWin').textContent = totalWin;
+        }
+
+        function reset() {
+            credits = 100;
+            totalWin = 0;
+            result.textContent = '';
+            updateDisplay();
+            spinButton.disabled = false;
+            shareButton.style.display = 'none';
+            
+            document.getElementById('reel1').textContent = '🍒';
+            document.getElementById('reel2').textContent = '🍋';
+            document.getElementById('reel3').textContent = '🍊';
+        }
+
+        spinButton.addEventListener('click', spin);
+        resetButton.addEventListener('click', reset);
+
+        shareButton.addEventListener('click', () => {
+            const text = `スロットマシン: 総獲得${totalWin}コイン🎰`;
+            const url = window.location.href;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        });
+    </script>
+</body>
+</html>

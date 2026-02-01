@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>サイモンゲーム - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        .simon-board {
+            width: 400px;
+            height: 400px;
+            margin: 30px auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+
+        .simon-button {
+            cursor: pointer;
+            transition: all 0.1s;
+            position: relative;
+        }
+
+        .simon-button.active {
+            filter: brightness(1.5);
+        }
+
+        .simon-button.disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        #btn0 {
+            background: #e74c3c;
+            border-radius: 100% 0 0 0;
+        }
+
+        #btn1 {
+            background: #3498db;
+            border-radius: 0 100% 0 0;
+        }
+
+        #btn2 {
+            background: #2ecc71;
+            border-radius: 0 0 0 100%;
+        }
+
+        #btn3 {
+            background: #f39c12;
+            border-radius: 0 0 100% 0;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        .share-button {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            border-color: #1da1f2;
+            color: white;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #a0a0b0;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+            .simon-board {
+                width: 300px;
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>🎮 サイモンゲーム</h1>
+                <div class="instructions">光った順番を覚えて繰り返そう</div>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="level">0</div>
+                        <div class="stat-label">レベル</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="best">0</div>
+                        <div class="stat-label">ベスト</div>
+                    </div>
+                </div>
+
+                <div class="simon-board">
+                    <div class="simon-button" id="btn0" data-index="0"></div>
+                    <div class="simon-button" id="btn1" data-index="1"></div>
+                    <div class="simon-button" id="btn2" data-index="2"></div>
+                    <div class="simon-button" id="btn3" data-index="3"></div>
+                </div>
+
+                <div class="controls">
+                    <button id="startButton">スタート</button>
+                    <button id="shareButton" class="share-button" style="display:none;">🐦 結果をシェア</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                広告スペース<br>300x250
+            </div>
+            <div class="ad-space">
+                広告スペース<br>300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const startButton = document.getElementById('startButton');
+        const shareButton = document.getElementById('shareButton');
+        const buttons = document.querySelectorAll('.simon-button');
+
+        let gameActive = false;
+        let sequence = [];
+        let playerSequence = [];
+        let level = 0;
+        let bestScore = parseInt(localStorage.getItem('simonBest') || '0');
+        let isPlaying = false;
+
+        function startGame() {
+            gameActive = true;
+            sequence = [];
+            playerSequence = [];
+            level = 0;
+            
+            updateDisplay();
+            startButton.style.display = 'none';
+            shareButton.style.display = 'none';
+            
+            buttons.forEach(btn => {
+                btn.classList.remove('disabled');
+                btn.addEventListener('click', handleClick);
+            });
+            
+            nextRound();
+        }
+
+        function nextRound() {
+            level++;
+            playerSequence = [];
+            sequence.push(Math.floor(Math.random() * 4));
+            updateDisplay();
+            playSequence();
+        }
+
+        async function playSequence() {
+            isPlaying = true;
+            buttons.forEach(btn => btn.classList.add('disabled'));
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            for (const index of sequence) {
+                await lightUp(index);
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+            
+            buttons.forEach(btn => btn.classList.remove('disabled'));
+            isPlaying = false;
+        }
+
+        function lightUp(index) {
+            return new Promise(resolve => {
+                const btn = document.getElementById(`btn${index}`);
+                btn.classList.add('active');
+                
+                setTimeout(() => {
+                    btn.classList.remove('active');
+                    resolve();
+                }, 400);
+            });
+        }
+
+        function handleClick(e) {
+            if (!gameActive || isPlaying) return;
+            
+            const index = parseInt(e.target.dataset.index);
+            playerSequence.push(index);
+            
+            lightUp(index);
+            
+            const currentStep = playerSequence.length - 1;
+            
+            if (playerSequence[currentStep] !== sequence[currentStep]) {
+                gameOver();
+                return;
+            }
+            
+            if (playerSequence.length === sequence.length) {
+                setTimeout(nextRound, 1000);
+            }
+        }
+
+        function gameOver() {
+            gameActive = false;
+            
+            if (level - 1 > bestScore) {
+                bestScore = level - 1;
+                localStorage.setItem('simonBest', bestScore.toString());
+                updateDisplay();
+            }
+            
+            buttons.forEach(btn => {
+                btn.classList.add('disabled');
+                btn.removeEventListener('click', handleClick);
+            });
+            
+            startButton.style.display = 'inline-block';
+            startButton.textContent = 'もう一度';
+            shareButton.style.display = 'inline-block';
+        }
+
+        function updateDisplay() {
+            document.getElementById('level').textContent = level;
+            document.getElementById('best').textContent = bestScore;
+        }
+
+        startButton.addEventListener('click', startGame);
+
+        shareButton.addEventListener('click', () => {
+            const text = `サイモンゲーム: レベル${level - 1}到達！🎮`;
+            const url = window.location.href;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        });
+
+        updateDisplay();
+    </script>
+</body>
+</html>

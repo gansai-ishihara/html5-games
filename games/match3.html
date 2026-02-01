@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3つ揃えパズル - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        #gameCanvas {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            display: block;
+            margin: 20px auto;
+            border: 2px solid #4a4a6a;
+            cursor: pointer;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        .share-button {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            border-color: #1da1f2;
+            color: white;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #a0a0b0;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>💎 3つ揃えパズル</h1>
+                <div class="instructions">同じ色のジェムを3つ以上揃えよう</div>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="score">0</div>
+                        <div class="stat-label">スコア</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="moves">30</div>
+                        <div class="stat-label">残り手数</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="combo">0</div>
+                        <div class="stat-label">コンボ</div>
+                    </div>
+                </div>
+
+                <canvas id="gameCanvas" width="560" height="560"></canvas>
+
+                <div class="controls">
+                    <button id="startButton">スタート</button>
+                    <button id="shareButton" class="share-button" style="display:none;">🐦 結果をシェア</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                広告スペース<br>300x250
+            </div>
+            <div class="ad-space">
+                広告スペース<br>300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+        const shareButton = document.getElementById('shareButton');
+
+        let gameActive = false;
+        let score = 0;
+        let moves = 30;
+        let combo = 0;
+
+        const gridSize = 8;
+        const cellSize = 70;
+        const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#e67e22'];
+        
+        let grid = [];
+        let selected = null;
+        let isSwapping = false;
+
+        function createGrid() {
+            grid = [];
+            for (let y = 0; y < gridSize; y++) {
+                grid[y] = [];
+                for (let x = 0; x < gridSize; x++) {
+                    grid[y][x] = Math.floor(Math.random() * colors.length);
+                }
+            }
+            // 初期マッチを削除
+            removeInitialMatches();
+        }
+
+        function removeInitialMatches() {
+            let hasMatch = true;
+            while (hasMatch) {
+                hasMatch = false;
+                for (let y = 0; y < gridSize; y++) {
+                    for (let x = 0; x < gridSize; x++) {
+                        if (checkMatch(x, y)) {
+                            grid[y][x] = Math.floor(Math.random() * colors.length);
+                            hasMatch = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        function checkMatch(x, y) {
+            const color = grid[y][x];
+            
+            // 横チェック
+            let horizontal = 1;
+            let tx = x - 1;
+            while (tx >= 0 && grid[y][tx] === color) {
+                horizontal++;
+                tx--;
+            }
+            tx = x + 1;
+            while (tx < gridSize && grid[y][tx] === color) {
+                horizontal++;
+                tx++;
+            }
+            
+            // 縦チェック
+            let vertical = 1;
+            let ty = y - 1;
+            while (ty >= 0 && grid[ty][x] === color) {
+                vertical++;
+                ty--;
+            }
+            ty = y + 1;
+            while (ty < gridSize && grid[ty][x] === color) {
+                vertical++;
+                ty++;
+            }
+            
+            return horizontal >= 3 || vertical >= 3;
+        }
+
+        function startGame() {
+            gameActive = true;
+            score = 0;
+            moves = 30;
+            combo = 0;
+            selected = null;
+            
+            createGrid();
+            updateDisplay();
+            draw();
+            
+            startButton.style.display = 'none';
+            shareButton.style.display = 'none';
+        }
+
+        canvas.addEventListener('click', (e) => {
+            if (!gameActive || isSwapping) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / cellSize);
+            const y = Math.floor((e.clientY - rect.top) / cellSize);
+            
+            if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return;
+            
+            if (!selected) {
+                selected = { x, y };
+                draw();
+            } else {
+                const dx = Math.abs(selected.x - x);
+                const dy = Math.abs(selected.y - y);
+                
+                if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+                    swapGems(selected, { x, y });
+                }
+                selected = null;
+                draw();
+            }
+        });
+
+        function swapGems(pos1, pos2) {
+            isSwapping = true;
+            [grid[pos1.y][pos1.x], grid[pos2.y][pos2.x]] = 
+            [grid[pos2.y][pos2.x], grid[pos1.y][pos1.x]];
+            
+            draw();
+            
+            setTimeout(() => {
+                if (!findMatches()) {
+                    // マッチなし、元に戻す
+                    [grid[pos1.y][pos1.x], grid[pos2.y][pos2.x]] = 
+                    [grid[pos2.y][pos2.x], grid[pos1.y][pos1.x]];
+                    draw();
+                    isSwapping = false;
+                } else {
+                    moves--;
+                    updateDisplay();
+                    processMatches();
+                }
+            }, 200);
+        }
+
+        function findMatches() {
+            const matches = [];
+            
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    if (checkMatch(x, y)) {
+                        matches.push({ x, y });
+                    }
+                }
+            }
+            
+            return matches.length > 0;
+        }
+
+        function processMatches() {
+            const matched = new Set();
+            
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    if (checkMatch(x, y)) {
+                        matched.add(`${x},${y}`);
+                    }
+                }
+            }
+            
+            if (matched.size > 0) {
+                combo++;
+                score += matched.size * 10 * combo;
+                updateDisplay();
+                
+                matched.forEach(pos => {
+                    const [x, y] = pos.split(',').map(Number);
+                    grid[y][x] = -1;
+                });
+                
+                draw();
+                
+                setTimeout(() => {
+                    dropGems();
+                    fillEmpty();
+                    draw();
+                    
+                    setTimeout(() => {
+                        if (findMatches()) {
+                            processMatches();
+                        } else {
+                            combo = 0;
+                            isSwapping = false;
+                            updateDisplay();
+                            
+                            if (moves === 0) {
+                                endGame();
+                            }
+                        }
+                    }, 300);
+                }, 300);
+            }
+        }
+
+        function dropGems() {
+            for (let x = 0; x < gridSize; x++) {
+                let emptySpaces = 0;
+                for (let y = gridSize - 1; y >= 0; y--) {
+                    if (grid[y][x] === -1) {
+                        emptySpaces++;
+                    } else if (emptySpaces > 0) {
+                        grid[y + emptySpaces][x] = grid[y][x];
+                        grid[y][x] = -1;
+                    }
+                }
+            }
+        }
+
+        function fillEmpty() {
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    if (grid[y][x] === -1) {
+                        grid[y][x] = Math.floor(Math.random() * colors.length);
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    if (grid[y][x] >= 0) {
+                        ctx.fillStyle = colors[grid[y][x]];
+                        ctx.fillRect(
+                            x * cellSize + 5, 
+                            y * cellSize + 5, 
+                            cellSize - 10, 
+                            cellSize - 10
+                        );
+                        
+                        if (selected && selected.x === x && selected.y === y) {
+                            ctx.strokeStyle = '#fff';
+                            ctx.lineWidth = 4;
+                            ctx.strokeRect(
+                                x * cellSize + 5, 
+                                y * cellSize + 5, 
+                                cellSize - 10, 
+                                cellSize - 10
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        function updateDisplay() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('moves').textContent = moves;
+            document.getElementById('combo').textContent = combo;
+        }
+
+        function endGame() {
+            gameActive = false;
+            
+            startButton.style.display = 'inline-block';
+            startButton.textContent = 'もう一度';
+            shareButton.style.display = 'inline-block';
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#e0e0e0';
+            ctx.font = 'bold 40px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('ゲーム終了！', canvas.width / 2, canvas.height / 2);
+        }
+
+        startButton.addEventListener('click', startGame);
+
+        shareButton.addEventListener('click', () => {
+            const text = `3つ揃えパズル: ${score}点獲得！💎`;
+            const url = window.location.href;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        });
+    </script>
+</body>
+</html>

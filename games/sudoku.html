@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数独 - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        .sudoku-board {
+            display: inline-grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 0;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 10px;
+            margin: 20px auto;
+        }
+
+        .game-wrapper {
+            text-align: center;
+        }
+
+        .cell {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #4a4a6a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .cell input {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            text-align: center;
+            color: #7dd3fc;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .cell input:focus {
+            outline: none;
+            background: rgba(125, 211, 252, 0.2);
+        }
+
+        .cell.fixed input {
+            color: #e0e0e0;
+            cursor: not-allowed;
+        }
+
+        .cell.error input {
+            color: #e74c3c;
+        }
+
+        .cell:nth-child(3n) {
+            border-right: 3px solid #7dd3fc;
+        }
+
+        .cell:nth-child(n+19):nth-child(-n+27),
+        .cell:nth-child(n+46):nth-child(-n+54) {
+            border-bottom: 3px solid #7dd3fc;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        .share-button {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            border-color: #1da1f2;
+            color: white;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #a0a0b0;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+            .cell {
+                width: 35px;
+                height: 35px;
+            }
+            .cell input {
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>🔢 数独</h1>
+                <div class="instructions">1-9の数字を各行・列・3x3ブロックに1つずつ入れよう</div>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="difficulty">Easy</div>
+                        <div class="stat-label">難易度</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="time">0:00</div>
+                        <div class="stat-label">タイム</div>
+                    </div>
+                </div>
+
+                <div class="game-wrapper">
+                    <div class="sudoku-board" id="sudokuBoard"></div>
+                </div>
+
+                <div class="controls">
+                    <button id="startButton">新しいゲーム</button>
+                    <button id="checkButton">チェック</button>
+                    <button id="shareButton" class="share-button" style="display:none;">🐦 結果をシェア</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                広告スペース<br>300x250
+            </div>
+            <div class="ad-space">
+                広告スペース<br>300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const sudokuBoard = document.getElementById('sudokuBoard');
+        const startButton = document.getElementById('startButton');
+        const checkButton = document.getElementById('checkButton');
+        const shareButton = document.getElementById('shareButton');
+
+        let board = [];
+        let solution = [];
+        let startTime = null;
+        let timerInterval = null;
+
+        function generateSudoku() {
+            // 簡単な数独生成（完全な解を作成してランダムに削除）
+            board = Array(9).fill().map(() => Array(9).fill(0));
+            solution = Array(9).fill().map(() => Array(9).fill(0));
+            
+            // 基本的な数独パターンを生成
+            const base = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    solution[i][j] = base[(i * 3 + Math.floor(i / 3) + j) % 9];
+                }
+            }
+            
+            // シャッフルして多様性を持たせる
+            shuffleRows();
+            shuffleColumns();
+            
+            // ボードにコピー
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    board[i][j] = solution[i][j];
+                }
+            }
+            
+            // ランダムに40個削除（Easy）
+            let removed = 0;
+            while (removed < 40) {
+                const row = Math.floor(Math.random() * 9);
+                const col = Math.floor(Math.random() * 9);
+                if (board[row][col] !== 0) {
+                    board[row][col] = 0;
+                    removed++;
+                }
+            }
+        }
+
+        function shuffleRows() {
+            for (let block = 0; block < 3; block++) {
+                for (let i = 0; i < 10; i++) {
+                    const r1 = block * 3 + Math.floor(Math.random() * 3);
+                    const r2 = block * 3 + Math.floor(Math.random() * 3);
+                    [solution[r1], solution[r2]] = [solution[r2], solution[r1]];
+                }
+            }
+        }
+
+        function shuffleColumns() {
+            for (let block = 0; block < 3; block++) {
+                for (let i = 0; i < 10; i++) {
+                    const c1 = block * 3 + Math.floor(Math.random() * 3);
+                    const c2 = block * 3 + Math.floor(Math.random() * 3);
+                    for (let row = 0; row < 9; row++) {
+                        [solution[row][c1], solution[row][c2]] = [solution[row][c2], solution[row][c1]];
+                    }
+                }
+            }
+        }
+
+        function startGame() {
+            generateSudoku();
+            renderBoard();
+            startTimer();
+            
+            shareButton.style.display = 'none';
+        }
+
+        function renderBoard() {
+            sudokuBoard.innerHTML = '';
+            
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.maxLength = 1;
+                    input.dataset.row = i;
+                    input.dataset.col = j;
+                    
+                    if (board[i][j] !== 0) {
+                        input.value = board[i][j];
+                        input.readOnly = true;
+                        cell.classList.add('fixed');
+                    }
+                    
+                    input.addEventListener('input', (e) => {
+                        const val = e.target.value;
+                        if (val && (val < '1' || val > '9')) {
+                            e.target.value = '';
+                        }
+                    });
+                    
+                    cell.appendChild(input);
+                    sudokuBoard.appendChild(cell);
+                }
+            }
+        }
+
+        function checkSolution() {
+            const cells = sudokuBoard.querySelectorAll('.cell');
+            let correct = true;
+            
+            cells.forEach((cell, index) => {
+                const input = cell.querySelector('input');
+                const row = parseInt(input.dataset.row);
+                const col = parseInt(input.dataset.col);
+                const value = parseInt(input.value) || 0;
+                
+                cell.classList.remove('error');
+                
+                if (!input.readOnly) {
+                    if (value === 0 || value !== solution[row][col]) {
+                        cell.classList.add('error');
+                        correct = false;
+                    }
+                }
+            });
+            
+            if (correct) {
+                clearInterval(timerInterval);
+                setTimeout(() => {
+                    alert('🎉 おめでとう！クリアしました！');
+                    shareButton.style.display = 'inline-block';
+                }, 100);
+            } else {
+                alert('まだ間違いがあります。もう一度チェックしてください。');
+            }
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('time').textContent = 
+                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        startButton.addEventListener('click', startGame);
+        checkButton.addEventListener('click', checkSolution);
+
+        shareButton.addEventListener('click', () => {
+            const text = `数独: ${document.getElementById('time').textContent}でクリア！🔢`;
+            const url = window.location.href;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        });
+
+        // 初期ゲーム開始
+        startGame();
+    </script>
+</body>
+</html>

@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ブラックジャック - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        .game-area {
+            min-height: 400px;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .hand {
+            margin: 20px 0;
+        }
+
+        .hand-title {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #a0a0b0;
+        }
+
+        .cards {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            min-height: 80px;
+        }
+
+        .card {
+            width: 60px;
+            height: 84px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .card.red {
+            color: #e74c3c;
+        }
+
+        .card.black {
+            color: #2c3e50;
+        }
+
+        .card.hidden {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .score {
+            font-size: 1.5em;
+            color: #7dd3fc;
+            margin-top: 10px;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover:not(:disabled) {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .share-button {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            border-color: #1da1f2;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>🃏 ブラックジャック</h1>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="wins">0</div>
+                        <div class="stat-label">勝利</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="losses">0</div>
+                        <div class="stat-label">敗北</div>
+                    </div>
+                </div>
+
+                <div class="game-area">
+                    <div class="hand">
+                        <div class="hand-title">ディーラー</div>
+                        <div class="cards" id="dealerCards"></div>
+                        <div class="score" id="dealerScore"></div>
+                    </div>
+
+                    <div class="hand">
+                        <div class="hand-title">プレイヤー</div>
+                        <div class="cards" id="playerCards"></div>
+                        <div class="score" id="playerScore"></div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button id="startButton">新しいゲーム</button>
+                    <button id="hitButton" disabled>ヒット</button>
+                    <button id="standButton" disabled>スタンド</button>
+                    <button id="shareButton" class="share-button" style="display:none;">🐦 結果をシェア</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                広告スペース<br>300x250
+            </div>
+            <div class="ad-space">
+                広告スペース<br>300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const startButton = document.getElementById('startButton');
+        const hitButton = document.getElementById('hitButton');
+        const standButton = document.getElementById('standButton');
+        const shareButton = document.getElementById('shareButton');
+
+        let deck = [];
+        let playerHand = [];
+        let dealerHand = [];
+        let gameActive = false;
+        let wins = 0;
+        let losses = 0;
+
+        const suits = ['♠', '♥', '♦', '♣'];
+        const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+        function createDeck() {
+            deck = [];
+            for (const suit of suits) {
+                for (const value of values) {
+                    deck.push({ suit, value });
+                }
+            }
+            // シャッフル
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        function getCardValue(card) {
+            if (card.value === 'A') return 11;
+            if (['J', 'Q', 'K'].includes(card.value)) return 10;
+            return parseInt(card.value);
+        }
+
+        function calculateScore(hand) {
+            let score = 0;
+            let aces = 0;
+            
+            for (const card of hand) {
+                score += getCardValue(card);
+                if (card.value === 'A') aces++;
+            }
+            
+            while (score > 21 && aces > 0) {
+                score -= 10;
+                aces--;
+            }
+            
+            return score;
+        }
+
+        function startGame() {
+            gameActive = true;
+            createDeck();
+            playerHand = [deck.pop(), deck.pop()];
+            dealerHand = [deck.pop(), deck.pop()];
+            
+            hitButton.disabled = false;
+            standButton.disabled = false;
+            shareButton.style.display = 'none';
+            
+            renderHands(false);
+            
+            if (calculateScore(playerHand) === 21) {
+                endGame();
+            }
+        }
+
+        function hit() {
+            if (!gameActive) return;
+            
+            playerHand.push(deck.pop());
+            renderHands(false);
+            
+            if (calculateScore(playerHand) > 21) {
+                endGame();
+            }
+        }
+
+        function stand() {
+            if (!gameActive) return;
+            
+            // ディーラーのターン
+            while (calculateScore(dealerHand) < 17) {
+                dealerHand.push(deck.pop());
+            }
+            
+            endGame();
+        }
+
+        function renderHands(showDealer) {
+            const dealerCards = document.getElementById('dealerCards');
+            const playerCards = document.getElementById('playerCards');
+            
+            dealerCards.innerHTML = '';
+            dealerHand.forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card';
+                
+                if (index === 1 && !showDealer) {
+                    cardEl.classList.add('hidden');
+                    cardEl.textContent = '?';
+                } else {
+                    cardEl.classList.add(['♥', '♦'].includes(card.suit) ? 'red' : 'black');
+                    cardEl.textContent = card.value + card.suit;
+                }
+                
+                dealerCards.appendChild(cardEl);
+            });
+            
+            playerCards.innerHTML = '';
+            playerHand.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card';
+                cardEl.classList.add(['♥', '♦'].includes(card.suit) ? 'red' : 'black');
+                cardEl.textContent = card.value + card.suit;
+                playerCards.appendChild(cardEl);
+            });
+            
+            const dealerScore = showDealer ? calculateScore(dealerHand) : '?';
+            document.getElementById('dealerScore').textContent = `合計: ${dealerScore}`;
+            document.getElementById('playerScore').textContent = `合計: ${calculateScore(playerHand)}`;
+        }
+
+        function endGame() {
+            gameActive = false;
+            hitButton.disabled = true;
+            standButton.disabled = true;
+            
+            renderHands(true);
+            
+            const playerScore = calculateScore(playerHand);
+            const dealerScore = calculateScore(dealerHand);
+            
+            let result = '';
+            if (playerScore > 21) {
+                result = 'バースト！ディーラーの勝ち';
+                losses++;
+            } else if (dealerScore > 21) {
+                result = 'ディーラーがバースト！あなたの勝ち';
+                wins++;
+            } else if (playerScore > dealerScore) {
+                result = 'あなたの勝ち！';
+                wins++;
+            } else if (playerScore < dealerScore) {
+                result = 'ディーラーの勝ち';
+                losses++;
+            } else {
+                result = '引き分け';
+            }
+            
+            updateDisplay();
+            setTimeout(() => alert(result), 500);
+            shareButton.style.display = 'inline-block';
+        }
+
+        function updateDisplay() {
+            document.getElementById('wins').textContent = wins;
+            document.getElementById('losses').textContent = losses;
+        }
+
+        startButton.addEventListener('click', startGame);
+        hitButton.addEventListener('click', hit);
+        standButton.addEventListener('click', stand);
+
+        shareButton.addEventListener('click', () => {
+            const text = `ブラックジャック: ${wins}勝${losses}敗🃏`;
+            const url = window.location.href;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        });
+    </script>
+</body>
+</html>

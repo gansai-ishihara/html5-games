@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048パズル - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        .game-board {
+            width: 450px;
+            height: 450px;
+            margin: 30px auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .tile {
+            background: rgba(100, 100, 120, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
+            transition: all 0.15s;
+        }
+
+        .tile.value-2 { background: #eee4da; color: #776e65; }
+        .tile.value-4 { background: #ede0c8; color: #776e65; }
+        .tile.value-8 { background: #f2b179; color: #f9f6f2; }
+        .tile.value-16 { background: #f59563; color: #f9f6f2; }
+        .tile.value-32 { background: #f67c5f; color: #f9f6f2; }
+        .tile.value-64 { background: #f65e3b; color: #f9f6f2; }
+        .tile.value-128 { background: #edcf72; color: #f9f6f2; font-size: 1.8em; }
+        .tile.value-256 { background: #edcc61; color: #f9f6f2; font-size: 1.8em; }
+        .tile.value-512 { background: #edc850; color: #f9f6f2; font-size: 1.8em; }
+        .tile.value-1024 { background: #edc53f; color: #f9f6f2; font-size: 1.5em; }
+        .tile.value-2048 { background: #edc22e; color: #f9f6f2; font-size: 1.5em; }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        .share-button {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            border-color: #1da1f2;
+            color: white;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #a0a0b0;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+            .game-board {
+                width: 350px;
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>🔢 2048パズル</h1>
+                <div class="instructions">矢印キーで同じ数字を合わせて2048を目指そう</div>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="score">0</div>
+                        <div class="stat-label">スコア</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="best">0</div>
+                        <div class="stat-label">ベスト</div>
+                    </div>
+                </div>
+
+                <div class="game-board" id="gameBoard"></div>
+
+                <div class="controls">
+                    <button id="startButton">スタート</button>
+                    <button id="shareButton" class="share-button" style="display:none;">🐦 結果をシェア</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                広告スペース<br>300x250
+            </div>
+            <div class="ad-space">
+                広告スペース<br>300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const gameBoard = document.getElementById('gameBoard');
+        const startButton = document.getElementById('startButton');
+        const shareButton = document.getElementById('shareButton');
+
+        let gameActive = false;
+        let score = 0;
+        let bestScore = parseInt(localStorage.getItem('2048Best') || '0');
+        let grid = [];
+
+        function startGame() {
+            gameActive = true;
+            score = 0;
+            grid = Array(4).fill().map(() => Array(4).fill(0));
+            
+            addNewTile();
+            addNewTile();
+            updateDisplay();
+            
+            startButton.style.display = 'none';
+            shareButton.style.display = 'none';
+        }
+
+        function addNewTile() {
+            const empty = [];
+            for (let y = 0; y < 4; y++) {
+                for (let x = 0; x < 4; x++) {
+                    if (grid[y][x] === 0) empty.push({ x, y });
+                }
+            }
+            
+            if (empty.length > 0) {
+                const pos = empty[Math.floor(Math.random() * empty.length)];
+                grid[pos.y][pos.x] = Math.random() < 0.9 ? 2 : 4;
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            
+            let moved = false;
+            const oldGrid = JSON.stringify(grid);
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                    e.preventDefault();
+                    moved = moveUp();
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    moved = moveDown();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    moved = moveLeft();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    moved = moveRight();
+                    break;
+                default:
+                    return;
+            }
+            
+            if (JSON.stringify(grid) !== oldGrid) {
+                addNewTile();
+                updateDisplay();
+                
+                if (!canMove()) {
+                    endGame();
+                }
+            }
+        });
+
+        function moveLeft() {
+            let moved = false;
+            for (let y = 0; y < 4; y++) {
+                const row = grid[y].filter(x => x !== 0);
+                const merged = [];
+                
+                for (let i = 0; i < row.length; i++) {
+                    if (i < row.length - 1 && row[i] === row[i + 1]) {
+                        merged.push(row[i] * 2);
+                        score += row[i] * 2;
+                        i++;
+                    } else {
+                        merged.push(row[i]);
+                    }
+                }
+                
+                while (merged.length < 4) merged.push(0);
+                
+                if (JSON.stringify(grid[y]) !== JSON.stringify(merged)) moved = true;
+                grid[y] = merged;
+            }
+            return moved;
+        }
+
+        function moveRight() {
+            grid = grid.map(row => row.reverse());
+            const moved = moveLeft();
+            grid = grid.map(row => row.reverse());
+            return moved;
+        }
+
+        function moveUp() {
+            grid = transpose(grid);
+            const moved = moveLeft();
+            grid = transpose(grid);
+            return moved;
+        }
+
+        function moveDown() {
+            grid = transpose(grid);
+            grid = grid.map(row => row.reverse());
+            const moved = moveLeft();
+            grid = grid.map(row => row.reverse());
+            grid = transpose(grid);
+            return moved;
+        }
+
+        function transpose(matrix) {
+            return matrix[0].map((_, i) => matrix.map(row => row[i]));
+        }
+
+        function canMove() {
+            // 空きマスがあるか
+            for (let y = 0; y < 4; y++) {
+                for (let x = 0; x < 4; x++) {
+                    if (grid[y][x] === 0) return true;
+                }
+            }
+            
+            // 隣接する同じ数字があるか
+            for (let y = 0; y < 4; y++) {
+                for (let x = 0; x < 4; x++) {
+                    if (x < 3 && grid[y][x] === grid[y][x + 1]) return true;
+                    if (y < 3 && grid[y][x] === grid[y + 1][x]) return true;
+                }
+            }
+            
+            return false;
+        }
+
+        function updateDisplay() {
+            gameBoard.innerHTML = '';
+            
+            for (let y = 0; y < 4; y++) {
+                for (let x = 0; x < 4; x++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'tile';
+                    if (grid[y][x] > 0) {
+                        tile.classList.add(`value-${grid[y][x]}`);
+                        tile.textContent = grid[y][x];
+                    }
+                    gameBoard.appendChild(tile);
+                }
+            }
+            
+            document.getElementById('score').textContent = score;
+            document.getElementById('best').textContent = bestScore;
+        }
+
+        function endGame() {
+            gameActive = false;
+            
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('2048Best', bestScore.toString());
+                updateDisplay();
+            }
+            
+            startButton.style.display = 'inline-block';
+            startButton.textContent = 'もう一度';
+            shareButton.style.display = 'inline-block';
+        }
+
+        startButton.addEventListener('click', startGame);
+
+        shareButton.addEventListener('click', () => {
+            const text = `2048パズル: ${score}点獲得！🔢`;
+            const url = window.location.href;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        });
+
+        document.getElementById('best').textContent = bestScore;
+    </script>
+</body>
+</html>

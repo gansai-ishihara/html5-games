@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>迷路ゲーム - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        #gameCanvas {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            display: block;
+            margin: 20px auto;
+            border: 2px solid #4a4a6a;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        .share-button {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            border-color: #1da1f2;
+            color: white;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #a0a0b0;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>🌀 迷路ゲーム</h1>
+                <div class="instructions">矢印キーでゴールを目指そう</div>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="level">1</div>
+                        <div class="stat-label">レベル</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="moves">0</div>
+                        <div class="stat-label">移動回数</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="time">0:00</div>
+                        <div class="stat-label">タイム</div>
+                    </div>
+                </div>
+
+                <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+                <div class="controls">
+                    <button id="startButton">スタート</button>
+                    <button id="shareButton" class="share-button" style="display:none;">🐦 結果をシェア</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                広告スペース<br>300x250
+            </div>
+            <div class="ad-space">
+                広告スペース<br>300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+        const shareButton = document.getElementById('shareButton');
+
+        let gameActive = false;
+        let level = 1;
+        let moves = 0;
+        let startTime = null;
+        let timerInterval = null;
+
+        const cellSize = 30;
+        const cols = 20;
+        const rows = 20;
+
+        let maze = [];
+        let player = { x: 1, y: 1 };
+        let goal = { x: cols - 2, y: rows - 2 };
+
+        function generateMaze() {
+            // 迷路を初期化（全て壁）
+            maze = Array(rows).fill().map(() => Array(cols).fill(1));
+            
+            // 再帰的バックトラック法で迷路生成
+            function carve(x, y) {
+                maze[y][x] = 0;
+                
+                const dirs = [
+                    [0, -2], [2, 0], [0, 2], [-2, 0]
+                ].sort(() => Math.random() - 0.5);
+                
+                for (const [dx, dy] of dirs) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    
+                    if (nx > 0 && nx < cols - 1 && ny > 0 && ny < rows - 1 && maze[ny][nx] === 1) {
+                        maze[y + dy/2][x + dx/2] = 0;
+                        carve(nx, ny);
+                    }
+                }
+            }
+            
+            carve(1, 1);
+            maze[1][1] = 0;
+            maze[goal.y][goal.x] = 0;
+        }
+
+        function startGame() {
+            gameActive = true;
+            level = 1;
+            moves = 0;
+            startTime = Date.now();
+            
+            player = { x: 1, y: 1 };
+            generateMaze();
+            updateDisplay();
+            draw();
+            startTimer();
+            
+            startButton.style.display = 'none';
+            shareButton.style.display = 'none';
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('time').textContent = 
+                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            
+            let newX = player.x;
+            let newY = player.y;
+            
+            switch(e.key) {
+                case 'ArrowUp': newY--; break;
+                case 'ArrowDown': newY++; break;
+                case 'ArrowLeft': newX--; break;
+                case 'ArrowRight': newX++; break;
+                default: return;
+            }
+            
+            e.preventDefault();
+            
+            if (newX >= 0 && newX < cols && newY >= 0 && newY < rows && maze[newY][newX] === 0) {
+                player.x = newX;
+                player.y = newY;
+                moves++;
+                updateDisplay();
+                draw();
+                
+                if (player.x === goal.x && player.y === goal.y) {
+                    nextLevel();
+                }
+            }
+        });
+
+        function nextLevel() {
+            level++;
+            moves = 0;
+            player = { x: 1, y: 1 };
+            generateMaze();
+            updateDisplay();
+            draw();
+        }
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 迷路を描画
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    if (maze[y][x] === 1) {
+                        ctx.fillStyle = '#4a4a6a';
+                        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+            
+            // ゴール
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(goal.x * cellSize, goal.y * cellSize, cellSize, cellSize);
+            
+            // プレイヤー
+            ctx.fillStyle = '#7dd3fc';
+            ctx.beginPath();
+            ctx.arc(
+                player.x * cellSize + cellSize/2, 
+                player.y * cellSize + cellSize/2, 
+                cellSize/3, 
+                0, Math.PI * 2
+            );
+            ctx.fill();
+        }
+
+        function updateDisplay() {
+            document.getElementById('level').textContent = level;
+            document.getElementById('moves').textContent = moves;
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            
+            startButton.style.display = 'inline-block';
+            startButton.textContent = 'もう一度';
+            shareButton.style.display = 'inline-block';
+        }
+
+        startButton.addEventListener('click', startGame);
+
+        shareButton.addEventListener('click', () => {
+            const text = `迷路ゲーム: レベル${level}到達 ${document.getElementById('time').textContent}🌀`;
+            const url = window.location.href;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        });
+    </script>
+</body>
+</html>

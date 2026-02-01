@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マインスイーパー - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        .header a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .ad-space {
+            background: rgba(100, 100, 120, 0.2);
+            border: 2px dashed #4a4a6a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            margin-top: 5px;
+        }
+
+        .game-board {
+            display: inline-grid;
+            gap: 2px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 10px;
+            margin: 20px auto;
+        }
+
+        .game-wrapper {
+            text-align: center;
+        }
+
+        .cell {
+            width: 30px;
+            height: 30px;
+            background: rgba(100, 100, 120, 0.5);
+            border: 2px solid #4a4a6a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9em;
+            user-select: none;
+        }
+
+        .cell:hover:not(.revealed):not(.flagged) {
+            background: rgba(125, 211, 252, 0.3);
+        }
+
+        .cell.revealed {
+            background: rgba(0, 0, 0, 0.2);
+            cursor: default;
+        }
+
+        .cell.flagged {
+            background: rgba(231, 76, 60, 0.5);
+        }
+
+        .cell.mine {
+            background: rgba(231, 76, 60, 0.8);
+        }
+
+        .cell.num-1 { color: #3498db; }
+        .cell.num-2 { color: #2ecc71; }
+        .cell.num-3 { color: #e74c3c; }
+        .cell.num-4 { color: #9b59b6; }
+        .cell.num-5 { color: #f39c12; }
+        .cell.num-6 { color: #1abc9c; }
+        .cell.num-7 { color: #34495e; }
+        .cell.num-8 { color: #95a5a6; }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #7dd3fc;
+            color: #7dd3fc;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: rgba(125, 211, 252, 0.2);
+            transform: scale(1.05);
+        }
+
+        .share-button {
+            background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
+            border-color: #1da1f2;
+            color: white;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #a0a0b0;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← ゲーム一覧に戻る</a>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="game-container">
+                <h1>💣 マインスイーパー</h1>
+                <div class="instructions">左クリック：開く / 右クリック：旗を立てる</div>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="mines">10</div>
+                        <div class="stat-label">地雷数</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="flags">0</div>
+                        <div class="stat-label">旗</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="time">0:00</div>
+                        <div class="stat-label">タイム</div>
+                    </div>
+                </div>
+
+                <div class="game-wrapper">
+                    <div class="game-board" id="gameBoard"></div>
+                </div>
+
+                <div class="controls">
+                    <button id="startButton">スタート</button>
+                    <button id="shareButton" class="share-button" style="display:none;">🐦 結果をシェア</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="ad-space">
+                広告スペース<br>300x250
+            </div>
+            <div class="ad-space">
+                広告スペース<br>300x600
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const gameBoard = document.getElementById('gameBoard');
+        const startButton = document.getElementById('startButton');
+        const shareButton = document.getElementById('shareButton');
+
+        let gameActive = false;
+        let grid = [];
+        let revealed = [];
+        let flagged = [];
+        const rows = 10;
+        const cols = 10;
+        const mineCount = 10;
+        let flags = 0;
+        let startTime = null;
+        let timerInterval = null;
+
+        function startGame() {
+            gameActive = true;
+            flags = 0;
+            startTime = Date.now();
+            
+            createGrid();
+            placeMines();
+            calculateNumbers();
+            renderBoard();
+            startTimer();
+            
+            startButton.style.display = 'none';
+            shareButton.style.display = 'none';
+            updateDisplay();
+        }
+
+        function createGrid() {
+            grid = Array(rows).fill().map(() => Array(cols).fill(0));
+            revealed = Array(rows).fill().map(() => Array(cols).fill(false));
+            flagged = Array(rows).fill().map(() => Array(cols).fill(false));
+        }
+
+        function placeMines() {
+            let placed = 0;
+            while (placed < mineCount) {
+                const x = Math.floor(Math.random() * cols);
+                const y = Math.floor(Math.random() * rows);
+                if (grid[y][x] !== -1) {
+                    grid[y][x] = -1;
+                    placed++;
+                }
+            }
+        }
+
+        function calculateNumbers() {
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    if (grid[y][x] !== -1) {
+                        let count = 0;
+                        for (let dy = -1; dy <= 1; dy++) {
+                            for (let dx = -1; dx <= 1; dx++) {
+                                const ny = y + dy;
+                                const nx = x + dx;
+                                if (ny >= 0 && ny < rows && nx >= 0 && nx < cols && grid[ny][nx] === -1) {
+                                    count++;
+                                }
+                            }
+                        }
+                        grid[y][x] = count;
+                    }
+                }
+            }
+        }
+
+        function renderBoard() {
+            gameBoard.innerHTML = '';
+            gameBoard.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
+            
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    
+                    cell.addEventListener('click', () => revealCell(x, y));
+                    cell.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        toggleFlag(x, y);
+                    });
+                    
+                    if (revealed[y][x]) {
+                        cell.classList.add('revealed');
+                        if (grid[y][x] === -1) {
+                            cell.classList.add('mine');
+                            cell.textContent = '💣';
+                        } else if (grid[y][x] > 0) {
+                            cell.textContent = grid[y][x];
+                            cell.classList.add(`num-${grid[y][x]}`);
+                        }
+                    } else if (flagged[y][x]) {
+                        cell.classList.add('flagged');
+                        cell.textContent = '🚩';
+                    }
+                    
+                    gameBoard.appendChild(cell);
+                }
+            }
+        }
+
+        function revealCell(x, y) {
+            if (!gameActive || revealed[y][x] || flagged[y][x]) return;
+            
+            revealed[y][x] = true;
+            
+            if (grid[y][x] === -1) {
+                gameOver(false);
+                return;
+            }
+            
+            if (grid[y][x] === 0) {
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const ny = y + dy;
+                        const nx = x + dx;
+                        if (ny >= 0 && ny < rows && nx >= 0 && nx < cols && !revealed[ny][nx]) {
+                            revealCell(nx, ny);
+                        }
+                    }
+                }
+            }
+            
+            renderBoard();
+            checkWin();
+        }
+
+        function toggleFlag(x, y) {
+            if (!gameActive || revealed[y][x]) return;
+            
+            flagged[y][x] = !flagged[y][x];
+            flags += flagged[y][x] ? 1 : -1;
+            updateDisplay();
+            renderBoard();
+        }
+
+        function checkWin() {
+            let safeCells = 0;
+            let revealedSafeCells = 0;
+            
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    if (grid[y][x] !== -1) {
+                        safeCells++;
+                        if (revealed[y][x]) revealedSafeCells++;
+                    }
+                }
+            }
+            
+            if (safeCells === revealedSafeCells) {
+                gameOver(true);
+            }
+        }
+
+        function gameOver(won) {
+            gameActive = false;
+            clearInterval(timerInterval);
+            
+            // 全ての地雷を表示
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    if (grid[y][x] === -1) {
+                        revealed[y][x] = true;
+                    }
+                }
+            }
+            renderBoard();
+            
+            setTimeout(() => {
+                alert(won ? '🎉 クリア！' : '💣 ゲームオーバー');
+                startButton.style.display = 'inline-block';
+                startButton.textContent = 'もう一度';
+                shareButton.style.display = 'inline-block';
+            }, 100);
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('time').textContent = 
+                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function updateDisplay() {
+            document.getElementById('mines').textContent = mineCount;
+            document.getElementById('flags').textContent = flags;
+        }
+
+        startButton.addEventListener('click', startGame);
+
+        shareButton.addEventListener('click', () => {
+            const text = `マインスイーパー: ${document.getElementById('time').textContent}でクリア！💣`;
+            const url = window.location.href;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        });
+    </script>
+</body>
+</html>
