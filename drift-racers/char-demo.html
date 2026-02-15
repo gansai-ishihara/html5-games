@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>キャラクター3Dデモ - ブレイズ (火竜)</title>
+<style>
+body { margin:0; background:#1a1a2e; overflow:hidden; font-family:sans-serif; }
+#info { position:absolute; top:10px; left:50%; transform:translateX(-50%); color:#fff;
+  font-size:20px; text-shadow:0 2px 8px rgba(0,0,0,0.5); z-index:10; text-align:center; }
+#info span { color:#FF6644; font-weight:bold; }
+</style>
+</head>
+<body>
+<div id="info">🔥 <span>ブレイズ</span> - Three.jsプリミティブのみで制作<br>
+<small>マウスドラッグで回転 / スクロールでズーム</small></div>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+var scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1a2e);
+
+var camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 100);
+camera.position.set(0, 2, 6);
+
+var renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+var controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0, 1.2, 0);
+
+// === Lighting ===
+var ambient = new THREE.AmbientLight(0xffffff, 0.4);
+scene.add(ambient);
+
+var sun = new THREE.DirectionalLight(0xFFEEDD, 1.0);
+sun.position.set(5, 8, 3);
+sun.castShadow = true;
+scene.add(sun);
+
+var fill = new THREE.DirectionalLight(0x8899CC, 0.3);
+fill.position.set(-3, 2, -5);
+scene.add(fill);
+
+var hemi = new THREE.HemisphereLight(0x99BBFF, 0x553322, 0.25);
+scene.add(hemi);
+
+// === Ground ===
+var gnd = new THREE.Mesh(
+  new THREE.CircleGeometry(4, 32),
+  new THREE.MeshStandardMaterial({color:0x333344, roughness:0.9})
+);
+gnd.rotation.x = -Math.PI/2;
+gnd.receiveShadow = true;
+scene.add(gnd);
+
+// ============================================
+// ブレイズ (火竜) - かわいいドラゴンキャラクター
+// ============================================
+var dragon = new THREE.Group();
+
+// --- MATERIALS ---
+var bodyMat = new THREE.MeshStandardMaterial({color:0xCC2200, roughness:0.4, metalness:0.1});
+var bellyMat = new THREE.MeshStandardMaterial({color:0xFFCC55, roughness:0.55});
+var eyeWhiteMat = new THREE.MeshStandardMaterial({color:0xFFFFFF, roughness:0.2});
+var pupilMat = new THREE.MeshStandardMaterial({color:0x111111, roughness:0.1});
+var irisMat = new THREE.MeshStandardMaterial({color:0xFF8800, emissive:0xFF6600, emissiveIntensity:0.25, roughness:0.2});
+var hornMat = new THREE.MeshStandardMaterial({color:0xEECC33, metalness:0.5, roughness:0.25});
+var wingMembraneMat = new THREE.MeshStandardMaterial({
+  color:0xFF5522, transparent:true, opacity:0.65, side:THREE.DoubleSide, roughness:0.5
+});
+var wingBoneMat = new THREE.MeshStandardMaterial({color:0xBB1800, metalness:0.2, roughness:0.35});
+var clawMat = new THREE.MeshStandardMaterial({color:0xFFEE77, metalness:0.4, roughness:0.25});
+var noseMat = new THREE.MeshStandardMaterial({color:0x991800, roughness:0.5});
+var flameMat = new THREE.MeshStandardMaterial({
+  color:0xFF3300, emissive:0xFF4400, emissiveIntensity:0.6, transparent:true, opacity:0.85
+});
+var flameInnerMat = new THREE.MeshStandardMaterial({
+  color:0xFFCC00, emissive:0xFF8800, emissiveIntensity:0.8
+});
+var spineMat = new THREE.MeshStandardMaterial({color:0xFF5533, roughness:0.4});
+var mouthMat = new THREE.MeshStandardMaterial({color:0x661100, roughness:0.5});
+var fangMat = new THREE.MeshStandardMaterial({color:0xFFFFEE, roughness:0.25});
+var smokeMat = new THREE.MeshStandardMaterial({color:0x999999, transparent:true, opacity:0.35});
+var blushMat = new THREE.MeshStandardMaterial({color:0xFF5544, transparent:true, opacity:0.3, roughness:0.9});
+
+// --- HEAD ---
+var headGroup = new THREE.Group();
+headGroup.position.set(0, 2.2, 0);
+
+// Main head
+var head = new THREE.Mesh(new THREE.SphereGeometry(0.65, 24, 20), bodyMat);
+head.scale.set(1, 0.92, 1.05);
+head.castShadow = true;
+headGroup.add(head);
+
+// Snout
+var snout = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 14), bodyMat);
+snout.position.set(0, -0.08, 0.48);
+snout.scale.set(0.85, 0.65, 0.7);
+headGroup.add(snout);
+
+// Nostrils
+var nostrilGeo = new THREE.SphereGeometry(0.06, 8, 8);
+var n1 = new THREE.Mesh(nostrilGeo, noseMat);
+n1.position.set(-0.12, -0.1, 0.72);
+headGroup.add(n1);
+var n2 = new THREE.Mesh(nostrilGeo, noseMat);
+n2.position.set(0.12, -0.1, 0.72);
+headGroup.add(n2);
+
+// Smoke puffs
+var smokeGeo = new THREE.SphereGeometry(0.04, 6, 6);
+var smoke1 = new THREE.Mesh(smokeGeo, smokeMat);
+smoke1.position.set(-0.12, -0.05, 0.82);
+headGroup.add(smoke1);
+var smoke2 = new THREE.Mesh(smokeGeo.clone(), smokeMat);
+smoke2.position.set(0.12, -0.02, 0.85);
+smoke2.scale.set(1.3, 1.3, 1.3);
+headGroup.add(smoke2);
+
+// === EYES (big cute eyes) ===
+function makeEye(x) {
+  var eg = new THREE.Group();
+  // White
+  var white = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 14), eyeWhiteMat);
+  white.scale.set(1, 1.1, 0.6);
+  eg.add(white);
+  // Iris (colored)
+  var iris = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), irisMat);
+  iris.position.z = 0.08;
+  iris.scale.set(1, 1.1, 0.5);
+  eg.add(iris);
+  // Pupil (black)
+  var pupil = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), pupilMat);
+  pupil.position.z = 0.12;
+  eg.add(pupil);
+  // Highlight (white dot)
+  var hlMat = new THREE.MeshBasicMaterial({color:0xFFFFFF});
+  var hl = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 6), hlMat);
+  hl.position.set(0.04, 0.04, 0.14);
+  eg.add(hl);
+  eg.position.set(x, 0.1, 0.55);
+  eg.scale.set(1.15, 1.15, 1.15);
+  return eg;
+}
+var leftEye = makeEye(-0.22);
+var rightEye = makeEye(0.22);
+headGroup.add(leftEye);
+headGroup.add(rightEye);
+
+// Eyebrow ridges
+var browGeo = new THREE.BoxGeometry(0.2, 0.045, 0.08);
+var browMat2 = new THREE.MeshStandardMaterial({color:0x881800, roughness:0.5});
+var lBrow = new THREE.Mesh(browGeo, browMat2);
+lBrow.position.set(-0.22, 0.28, 0.42);
+lBrow.rotation.z = -0.2;
+headGroup.add(lBrow);
+var rBrow = new THREE.Mesh(browGeo, browMat2);
+rBrow.position.set(0.22, 0.28, 0.42);
+rBrow.rotation.z = 0.2;
+headGroup.add(rBrow);
+
+// Mouth (grin)
+var mouth = new THREE.Mesh(
+  new THREE.TorusGeometry(0.12, 0.018, 8, 12, Math.PI), mouthMat
+);
+mouth.position.set(0, -0.2, 0.5);
+mouth.rotation.x = 0.2;
+headGroup.add(mouth);
+
+// Fangs
+var fangGeo = new THREE.ConeGeometry(0.025, 0.08, 6);
+var f1 = new THREE.Mesh(fangGeo, fangMat);
+f1.position.set(-0.08, -0.26, 0.52);
+headGroup.add(f1);
+var f2 = new THREE.Mesh(fangGeo, fangMat);
+f2.position.set(0.08, -0.26, 0.52);
+headGroup.add(f2);
+
+// Horns
+function makeHorn(x, rotZ) {
+  var hg = new THREE.Group();
+  var h1 = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.22, 8), hornMat);
+  h1.position.y = 0.11;
+  hg.add(h1);
+  var h2 = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.16, 8), hornMat);
+  h2.position.set(0, 0.24, -0.04);
+  h2.rotation.x = -0.4;
+  hg.add(h2);
+  hg.position.set(x, 0.5, -0.15);
+  hg.rotation.z = rotZ;
+  return hg;
+}
+headGroup.add(makeHorn(-0.2, 0.3));
+headGroup.add(makeHorn(0.2, -0.3));
+
+// Head spines
+for (var i = 0; i < 3; i++) {
+  var spine = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.1, 5), spineMat);
+  spine.position.set(0, 0.55 - i*0.12, -0.25 - i*0.12);
+  spine.rotation.x = -0.3;
+  headGroup.add(spine);
+}
+
+// Cheek blush
+var blushGeo = new THREE.SphereGeometry(0.1, 10, 8);
+var lb = new THREE.Mesh(blushGeo, blushMat);
+lb.position.set(-0.42, -0.02, 0.28);
+lb.scale.set(1, 0.6, 0.4);
+headGroup.add(lb);
+var rb = new THREE.Mesh(blushGeo, blushMat);
+rb.position.set(0.42, -0.02, 0.28);
+rb.scale.set(1, 0.6, 0.4);
+headGroup.add(rb);
+
+dragon.add(headGroup);
+
+// --- BODY ---
+var bodyGroup = new THREE.Group();
+bodyGroup.position.set(0, 1.2, 0);
+
+var body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 18), bodyMat);
+body.scale.set(1, 1.15, 0.95);
+body.castShadow = true;
+bodyGroup.add(body);
+
+// Belly
+var belly = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 16), bellyMat);
+belly.position.set(0, -0.05, 0.32);
+belly.scale.set(0.88, 1.0, 0.55);
+bodyGroup.add(belly);
+
+// Belly scale lines
+var scaleLineMat = new THREE.MeshStandardMaterial({color:0xDDAA33, roughness:0.5});
+for (var i = 0; i < 4; i++) {
+  var scaleLine = new THREE.Mesh(
+    new THREE.TorusGeometry(0.28 - i*0.04, 0.008, 4, 12, Math.PI*0.8),
+    scaleLineMat
+  );
+  scaleLine.position.set(0, 0.15 - i*0.12, 0.28);
+  scaleLine.rotation.y = Math.PI/2;
+  scaleLine.rotation.z = Math.PI/2;
+  bodyGroup.add(scaleLine);
+}
+
+dragon.add(bodyGroup);
+
+// --- ARMS ---
+function makeArm(x, rotZ) {
+  var ag = new THREE.Group();
+  var upper = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 10), bodyMat);
+  upper.scale.set(1, 1.3, 0.9);
+  ag.add(upper);
+  var fore = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), bodyMat);
+  fore.position.set(0, -0.22, 0.05);
+  ag.add(fore);
+  for (var c = 0; c < 3; c++) {
+    var claw = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.06, 5), clawMat);
+    claw.position.set(-0.05 + c*0.05, -0.32, 0.08);
+    claw.rotation.x = 0.5;
+    ag.add(claw);
+  }
+  ag.position.set(x, 1.3, 0.15);
+  ag.rotation.z = rotZ;
+  return ag;
+}
+dragon.add(makeArm(-0.55, 0.4));
+dragon.add(makeArm(0.55, -0.4));
+
+// --- LEGS ---
+function makeLeg(x) {
+  var lg = new THREE.Group();
+  var thigh = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), bodyMat);
+  thigh.scale.set(0.9, 1.2, 0.9);
+  lg.add(thigh);
+  var foot = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), bodyMat);
+  foot.position.set(0, -0.28, 0.08);
+  foot.scale.set(1.1, 0.6, 1.3);
+  lg.add(foot);
+  for (var c = 0; c < 3; c++) {
+    var claw = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.07, 5), clawMat);
+    claw.position.set(-0.06 + c*0.06, -0.35, 0.18);
+    claw.rotation.x = 0.7;
+    lg.add(claw);
+  }
+  lg.position.set(x, 0.6, 0.05);
+  return lg;
+}
+dragon.add(makeLeg(-0.28));
+dragon.add(makeLeg(0.28));
+
+// --- WINGS ---
+function makeWing(x, flipX) {
+  var wg = new THREE.Group();
+  var bone1 = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.02, 0.5, 6), wingBoneMat);
+  bone1.rotation.z = flipX * 0.8;
+  bone1.position.set(flipX * 0.2, 0.1, 0);
+  wg.add(bone1);
+
+  var shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.lineTo(flipX * 0.6, 0.3);
+  shape.lineTo(flipX * 0.5, -0.15);
+  shape.lineTo(flipX * 0.2, -0.2);
+  shape.lineTo(0, -0.1);
+  var membrane = new THREE.Mesh(new THREE.ShapeGeometry(shape), wingMembraneMat);
+  wg.add(membrane);
+
+  var tip = new THREE.Mesh(new THREE.ConeGeometry(0.015, 0.08, 4), wingBoneMat);
+  tip.position.set(flipX * 0.6, 0.3, 0);
+  tip.rotation.z = flipX * -0.5;
+  wg.add(tip);
+
+  wg.position.set(x, 1.55, -0.35);
+  return wg;
+}
+var leftWing = makeWing(-0.35, -1);
+var rightWing = makeWing(0.35, 1);
+dragon.add(leftWing);
+dragon.add(rightWing);
+
+// --- TAIL ---
+var tailGroup = new THREE.Group();
+var tailSegs = 8;
+for (var i = 0; i < tailSegs; i++) {
+  var t = i / tailSegs;
+  var segSize = 0.12 * (1 - t * 0.6);
+  var seg = new THREE.Mesh(new THREE.SphereGeometry(segSize, 10, 8), bodyMat);
+  var ty = 0.9 - i * 0.08 - t * t * 0.3;
+  var tz = -0.4 - i * 0.15 - t * 0.1;
+  seg.position.set(0, ty, tz);
+  tailGroup.add(seg);
+
+  if (i % 2 === 0 && i < 6) {
+    var tSpine = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.08, 5), spineMat);
+    tSpine.position.set(0, ty + segSize + 0.02, tz);
+    tailGroup.add(tSpine);
+  }
+}
+// Tail flame tip
+var tailTip = new THREE.Mesh(new THREE.OctahedronGeometry(0.1, 0), flameMat);
+tailTip.position.set(0, 0.28, -1.55);
+tailGroup.add(tailTip);
+var tailTipInner = new THREE.Mesh(new THREE.OctahedronGeometry(0.06, 0), flameInnerMat);
+tailTipInner.position.set(0, 0.28, -1.55);
+tailGroup.add(tailTipInner);
+
+dragon.add(tailGroup);
+
+// --- POSITION ---
+dragon.position.y = 0;
+scene.add(dragon);
+
+// Pedestal
+var pedestal = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.8, 1.0, 0.15, 24),
+  new THREE.MeshStandardMaterial({color:0xCC3311, metalness:0.4, roughness:0.25})
+);
+pedestal.position.y = 0.075;
+pedestal.receiveShadow = true;
+scene.add(pedestal);
+
+// ============================================
+// ANIMATION
+// ============================================
+var clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  var t = clock.getElapsedTime();
+
+  // Body bob
+  dragon.position.y = Math.sin(t * 1.5) * 0.05;
+
+  // Head tilt
+  headGroup.rotation.z = Math.sin(t * 0.8) * 0.05;
+  headGroup.rotation.x = Math.sin(t * 0.6) * 0.03;
+
+  // Wing flap
+  var wingFlap = Math.sin(t * 3) * 0.15;
+  leftWing.rotation.z = wingFlap - 0.1;
+  rightWing.rotation.z = -wingFlap + 0.1;
+
+  // Tail wag
+  for (var i = 0; i < tailGroup.children.length; i++) {
+    tailGroup.children[i].position.x = Math.sin(t * 2 + i * 0.5) * 0.03 * (i+1) * 0.3;
+  }
+
+  // Flame flicker
+  tailTip.rotation.y = t * 3;
+  tailTip.scale.setScalar(0.9 + Math.sin(t * 8) * 0.2);
+  tailTipInner.rotation.y = -t * 4;
+  tailTipInner.scale.setScalar(0.85 + Math.sin(t * 10 + 1) * 0.25);
+
+  // Smoke drift
+  smoke1.position.y = -0.05 + Math.sin(t * 2) * 0.03;
+  smoke1.position.z = 0.82 + Math.sin(t * 1.5) * 0.02;
+  smoke1.material.opacity = 0.2 + Math.sin(t * 3) * 0.12;
+  smoke2.position.y = -0.02 + Math.sin(t * 2.5 + 1) * 0.03;
+  smoke2.material.opacity = 0.2 + Math.sin(t * 3.5 + 1) * 0.12;
+
+  // Eye blink
+  var blinkPhase = t % 4;
+  if (blinkPhase > 3.8 && blinkPhase < 3.95) {
+    leftEye.scale.y = 0.1;
+    rightEye.scale.y = 0.1;
+  } else {
+    leftEye.scale.y = 1;
+    rightEye.scale.y = 1;
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+animate();
+
+window.addEventListener('resize', function() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>

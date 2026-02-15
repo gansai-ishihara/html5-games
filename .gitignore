@@ -23,6 +23,16 @@ npm-debug.log*
 *.bak
 *.cache
 
+# Playwright MCP test artifacts
+.playwright-mcp/
+*.png
+
+# Claude Code
+.claude/
+
+# Windows device files
+nul
+
 # Build outputs (if you add a build process)
 dist/
 build/

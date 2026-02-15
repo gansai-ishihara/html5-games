@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>キャラクターギャラリー - ドリフトレーサーズ</title>
+<style>
+body { margin:0; background:#0a0a1e; font-family:sans-serif; }
+#container { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; width:100vw; height:100vh; }
+.cell { position:relative; overflow:hidden; border:1px solid rgba(255,255,255,0.1); }
+.cell canvas { width:100%; height:100%; display:block; }
+.label { position:absolute; top:8px; left:50%; transform:translateX(-50%); color:#fff;
+  font-size:16px; font-weight:bold; text-shadow:0 2px 6px rgba(0,0,0,0.8); z-index:10;
+  text-align:center; pointer-events:none; }
+</style>
+</head>
+<body>
+<div id="container">
+  <div class="cell" id="cell0"><div class="label">ブレイズ</div></div>
+  <div class="cell" id="cell1"><div class="label">アクア</div></div>
+  <div class="cell" id="cell2"><div class="label">テラ</div></div>
+  <div class="cell" id="cell3"><div class="label">シャドウ</div></div>
+</div>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script>
+// === Setup a cell view ===
+function createView(cellId) {
+  var cell = document.getElementById(cellId);
+  var w = cell.clientWidth, h = cell.clientHeight;
+  var renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  cell.appendChild(renderer.domElement);
+
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x1a1a2e);
+
+  var camera = new THREE.PerspectiveCamera(40, w/h, 0.1, 100);
+  camera.position.set(0, 1.6, 4.5);
+  camera.lookAt(0, 0.8, 0);
+
+  // Soft lighting - cute style
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+  var sun = new THREE.DirectionalLight(0xFFF5E0, 0.9);
+  sun.position.set(3, 6, 4); sun.castShadow = true;
+  scene.add(sun);
+  scene.add(new THREE.DirectionalLight(0xAABBFF, 0.25).translateX(-3).translateY(2).translateZ(-2));
+  scene.add(new THREE.HemisphereLight(0xDDEEFF, 0x554433, 0.25));
+
+  // Ground disc
+  var gnd = new THREE.Mesh(new THREE.CircleGeometry(2.5, 32),
+    new THREE.MeshStandardMaterial({color:0x2a2a3e, roughness:0.85}));
+  gnd.rotation.x = -Math.PI/2; gnd.receiveShadow = true;
+  scene.add(gnd);
+
+  return {renderer:renderer, scene:scene, camera:camera};
+}
+
+// === Material helper ===
+function M(color, opts) {
+  var o = opts || {};
+  return new THREE.MeshStandardMaterial({
+    color: color,
+    roughness: o.r !== undefined ? o.r : 0.55,
+    metalness: o.m !== undefined ? o.m : 0.05,
+    emissive: o.e || 0x000000,
+    emissiveIntensity: o.ei || 0,
+    transparent: !!o.t,
+    opacity: o.t || 1,
+    side: o.ds ? THREE.DoubleSide : THREE.FrontSide
+  });
+}
+
+// =============================================
+// CUTE CHIBI EYE SYSTEM v2
+// White oval base + big black pupil + white highlight = maximum cuteness
+// Inspired by Mario Kart / Kirby / Faaast Penguin
+// =============================================
+function makeCuteEyes(group, eyeColor, posY, opts) {
+  var o = opts || {};
+  var spread = o.spread || 0.20;
+  var sz = o.size || 0.16;       // bigger eyes!
+  var fwd = o.fwd || 0.62;      // pushed further out
+  var whiteMat = M(0xFFFFFF, {r:0.15, m:0.0});
+  var pupilMat = M(0x111122, {r:0.1});
+  var hlMat = new THREE.MeshBasicMaterial({color:0xFFFFFF});
+
+  function makeEye(x) {
+    var eg = new THREE.Group();
+    // White base - visible oval
+    var white = new THREE.Mesh(new THREE.SphereGeometry(sz, 14, 12), whiteMat);
+    white.scale.set(0.85, 1.1, 0.45);
+    eg.add(white);
+    // Big black pupil
+    var pupil = new THREE.Mesh(new THREE.SphereGeometry(sz * 0.7, 12, 10), pupilMat);
+    pupil.scale.set(1, 1, 0.5);
+    pupil.position.set(0, -0.01, 0.04);
+    eg.add(pupil);
+    // Main highlight (top-right, large)
+    var hl = new THREE.Mesh(new THREE.SphereGeometry(sz * 0.3, 8, 6), hlMat);
+    hl.position.set(sz * 0.25, sz * 0.3, 0.06);
+    eg.add(hl);
+    // Small secondary highlight (bottom-left)
+    var hl2 = new THREE.Mesh(new THREE.SphereGeometry(sz * 0.15, 6, 5), hlMat);
+    hl2.position.set(-sz * 0.2, -sz * 0.2, 0.06);
+    eg.add(hl2);
+    eg.position.set(x, posY || 0.05, fwd);
+    return eg;
+  }
+  var le = makeEye(-spread), re = makeEye(spread);
+  group.add(le); group.add(re);
+  return {left: le, right: re};
+}
+
+// Cute small mouth
+function addCuteMouth(group, color, opts) {
+  var o = opts || {};
+  var mouth = new THREE.Mesh(
+    new THREE.TorusGeometry(o.w || 0.06, 0.015, 6, 10, Math.PI),
+    M(color || 0x332222, {r:0.5})
+  );
+  mouth.position.set(0, o.y || -0.15, o.z || 0.58);
+  mouth.rotation.x = 0.15;
+  group.add(mouth);
+}
+
+// Cute blush circles (brighter, more visible)
+function addBlush(group, color, opts) {
+  var o = opts || {};
+  var blushMat = M(color || 0xFF8899, {t:0.35, r:0.85});
+  var y = o.y || -0.05, z = o.z || 0.45, x = o.x || 0.32;
+  var s = o.s || 0.07;
+  var bl = new THREE.Mesh(new THREE.SphereGeometry(s, 8, 6), blushMat);
+  bl.position.set(-x, y, z); bl.scale.set(1.5, 0.8, 0.35);
+  group.add(bl);
+  var br = new THREE.Mesh(new THREE.SphereGeometry(s, 8, 6), blushMat);
+  br.position.set(x, y, z); br.scale.set(1.5, 0.8, 0.35);
+  group.add(br);
+}
+
+// ============================================
+// 1. ブレイズ (Fire Dragon) - Cute chibi dragon
+// ============================================
+function buildBlaze(scene) {
+  var g = new THREE.Group();
+  var bodyCol = 0xDD3311;
+  var bellyCol = 0xFFDD66;
+  var bodyMat = M(bodyCol);
+  var bellyMat = M(bellyCol, {r:0.5});
+
+  // === HEAD (big round chibi head) ===
+  var hg = new THREE.Group();
+  hg.position.set(0, 1.55, 0);
+  // Main head sphere - big and round!
+  var head = new THREE.Mesh(new THREE.SphereGeometry(0.7, 24, 20), bodyMat);
+  head.castShadow = true;
+  hg.add(head);
+  // Cute snout bump (small, not protruding)
+  var snout = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 10), bodyMat);
+  snout.position.set(0, -0.12, 0.52);
+  snout.scale.set(1, 0.7, 0.6);
+  hg.add(snout);
+  // Cute eyes!
+  var eyes = makeCuteEyes(hg, 0xFF8800, 0.06, {spread:0.22, size:0.16, fwd:0.62});
+  addCuteMouth(hg, 0x881100, {y:-0.22, z:0.6, w:0.07});
+  addBlush(hg, 0xFF6644, {y:-0.1, z:0.48, x:0.38});
+  // Prominent horns (bigger, more visible)
+  var hornMat = M(0xFFCC33, {m:0.3, r:0.25});
+  var h1 = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.3, 6), hornMat);
+  h1.position.set(-0.3, 0.58, -0.1); h1.rotation.z = 0.3;
+  hg.add(h1);
+  var h2 = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.3, 6), hornMat);
+  h2.position.set(0.3, 0.58, -0.1); h2.rotation.z = -0.3;
+  hg.add(h2);
+  // Dragon ear frills
+  var ear1 = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.18, 4), bodyMat);
+  ear1.position.set(-0.55, 0.2, -0.05); ear1.rotation.z = 0.8;
+  hg.add(ear1);
+  var ear2 = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.18, 4), bodyMat);
+  ear2.position.set(0.55, 0.2, -0.05); ear2.rotation.z = -0.8;
+  hg.add(ear2);
+  g.add(hg);
+
+  // === BODY (small round chibi body) ===
+  var body = new THREE.Mesh(new THREE.SphereGeometry(0.45, 18, 14), bodyMat);
+  body.position.set(0, 0.75, 0);
+  body.scale.set(1, 1.05, 0.95);
+  body.castShadow = true;
+  g.add(body);
+  // Belly patch
+  var belly = new THREE.Mesh(new THREE.SphereGeometry(0.3, 14, 10), bellyMat);
+  belly.position.set(0, 0.68, 0.24);
+  belly.scale.set(0.8, 0.8, 0.4);
+  g.add(belly);
+
+  // === STUBBY ARMS ===
+  function arm(x, rz) {
+    var ag = new THREE.Group();
+    var a = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 8), bodyMat);
+    a.scale.set(0.9, 1.2, 0.9);
+    ag.add(a);
+    ag.position.set(x, 0.8, 0.1);
+    ag.rotation.z = rz;
+    return ag;
+  }
+  g.add(arm(-0.48, 0.5));
+  g.add(arm(0.48, -0.5));
+
+  // === STUBBY FEET ===
+  function foot(x) {
+    var ft = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), bodyMat);
+    ft.position.set(x, 0.18, 0.08);
+    ft.scale.set(1, 0.6, 1.3);
+    return ft;
+  }
+  g.add(foot(-0.2));
+  g.add(foot(0.2));
+
+  // === CUTE WINGS (bigger, more visible) ===
+  var wingMat = M(0xFF6633, {t:0.6, ds:true, r:0.45});
+  function wing(x, fx) {
+    var wg = new THREE.Group();
+    var s = new THREE.Shape();
+    s.moveTo(0,0); s.lineTo(fx*0.5, 0.3); s.lineTo(fx*0.45, 0.05); s.lineTo(fx*0.35, -0.1); s.lineTo(fx*0.15, -0.12); s.lineTo(0,-0.06);
+    wg.add(new THREE.Mesh(new THREE.ShapeGeometry(s), wingMat));
+    wg.position.set(x, 1.1, -0.3);
+    return wg;
+  }
+  var lw = wing(-0.22, -1), rw = wing(0.22, 1);
+  g.add(lw); g.add(rw);
+
+  // === TAIL (simple, short with flame tip) ===
+  var tg = new THREE.Group();
+  for (var i = 0; i < 4; i++) {
+    var t = i / 4;
+    var seg = new THREE.Mesh(new THREE.SphereGeometry(0.07*(1-t*0.5), 8, 6), bodyMat);
+    seg.position.set(0, 0.55 - i*0.06, -0.35 - i*0.1);
+    tg.add(seg);
+  }
+  // Tail flame
+  var flameMat = M(0xFF5500, {e:0xFF4400, ei:0.7, t:0.8});
+  var flameIn = M(0xFFCC00, {e:0xFF8800, ei:0.9});
+  var tt = new THREE.Mesh(new THREE.OctahedronGeometry(0.07, 0), flameMat);
+  tt.position.set(0, 0.38, -0.68);
+  tg.add(tt);
+  var ti = new THREE.Mesh(new THREE.OctahedronGeometry(0.04, 0), flameIn);
+  ti.position.set(0, 0.38, -0.68);
+  tg.add(ti);
+  g.add(tg);
+
+  scene.add(g);
+  // Pedestal
+  scene.add(new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.75, 0.1, 24),
+    M(0xCC3311, {m:0.3, r:0.3})).translateY(0.05));
+
+  return {group:g, head:hg, eyes:eyes, lw:lw, rw:rw, tail:tg, tt:tt, ti:ti};
+}
+
+// ============================================
+// 2. アクア (Mermaid) - Cute chibi mermaid
+// ============================================
+function buildAqua(scene) {
+  var g = new THREE.Group();
+  var bodyCol = 0x2288DD;
+  var bodyMat = M(bodyCol);
+  var lightMat = M(0xAADDFF, {r:0.45});
+  var finMat = M(0x44BBFF, {t:0.55, ds:true, m:0.2, r:0.3});
+
+  // === HEAD ===
+  var hg = new THREE.Group();
+  hg.position.set(0, 1.55, 0);
+  var head = new THREE.Mesh(new THREE.SphereGeometry(0.68, 24, 20), bodyMat);
+  head.castShadow = true;
+  hg.add(head);
+  // Cute eyes
+  var eyes = makeCuteEyes(hg, 0x44BBFF, 0.05, {spread:0.22, size:0.16, fwd:0.6});
+  addCuteMouth(hg, 0x0055AA, {y:-0.18, z:0.58, w:0.05});
+  addBlush(hg, 0xFF88BB, {y:-0.08, z:0.48, x:0.36});
+  // Tiara (gold, more visible!)
+  var tiaraMat = M(0xFFDD44, {m:0.6, r:0.1, e:0xFFCC00, ei:0.3});
+  var tiara = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.03, 6, 12, Math.PI), tiaraMat);
+  tiara.position.set(0, 0.42, 0.12); tiara.rotation.x = -0.3;
+  hg.add(tiara);
+  // Gem on tiara (pink, stands out against blue)
+  var gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.06, 0), M(0xFF88CC, {m:0.7, r:0.05, e:0xFF66AA, ei:0.3}));
+  gem.position.set(0, 0.55, 0.2);
+  hg.add(gem);
+  // Side pearls on tiara
+  var pearlMat = M(0xFFFFEE, {m:0.7, r:0.05});
+  var p1 = new THREE.Mesh(new THREE.SphereGeometry(0.035, 7, 5), pearlMat);
+  p1.position.set(-0.2, 0.5, 0.18); hg.add(p1);
+  var p2 = new THREE.Mesh(new THREE.SphereGeometry(0.035, 7, 5), pearlMat);
+  p2.position.set(0.2, 0.5, 0.18); hg.add(p2);
+  // Side fin-hair (bigger, more visible)
+  var fh1 = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.35, 5), finMat);
+  fh1.position.set(-0.52, -0.05, -0.15); fh1.rotation.z = 0.45;
+  hg.add(fh1);
+  var fh2 = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.35, 5), finMat);
+  fh2.position.set(0.52, -0.05, -0.15); fh2.rotation.z = -0.45;
+  hg.add(fh2);
+  g.add(hg);
+
+  // === BODY ===
+  var body = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 14), bodyMat);
+  body.position.set(0, 0.78, 0);
+  body.scale.set(1, 1.05, 0.9);
+  body.castShadow = true;
+  g.add(body);
+  var belly = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 10), lightMat);
+  belly.position.set(0, 0.73, 0.2);
+  belly.scale.set(0.8, 0.85, 0.4);
+  g.add(belly);
+
+  // === STUBBY ARMS ===
+  function arm(x, rz) {
+    var ag = new THREE.Group();
+    ag.add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), bodyMat));
+    ag.position.set(x, 0.82, 0.08);
+    ag.rotation.z = rz;
+    return ag;
+  }
+  g.add(arm(-0.44, 0.5));
+  g.add(arm(0.44, -0.5));
+
+  // === MERMAID TAIL (replaces legs) ===
+  var tailMat = M(0x1177CC, {m:0.15});
+  var tg = new THREE.Group();
+  // Smooth curve down and back
+  var tailPts = [
+    {y:0.5, z:0.0, s:0.2},
+    {y:0.35, z:-0.05, s:0.17},
+    {y:0.22, z:-0.14, s:0.14},
+    {y:0.13, z:-0.28, s:0.11},
+    {y:0.08, z:-0.42, s:0.09}
+  ];
+  for (var i = 0; i < tailPts.length; i++) {
+    var tp = tailPts[i];
+    var seg = new THREE.Mesh(new THREE.SphereGeometry(tp.s, 10, 8), tailMat);
+    seg.position.set(0, tp.y, tp.z);
+    tg.add(seg);
+  }
+  // Fluked fin
+  var tailFinMat = M(0x44CCFF, {t:0.5, ds:true, m:0.2});
+  var f1 = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.22, 4), tailFinMat);
+  f1.position.set(-0.1, 0.05, -0.55); f1.rotation.set(-0.3, 0, 0.5);
+  tg.add(f1);
+  var f2 = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.22, 4), tailFinMat);
+  f2.position.set(0.1, 0.05, -0.55); f2.rotation.set(-0.3, 0, -0.5);
+  tg.add(f2);
+  g.add(tg);
+
+  // Bubbles
+  var bubbleMat = M(0xCCEEFF, {t:0.35, m:0.7, r:0.05});
+  var bubbles = [];
+  for (var i = 0; i < 4; i++) {
+    var b = new THREE.Mesh(new THREE.SphereGeometry(0.02 + Math.random()*0.025, 6, 6), bubbleMat);
+    b.position.set((Math.random()-0.5)*0.8, 0.5+Math.random()*1.2, (Math.random()-0.5)*0.5);
+    g.add(b); bubbles.push(b);
+  }
+
+  scene.add(g);
+  scene.add(new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.75, 0.1, 24),
+    M(0x1177CC, {m:0.3, r:0.3})).translateY(0.05));
+
+  return {group:g, head:hg, eyes:eyes, tail:tg, bubbles:bubbles};
+}
+
+// ============================================
+// 3. テラ (Forest Golem) - Cute chibi tree creature
+// ============================================
+function buildTerra(scene) {
+  var g = new THREE.Group();
+  var bodyCol = 0x33AA44;
+  var bodyMat = M(bodyCol);
+  var lightMat = M(0x99DD77, {r:0.55});
+
+  // === HEAD ===
+  var hg = new THREE.Group();
+  hg.position.set(0, 1.5, 0);
+  var head = new THREE.Mesh(new THREE.SphereGeometry(0.68, 24, 20), bodyMat);
+  head.castShadow = true;
+  hg.add(head);
+  // Cute eyes
+  var eyes = makeCuteEyes(hg, 0x66DD44, 0.02, {spread:0.22, size:0.16, fwd:0.6});
+  addCuteMouth(hg, 0x225500, {y:-0.18, z:0.58, w:0.06});
+  addBlush(hg, 0x88DD66, {y:-0.08, z:0.48, x:0.36});
+  // Leaf crown (bigger, more prominent)
+  var leafMat = M(0x55DD33, {e:0x33AA00, ei:0.2});
+  for (var i = 0; i < 5; i++) {
+    var leaf = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.25, 4), leafMat);
+    var a = (i - 2) * 0.4;
+    leaf.position.set(Math.sin(a)*0.2, 0.6 + Math.cos(a)*0.05, Math.cos(a)*0.08);
+    leaf.rotation.z = a * 0.35;
+    hg.add(leaf);
+  }
+  // Cute mushroom on head (bigger!)
+  var mushCap = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), M(0xDD3322, {r:0.45}));
+  mushCap.position.set(0.35, 0.48, 0.08); mushCap.scale.set(1.3, 0.6, 1.3);
+  hg.add(mushCap);
+  // White dots on mushroom
+  var dotMat = M(0xFFFFEE, {r:0.3});
+  var md1 = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 5), dotMat);
+  md1.position.set(0.33, 0.52, 0.14); hg.add(md1);
+  var md2 = new THREE.Mesh(new THREE.SphereGeometry(0.015, 6, 5), dotMat);
+  md2.position.set(0.39, 0.5, 0.1); hg.add(md2);
+  var mushStem = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.08, 6), M(0xFFEECC, {r:0.6}));
+  mushStem.position.set(0.35, 0.4, 0.08);
+  hg.add(mushStem);
+  g.add(hg);
+
+  // === BODY ===
+  var body = new THREE.Mesh(new THREE.SphereGeometry(0.48, 18, 14), bodyMat);
+  body.position.set(0, 0.72, 0);
+  body.scale.set(1.05, 1.0, 0.95);
+  body.castShadow = true;
+  g.add(body);
+  var belly = new THREE.Mesh(new THREE.SphereGeometry(0.34, 12, 10), lightMat);
+  belly.position.set(0, 0.68, 0.22);
+  belly.scale.set(0.8, 0.85, 0.4);
+  g.add(belly);
+
+  // === STUBBY ARMS (branch-like) ===
+  var woodMat = M(0x664422, {r:0.65});
+  function arm(x, rz) {
+    var ag = new THREE.Group();
+    ag.add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), woodMat));
+    // Tiny leaf hand
+    var lh = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.08, 4), leafMat);
+    lh.position.set(0, -0.12, 0.02);
+    ag.add(lh);
+    ag.position.set(x, 0.78, 0.08);
+    ag.rotation.z = rz;
+    return ag;
+  }
+  g.add(arm(-0.5, 0.5));
+  g.add(arm(0.5, -0.5));
+
+  // === STUBBY FEET ===
+  function foot(x) {
+    var ft = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), bodyMat);
+    ft.position.set(x, 0.18, 0.06);
+    ft.scale.set(1, 0.6, 1.2);
+    return ft;
+  }
+  g.add(foot(-0.22));
+  g.add(foot(0.22));
+
+  // Small flower decoration
+  var flowerColors = [0xFF6688, 0xFFDD44, 0xFFAAFF];
+  for (var i = 0; i < 3; i++) {
+    var fl = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 5), M(flowerColors[i], {e:flowerColors[i], ei:0.25}));
+    fl.position.set(-0.3 + i * 0.3, 0.4 + i * 0.15, 0.3 - Math.abs(i-1)*0.1);
+    g.add(fl);
+  }
+
+  scene.add(g);
+  scene.add(new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.75, 0.1, 24),
+    M(0x336622, {m:0.25, r:0.4})).translateY(0.05));
+
+  return {group:g, head:hg, eyes:eyes};
+}
+
+// ============================================
+// 4. シャドウ (Phantom) - Cute chibi ghost
+// ============================================
+function buildShadow(scene) {
+  var g = new THREE.Group();
+  var bodyCol = 0x6633BB;
+  var bodyMat = M(bodyCol, {m:0.1});
+  var lightMat = M(0x9977DD, {r:0.45});
+  var glowMat = M(0xBB88FF, {e:0x8855CC, ei:0.4});
+
+  // === HEAD ===
+  var hg = new THREE.Group();
+  hg.position.set(0, 1.55, 0);
+  var head = new THREE.Mesh(new THREE.SphereGeometry(0.68, 24, 20), bodyMat);
+  head.castShadow = true;
+  hg.add(head);
+  // Cute eyes (slightly bigger for ghost cuteness)
+  var eyes = makeCuteEyes(hg, 0xBB66FF, 0.06, {spread:0.22, size:0.17, fwd:0.6});
+  // Small cat-like mouth
+  var mouthMat = M(0x331155, {r:0.4});
+  // Simple W-shaped cat mouth using two small arcs
+  var m1 = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.012, 6, 8, Math.PI), mouthMat);
+  m1.position.set(-0.03, -0.18, 0.6);
+  hg.add(m1);
+  var m2 = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.012, 6, 8, Math.PI), mouthMat);
+  m2.position.set(0.03, -0.18, 0.6);
+  hg.add(m2);
+  addBlush(hg, 0xBB77FF, {y:-0.07, z:0.48, x:0.36});
+  // Cute cat-like pointed ears
+  var earMat = M(0x8855DD, {m:0.2, r:0.25});
+  var earInMat = M(0xBB99FF, {r:0.4});
+  // Left ear
+  var e1 = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.28, 4), earMat);
+  e1.position.set(-0.4, 0.55, 0.0); e1.rotation.z = 0.35;
+  hg.add(e1);
+  var e1i = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.15, 4), earInMat);
+  e1i.position.set(-0.38, 0.52, 0.03); e1i.rotation.z = 0.35;
+  hg.add(e1i);
+  // Right ear
+  var e2 = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.28, 4), earMat);
+  e2.position.set(0.4, 0.55, 0.0); e2.rotation.z = -0.35;
+  hg.add(e2);
+  var e2i = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.15, 4), earInMat);
+  e2i.position.set(0.38, 0.52, 0.03); e2i.rotation.z = -0.35;
+  hg.add(e2i);
+  // Crescent mark on forehead
+  var crescent = new THREE.Mesh(
+    new THREE.TorusGeometry(0.05, 0.012, 6, 10, Math.PI*1.2),
+    M(0xFFDD44, {e:0xFFCC00, ei:0.7})
+  );
+  crescent.position.set(0, 0.3, 0.58);
+  crescent.rotation.set(0, 0, Math.PI*0.3);
+  hg.add(crescent);
+  g.add(hg);
+
+  // === BODY (slightly tapered for ghostly shape) ===
+  var body = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 14), bodyMat);
+  body.position.set(0, 0.78, 0);
+  body.scale.set(1, 1.1, 0.9);
+  body.castShadow = true;
+  g.add(body);
+  var belly = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 10), lightMat);
+  belly.position.set(0, 0.73, 0.2);
+  belly.scale.set(0.8, 0.85, 0.4);
+  g.add(belly);
+
+  // === WISPY ARMS ===
+  function arm(x, rz) {
+    var ag = new THREE.Group();
+    ag.add(new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), bodyMat));
+    ag.position.set(x, 0.82, 0.08);
+    ag.rotation.z = rz;
+    return ag;
+  }
+  g.add(arm(-0.44, 0.5));
+  g.add(arm(0.44, -0.5));
+
+  // === GHOST TAIL (wavy bottom instead of feet) ===
+  var tailMat = M(0x5522AA, {t:0.6, m:0.1});
+  for (var i = 0; i < 3; i++) {
+    var w = new THREE.Mesh(new THREE.SphereGeometry(0.12 - i*0.03, 10, 8), tailMat);
+    w.position.set((i-1)*0.15, 0.25 - i*0.06, 0);
+    w.scale.set(1.2, 0.6, 1);
+    g.add(w);
+  }
+
+  // Ghost wisps (floating particles)
+  var wisps = [];
+  var wispMat = M(0xBB88FF, {t:0.3, e:0x8844CC, ei:0.4});
+  for (var i = 0; i < 5; i++) {
+    var wp = new THREE.Mesh(new THREE.SphereGeometry(0.018 + Math.random()*0.015, 5, 4), wispMat);
+    wp.position.set((Math.random()-0.5)*0.8, 0.4+Math.random()*1.4, (Math.random()-0.5)*0.6);
+    g.add(wp); wisps.push(wp);
+  }
+
+  scene.add(g);
+  scene.add(new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.75, 0.1, 24),
+    M(0x4422AA, {m:0.3, r:0.3})).translateY(0.05));
+
+  return {group:g, head:hg, eyes:eyes, wisps:wisps};
+}
+
+// ============================================
+// CREATE ALL 4 VIEWS
+// ============================================
+var v0 = createView('cell0');
+var v1 = createView('cell1');
+var v2 = createView('cell2');
+var v3 = createView('cell3');
+
+var c0 = buildBlaze(v0.scene);
+var c1 = buildAqua(v1.scene);
+var c2 = buildTerra(v2.scene);
+var c3 = buildShadow(v3.scene);
+
+var clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  var t = clock.getElapsedTime();
+
+  // Shared: gentle bob + head tilt
+  [c0, c1, c2, c3].forEach(function(c) {
+    c.group.position.y = Math.sin(t * 1.5) * 0.03;
+    c.head.rotation.z = Math.sin(t * 0.8) * 0.04;
+    c.head.rotation.x = Math.sin(t * 0.6) * 0.02;
+    // Blink
+    var bp = t % 4;
+    if (bp > 3.8 && bp < 3.95) {
+      c.eyes.left.scale.y = 0.1; c.eyes.right.scale.y = 0.1;
+    } else {
+      c.eyes.left.scale.y = 1; c.eyes.right.scale.y = 1;
+    }
+  });
+
+  // Blaze wings + tail flame
+  if (c0.lw) { var wf = Math.sin(t*3)*0.12; c0.lw.rotation.z = wf-0.1; c0.rw.rotation.z = -wf+0.1; }
+  if (c0.tt) { c0.tt.rotation.y = t*3; c0.tt.scale.setScalar(0.9+Math.sin(t*8)*0.15); }
+  if (c0.ti) { c0.ti.rotation.y = -t*4; }
+
+  // Aqua bubbles
+  if (c1.bubbles) c1.bubbles.forEach(function(b, i) {
+    b.position.y += 0.002;
+    b.position.x += Math.sin(t*2+i)*0.001;
+    if (b.position.y > 3) b.position.y = 0.5;
+  });
+
+  // Shadow wisps
+  if (c3.wisps) c3.wisps.forEach(function(w, i) {
+    w.position.y += Math.sin(t+i)*0.002;
+    w.position.x += Math.cos(t*0.5+i*2)*0.001;
+    w.material.opacity = 0.2 + Math.sin(t*2+i)*0.12;
+  });
+
+  v0.renderer.render(v0.scene, v0.camera);
+  v1.renderer.render(v1.scene, v1.camera);
+  v2.renderer.render(v2.scene, v2.camera);
+  v3.renderer.render(v3.scene, v3.camera);
+}
+
+animate();
+
+window.addEventListener('resize', function() {
+  [v0, v1, v2, v3].forEach(function(v) {
+    var cell = v.renderer.domElement.parentElement;
+    var w = cell.clientWidth, h = cell.clientHeight;
+    v.camera.aspect = w/h;
+    v.camera.updateProjectionMatrix();
+    v.renderer.setSize(w, h);
+  });
+});
+</script>
+</body>
+</html>

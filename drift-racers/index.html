@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ドリフトレーサーズ 3D</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="rotate-prompt"><div class="icon">📱</div><p>横向きにしてください</p></div>
+
+<div id="title-screen">
+  <div class="title-logo">
+    <div class="title-main">DRIFT RACERS</div>
+    <div class="title-sub">ドリフトレーサーズ</div>
+  </div>
+  <div class="course-label">🏁 ドリームサーキチE�� - 3 LAPS</div>
+
+  <div class="select-section">
+    <div class="section-title">👤 キャラクター</div>
+    <div class="char-select" id="char-select"></div>
+    <div class="char-desc" id="char-desc"></div>
+    <div class="skill-preview" id="skill-preview"></div>
+  </div>
+
+  <div class="select-section">
+    <div class="section-title">🏎�E�Eマシン</div>
+    <div class="kart-select" id="kart-select"></div>
+  </div>
+
+  <div class="select-section">
+    <div class="section-title">🔧 裁E��</div>
+    <div class="equip-select" id="equip-select"></div>
+  </div>
+
+  <button class="start-btn" id="start-btn">START RACE</button>
+</div>
+
+<div id="hud">
+  <div class="hud-top">
+    <div id="position-display" class="hud-box">1<span class="suffix">st</span></div>
+    <div id="lap-display" class="hud-box">LAP 1/3</div>
+    <div id="item-box"></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;margin-top:6px">
+    <div id="speed-display" class="hud-box">0 km/h</div>
+    <div id="time-display" class="hud-box">0:00.00</div>
+  </div>
+  <div id="ring-display" class="hud-box" style="position:fixed;top:70px;right:16px;color:#ffdd00"></div>
+  <div id="skill-gauge" style="position:fixed;bottom:80px;right:16px;z-index:15"></div>
+</div>
+
+<div id="countdown"><div class="num" id="cd-num">3</div></div>
+
+<div id="results">
+  <h2 id="result-title">FINISH!</h2>
+  <div class="time" id="result-time"></div>
+  <ol class="result-list" id="result-list"></ol>
+  <button class="retry-btn" id="retry-btn">RETRY</button>
+</div>
+
+<canvas id="minimap" width="260" height="260"></canvas>
+
+<div id="boost-bar"><div id="boost-fill"></div></div>
+
+<div id="warning-flash"></div>
+
+<div id="mobile-controls">
+  <div class="ctrl-row">
+    <div class="dpad">
+      <div class="ctrl-btn up" data-key="up">▲</div>
+      <div class="ctrl-btn down" data-key="down">▼</div>
+      <div class="ctrl-btn left" data-key="left">◀</div>
+      <div class="ctrl-btn right" data-key="right">▶</div>
+    </div>
+    <div class="action-btns">
+      <div class="ctrl-btn btn-skill" data-key="skill">SKILL</div>
+      <div class="ctrl-btn btn-item" data-key="item">ITEM</div>
+      <div class="ctrl-btn btn-drift" data-key="drift">DRIFT</div>
+      <div class="ctrl-btn btn-brake" data-key="brake">BRAKE</div>
+      <div class="ctrl-btn btn-accel" data-key="accel">GAS</div>
+    </div>
+  </div>
+</div>
+
+<!-- Three.js from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+<!-- Post-processing -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/FXAAShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/pmrem/PMREMGenerator.js"></script>
+
+<!-- Game modules -->
+<script src="js/audio.js?v=18"></script>
+<script src="js/config.js?v=18"></script>
+<script src="js/track.js?v=18"></script>
+<script src="js/items.js?v=18"></script>
+<script src="js/kart.js?v=18"></script>
+<script src="js/input.js?v=18"></script>
+<script src="js/graphics.js?v=18"></script>
+<script src="js/hud.js?v=18"></script>
+<script src="js/main.js?v=18"></script>
+</body>
+</html>

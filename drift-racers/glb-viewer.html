@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>GLB Viewer - Blaze</title>
+<style>
+body { margin: 0; background: #222; overflow: hidden; font-family: Arial; }
+canvas { display: block; }
+#info { position: absolute; top: 10px; left: 10px; color: #fff; font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="info">Blaze GLB Model - Drag to rotate, Scroll to zoom</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x333333);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 100);
+camera.position.set(0, 2, 5);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+document.body.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0, 1, 0);
+
+// Lighting
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(5, 10, 5);
+scene.add(dirLight);
+
+const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+dirLight2.position.set(-5, 5, -5);
+scene.add(dirLight2);
+
+// Grid
+const grid = new THREE.GridHelper(10, 10, 0x555555, 0x444444);
+scene.add(grid);
+
+// Load GLB
+const loader = new THREE.GLTFLoader();
+loader.load('models/blaze.glb', function(gltf) {
+    const model = gltf.scene;
+    scene.add(model);
+
+    // Center and scale model
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+
+    // Scale to ~2 units tall
+    const scale = 2 / maxDim;
+    model.scale.setScalar(scale);
+
+    // Re-center
+    const box2 = new THREE.Box3().setFromObject(model);
+    const center2 = box2.getCenter(new THREE.Vector3());
+    model.position.sub(center2);
+    model.position.y += box2.getSize(new THREE.Vector3()).y / 2;
+
+    controls.target.set(0, box2.getSize(new THREE.Vector3()).y / 2, 0);
+
+    const info = document.getElementById('info');
+    info.textContent = 'Blaze GLB - Size: ' + size.x.toFixed(2) + ' x ' + size.y.toFixed(2) + ' x ' + size.z.toFixed(2) + ' | Vertices: ' + countVertices(model) + ' | Drag to rotate, Scroll to zoom';
+},
+function(xhr) {
+    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+},
+function(err) {
+    document.getElementById('info').textContent = 'Error loading model: ' + err.message;
+    console.error(err);
+});
+
+function countVertices(obj) {
+    var count = 0;
+    obj.traverse(function(child) {
+        if (child.isMesh && child.geometry) {
+            count += child.geometry.attributes.position ? child.geometry.attributes.position.count : 0;
+        }
+    });
+    return count.toLocaleString();
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', function() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
