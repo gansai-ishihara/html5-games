@@ -1,6 +1,6 @@
 // Input handling module for drift racing game
 
-var input = {up: false, down: false, left: false, right: false, drift: false, item: false, skill: false};
+var input = {up: false, down: false, left: false, right: false, drift: false, item: false, skill: false, stickX: 0, stickY: 0};
 var keys = {};
 
 // Keyboard event listeners
@@ -41,9 +41,98 @@ function updateInput() {
     }
 }
 
+// Virtual joystick state
+var joyActive = false;
+var joyTouchId = null;
+var joyCenterX = 0;
+var joyCenterY = 0;
+var joyRadius = 45; // max displacement from center
+
+function setupJoystick() {
+    var base = document.getElementById('joy-base');
+    var thumb = document.getElementById('joy-thumb');
+    if (!base || !thumb) return;
+
+    base.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        AUDIO.init();
+        var touch = e.changedTouches[0];
+        joyTouchId = touch.identifier;
+        joyActive = true;
+        var rect = base.getBoundingClientRect();
+        joyCenterX = rect.left + rect.width / 2;
+        joyCenterY = rect.top + rect.height / 2;
+        updateJoystick(touch.clientX, touch.clientY, thumb);
+    }, {passive: false});
+
+    document.addEventListener('touchmove', function(e) {
+        if (!joyActive) return;
+        for (var i = 0; i < e.changedTouches.length; i++) {
+            if (e.changedTouches[i].identifier === joyTouchId) {
+                e.preventDefault();
+                updateJoystick(e.changedTouches[i].clientX, e.changedTouches[i].clientY, thumb);
+                break;
+            }
+        }
+    }, {passive: false});
+
+    function onJoyEnd(e) {
+        for (var i = 0; i < e.changedTouches.length; i++) {
+            if (e.changedTouches[i].identifier === joyTouchId) {
+                joyActive = false;
+                joyTouchId = null;
+                thumb.style.transform = 'translate(0px, 0px)';
+                input.stickX = 0;
+                input.stickY = 0;
+                input.left = keys.ArrowLeft || keys.KeyA || false;
+                input.right = keys.ArrowRight || keys.KeyD || false;
+                input.up = keys.ArrowUp || keys.KeyW || false;
+                input.down = keys.ArrowDown || keys.KeyS || false;
+                break;
+            }
+        }
+    }
+    document.addEventListener('touchend', onJoyEnd, {passive: false});
+    document.addEventListener('touchcancel', onJoyEnd, {passive: false});
+}
+
+function updateJoystick(tx, ty, thumb) {
+    var dx = tx - joyCenterX;
+    var dy = ty - joyCenterY;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+
+    // Clamp to radius
+    if (dist > joyRadius) {
+        dx = dx / dist * joyRadius;
+        dy = dy / dist * joyRadius;
+        dist = joyRadius;
+    }
+
+    // Move thumb visual
+    thumb.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+
+    // Normalize to -1..1
+    var nx = dx / joyRadius;
+    var ny = dy / joyRadius;
+
+    input.stickX = nx;
+    input.stickY = ny;
+
+    // Dead zone
+    var deadZone = 0.2;
+    input.left = nx < -deadZone;
+    input.right = nx > deadZone;
+    input.up = ny < -deadZone;
+    input.down = ny > deadZone;
+}
+
 // Setup mobile touch controls
 function setupMobile() {
-    var buttons = document.querySelectorAll('.ctrl-btn');
+    // Setup joystick
+    setupJoystick();
+
+    // Setup action buttons (non-joystick buttons)
+    var buttons = document.querySelectorAll('.action-btns .ctrl-btn');
 
     buttons.forEach(function(btn) {
         var key = btn.getAttribute('data-key');
@@ -53,14 +142,10 @@ function setupMobile() {
             AUDIO.init();
             btn.classList.add('pressed');
 
-            if (key === 'up' || key === 'accel') {
+            if (key === 'accel') {
                 input.up = true;
-            } else if (key === 'down' || key === 'brake') {
+            } else if (key === 'brake') {
                 input.down = true;
-            } else if (key === 'left') {
-                input.left = true;
-            } else if (key === 'right') {
-                input.right = true;
             } else if (key === 'drift') {
                 input.drift = true;
             } else if (key === 'item') {
@@ -80,14 +165,10 @@ function setupMobile() {
             e.preventDefault();
             btn.classList.remove('pressed');
 
-            if (key === 'up' || key === 'accel') {
-                input.up = false;
-            } else if (key === 'down' || key === 'brake') {
-                input.down = false;
-            } else if (key === 'left') {
-                input.left = false;
-            } else if (key === 'right') {
-                input.right = false;
+            if (key === 'accel') {
+                input.up = joyActive ? input.stickY < -0.2 : false;
+            } else if (key === 'brake') {
+                input.down = joyActive ? input.stickY > 0.2 : false;
             } else if (key === 'drift') {
                 input.drift = false;
             }
@@ -97,14 +178,10 @@ function setupMobile() {
             e.preventDefault();
             btn.classList.remove('pressed');
 
-            if (key === 'up' || key === 'accel') {
-                input.up = false;
-            } else if (key === 'down' || key === 'brake') {
-                input.down = false;
-            } else if (key === 'left') {
-                input.left = false;
-            } else if (key === 'right') {
-                input.right = false;
+            if (key === 'accel') {
+                input.up = joyActive ? input.stickY < -0.2 : false;
+            } else if (key === 'brake') {
+                input.down = joyActive ? input.stickY > 0.2 : false;
             } else if (key === 'drift') {
                 input.drift = false;
             }

@@ -14,7 +14,7 @@ function initScene() {
   scene.fog = new THREE.FogExp2(0x8899CC, 0.00018);
 
   // Camera setup
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.5, 1500);
+  camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.5, 1500);
   camera.position.set(0, 10, 20);
 
   // Renderer setup
@@ -846,17 +846,13 @@ function buildSunDecor() {
 // Camera
 var cameraOffset = {x: 0, y: 6, z: 12};
 var cameraShake = {x: 0, y: 0};
-var currentFOV = 72;
+var currentFOV = 70;
 
 function updateCamera(pl) {
   if (!pl || !camera) return;
 
+  // Fixed camera distance - no pullback on speed
   var camDist = 7, camH = 3.2;
-  var targetFOV = 72;
-
-  currentFOV += (targetFOV - currentFOV) * 0.06;
-  camera.fov = currentFOV;
-  camera.updateProjectionMatrix();
 
   var idealX = pl.x - Math.cos(pl.ang) * camDist;
   var idealZ = pl.z - Math.sin(pl.ang) * camDist;
@@ -870,7 +866,8 @@ function updateCamera(pl) {
     cameraShake.y *= 0.85;
   }
 
-  var lerpFactor = 0.12;
+  // Tighter follow at high speed so camera doesn't lag behind
+  var lerpFactor = 0.12 + Math.min(pl.spd * 0.08, 0.18);
   camera.position.x += (idealX - camera.position.x) * lerpFactor + cameraShake.x;
   camera.position.y += (idealY - camera.position.y) * lerpFactor + cameraShake.y;
   camera.position.z += (idealZ - camera.position.z) * lerpFactor;

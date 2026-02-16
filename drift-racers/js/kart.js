@@ -801,12 +801,19 @@ Racer.prototype.update = function(input, racers, scene) {
     if (this.skillActive && this.char.skill === 'sakura_drift') turnRate *= 1.4;
     turnRate *= Math.min(1, Math.abs(this.spd) / 0.8);
 
-    if (input.left) {
-      this.ang -= turnRate;
-      this.tilt = Math.max(-0.3, this.tilt - 0.02);
+    // Analog stick steering (proportional) or digital
+    var steerAmt = 0;
+    if (input.stickX && Math.abs(input.stickX) > 0.1) {
+      steerAmt = input.stickX;
+    } else if (input.left) {
+      steerAmt = -1;
     } else if (input.right) {
-      this.ang += turnRate;
-      this.tilt = Math.min(0.3, this.tilt + 0.02);
+      steerAmt = 1;
+    }
+
+    if (steerAmt !== 0) {
+      this.ang += turnRate * steerAmt;
+      this.tilt = Math.max(-0.3, Math.min(0.3, this.tilt + 0.02 * steerAmt));
     } else {
       this.tilt *= 0.9;
     }
