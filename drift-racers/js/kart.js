@@ -148,8 +148,10 @@ function preloadEnvModels(callback) {
               if (mat.emissive !== undefined && mat.color) {
                 var hsl2 = {};
                 mat.color.getHSL(hsl2);
-                mat.emissive.setHSL(hsl2.h, Math.min(1.0, hsl2.s * 0.5), 0.15);
-                mat.emissiveIntensity = 0.3;
+                // Shift emissive towards blue for Crystal Kingdom theme
+                var eHue = hsl2.h * 0.7 + 0.6 * 0.3; // blend towards blue (0.6)
+                mat.emissive.setHSL(eHue, Math.min(1.0, hsl2.s * 0.45), 0.12);
+                mat.emissiveIntensity = 0.25;
               }
             }
           }

@@ -82,8 +82,8 @@ function createAsphaltTexture() {
     canvas.height = 512;
     var ctx = canvas.getContext('2d');
 
-    // Bright lavender-white base
-    ctx.fillStyle = '#E8E0F0';
+    // Crystal white base
+    ctx.fillStyle = '#DDE5F0';
     ctx.fillRect(0, 0, 512, 512);
 
     // Subtle sparkle dots
@@ -91,24 +91,24 @@ function createAsphaltTexture() {
         var sx = Math.random() * 512;
         var sy = Math.random() * 512;
         ctx.globalAlpha = 0.2 + Math.random() * 0.3;
-        ctx.fillStyle = ['#DDCCFF','#FFccEE','#ccDDFF'][Math.floor(Math.random() * 3)];
+        ctx.fillStyle = ['#CCddFF','#E8EEFF','#BBCCEE'][Math.floor(Math.random() * 3)];
         ctx.beginPath();
         ctx.arc(sx, sy, 0.5 + Math.random(), 0, Math.PI * 2);
         ctx.fill();
     }
     ctx.globalAlpha = 1.0;
 
-    // Left edge - cyan neon line
-    ctx.fillStyle = '#00EEFF';
+    // Left edge - sapphire blue line
+    ctx.fillStyle = '#4488DD';
     ctx.shadowBlur = 12;
-    ctx.shadowColor = '#00EEFF';
+    ctx.shadowColor = '#4488DD';
     ctx.fillRect(8, 0, 5, 512);
     ctx.shadowBlur = 0;
 
-    // Right edge - pink neon line
-    ctx.fillStyle = '#FF55BB';
+    // Right edge - amethyst line
+    ctx.fillStyle = '#8866BB';
     ctx.shadowBlur = 12;
-    ctx.shadowColor = '#FF55BB';
+    ctx.shadowColor = '#8866BB';
     ctx.fillRect(499, 0, 5, 512);
     ctx.shadowBlur = 0;
 
@@ -186,8 +186,8 @@ function buildTrackMesh(scene) {
     var asphaltTexture = createAsphaltTexture();
     var material = new THREE.MeshLambertMaterial({
         map: asphaltTexture,
-        color: 0x887799,
-        emissive: 0x221133,
+        color: 0x99AACC,
+        emissive: 0x1A2244,
         emissiveIntensity: 0.1
     });
 
@@ -304,8 +304,8 @@ function buildRoadWalls(scene) {
     scene.add(underMesh);
     trackMeshes.push(underMesh);
 
-    // Glowing edge strips on top of side walls (neon trim)
-    var edgeColors = [0x00EEFF, 0xFF55BB];
+    // Glowing edge strips on top of side walls (sapphire/amethyst trim)
+    var edgeColors = [0x4488DD, 0x8866BB];
     for (var side = -1; side <= 1; side += 2) {
         var edgeVertices = [];
         var edgeIndices = [];
@@ -361,10 +361,10 @@ function createCurbTexture() {
     canvas.height = 128;
     var ctx = canvas.getContext('2d');
 
-    // Red and white alternating diagonal stripes
+    // Sapphire blue and white alternating diagonal stripes
     var stripeWidth = 16;
     for (var i = 0; i < 8; i++) {
-        ctx.fillStyle = (i % 2 === 0) ? '#EE2244' : '#FFFFFF';
+        ctx.fillStyle = (i % 2 === 0) ? '#4488DD' : '#FFFFFF';
         ctx.fillRect(0, i * stripeWidth, 128, stripeWidth);
     }
 
@@ -592,163 +592,571 @@ function buildStartFinish(scene) {
     trackMeshes.push(rightPole);
 }
 
-// Build impressive environment decorations using GLB models
+// Build Crystal Kingdom environment decorations using zone system
+// 100 track nodes split into 5 themed zones
 function buildTrackDecorations(scene) {
     var useGLB = envModelsLoaded && Object.keys(envModelCache).length > 0;
-
-    // Trees - deterministic placement along the track
-    // Place trees every 1 node, alternating sides, 3 distance bands
     var treeTypes = ['tree-a', 'tree-b', 'tree-c'];
-    var treeDists = [38, 55, 75, 100, 130]; // 5 distance bands
-    var treeScales = [30, 40, 35, 45, 50];  // scale per band
-    for (var i = 6; i < trackNodes.length - 5; i++) {
-        var node = trackNodes[i];
-        var angle = getTrackAngle(i);
+    var HW = TRACK_WIDTH / 2; // half-width shorthand
 
-        // Each node gets 1-2 trees based on index pattern
-        var band = i % treeDists.length;
-        var side = (i % 2 === 0) ? 1 : -1;
-        var distance = treeDists[band];
+    // Zone determination
+    function getZone(idx) {
+        idx = ((idx % TRACK_POINTS) + TRACK_POINTS) % TRACK_POINTS;
+        if (idx >= 85 || idx < 5) return 'garden';
+        if (idx >= 5 && idx < 25) return 'forest';
+        if (idx >= 25 && idx < 45) return 'castle';
+        if (idx >= 45 && idx < 65) return 'lake';
+        return 'mountain';
+    }
 
+    // Zone color palette
+    function getZoneColors(zone) {
+        switch(zone) {
+            case 'forest':   return { pri: 0x4488DD, sec: 0x66AAEE, em: 0x2266AA, bush: 0x2A6644, lamp: 0x4488DD };
+            case 'castle':   return { pri: 0xFFCC66, sec: 0xFFDDAA, em: 0xCC9933, bush: 0x3A7744, lamp: 0xFFCC66 };
+            case 'lake':     return { pri: 0xE8EEFF, sec: 0xAABBDD, em: 0x6688CC, bush: 0x2A5544, lamp: 0x88AADD };
+            case 'mountain': return { pri: 0x8866BB, sec: 0xAA88DD, em: 0x5533AA, bush: 0x335533, lamp: 0x8866BB };
+            case 'garden':   return { pri: 0xDDA0BB, sec: 0x9988CC, em: 0xAA6688, bush: 0x3A8855, lamp: 0xFFCC66 };
+            default:         return { pri: 0x4488DD, sec: 0x6699CC, em: 0x224488, bush: 0x3A7744, lamp: 0x4488DD };
+        }
+    }
+
+    // FIXED: Smart Y placement - near objects use ROAD elevation, not underground terrain
+    function placeAtTrack(idx, side, distance, callback) {
+        var node = trackNodes[idx];
+        var angle = getTrackAngle(idx);
         var perpX = -Math.sin(angle) * side;
         var perpZ = Math.cos(angle) * side;
-
-        var treeX = node.x + perpX * distance;
-        var treeZ = node.z + perpZ * distance;
-        var treeY = getTerrainHeight(treeX, treeZ);
-
-        var treeType = treeTypes[i % 3];
-        var treeScale = treeScales[band];
-        var treeRot = (i * 1.37) % (Math.PI * 2); // deterministic rotation
-
-        if (useGLB && envModelCache[treeType]) {
-            placeEnvModel(scene, treeType, treeX, treeY, treeZ, treeScale, treeRot);
+        var px = node.x + perpX * distance;
+        var pz = node.z + perpZ * distance;
+        var py;
+        var shoulderEdge = HW + 8; // road shoulder extends 8 past track edge
+        if (distance <= shoulderEdge) {
+            // On road or shoulder: same height as road surface
+            py = node.y;
+        } else if (distance <= shoulderEdge + 25) {
+            // Transition: smoothly drop from road to terrain
+            var t = (distance - shoulderEdge) / 25;
+            t = t * t * (3 - 2 * t); // smoothstep
+            var terrainY = getTerrainHeight(px, pz);
+            py = node.y * (1 - t) + Math.max(terrainY, node.y - 10) * t;
         } else {
-            createPineTree(scene, treeX, treeY, treeZ);
+            py = getTerrainHeight(px, pz);
+        }
+        callback(px, py, pz, angle, node);
+    }
+
+    // === SMALL DETAIL HELPERS (new near-track objects) ===
+
+    // Crystal shard cluster for track edge (3x bigger)
+    function createCrystalShard(scene, x, y, z, color) {
+        var h = 1.5 + Math.random() * 1.5;
+        var geo = new THREE.CylinderGeometry(0, 0.35 + Math.random() * 0.2, h, 5);
+        var mat = new THREE.MeshLambertMaterial({
+            color: color, emissive: color, emissiveIntensity: 0.4,
+            transparent: true, opacity: 0.85
+        });
+        var shard = new THREE.Mesh(geo, mat);
+        shard.position.set(x, y + h * 0.4, z);
+        shard.rotation.z = (Math.random() - 0.5) * 0.3;
+        shard.rotation.y = Math.random() * Math.PI;
+        shard.castShadow = true;
+        scene.add(shard);
+        trackMeshes.push(shard);
+        // Secondary shard
+        var h2 = h * 0.6;
+        var s2 = new THREE.Mesh(
+            new THREE.CylinderGeometry(0, 0.2 + Math.random() * 0.15, h2, 5), mat
+        );
+        s2.position.set(x + (Math.random() - 0.5) * 0.8, y + h2 * 0.35, z + (Math.random() - 0.5) * 0.8);
+        s2.rotation.set(0.2 + Math.random() * 0.3, Math.random() * Math.PI, (Math.random() - 0.5) * 0.4);
+        scene.add(s2);
+        trackMeshes.push(s2);
+    }
+
+    // Bush / hedge for roadside (2x bigger)
+    function createBush(scene, x, y, z, color) {
+        var r = 1.0 + Math.random() * 0.8;
+        var geo = new THREE.SphereGeometry(r, 6, 5);
+        var mat = new THREE.MeshLambertMaterial({ color: color || 0x3A7744 });
+        var bush = new THREE.Mesh(geo, mat);
+        bush.position.set(x, y + r * 0.3, z);
+        bush.scale.y = 0.55;
+        bush.castShadow = true;
+        scene.add(bush);
+        trackMeshes.push(bush);
+        // Secondary smaller bush
+        var r2 = r * 0.6;
+        var b2 = new THREE.Mesh(new THREE.SphereGeometry(r2, 5, 4), mat);
+        b2.position.set(x + (Math.random() - 0.5) * r, y + r2 * 0.25, z + (Math.random() - 0.5) * r);
+        b2.scale.y = 0.5;
+        scene.add(b2);
+        trackMeshes.push(b2);
+    }
+
+    // Rock cluster (2x bigger, multiple rocks)
+    function createRock(scene, x, y, z) {
+        var r = 0.5 + Math.random() * 0.5;
+        var geo = new THREE.DodecahedronGeometry(r, 0);
+        var mat = new THREE.MeshLambertMaterial({
+            color: new THREE.Color().setHSL(0.58, 0.1, 0.35 + Math.random() * 0.1)
+        });
+        var rock = new THREE.Mesh(geo, mat);
+        rock.position.set(x, y + r * 0.25, z);
+        rock.rotation.set(Math.random(), Math.random(), Math.random());
+        rock.scale.y = 0.55;
+        rock.castShadow = true;
+        scene.add(rock);
+        trackMeshes.push(rock);
+        // Secondary rock
+        var r2 = r * 0.65;
+        var rock2 = new THREE.Mesh(new THREE.DodecahedronGeometry(r2, 0), mat);
+        rock2.position.set(x + (Math.random() - 0.5) * r * 1.5, y + r2 * 0.2, z + (Math.random() - 0.5) * r * 1.5);
+        rock2.rotation.set(Math.random(), Math.random(), Math.random());
+        rock2.scale.y = 0.5;
+        scene.add(rock2);
+        trackMeshes.push(rock2);
+    }
+
+    // Glowing bollard (taller, more visible)
+    function createBollard(scene, x, y, z, color) {
+        var pGeo = new THREE.CylinderGeometry(0.12, 0.18, 1.8, 6);
+        var pMat = new THREE.MeshLambertMaterial({ color: 0x8899AA });
+        var pole = new THREE.Mesh(pGeo, pMat);
+        pole.position.set(x, y + 0.9, z);
+        pole.castShadow = true;
+        scene.add(pole);
+        trackMeshes.push(pole);
+        var oGeo = new THREE.SphereGeometry(0.3, 6, 6);
+        var oMat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.9 });
+        var orb = new THREE.Mesh(oGeo, oMat);
+        orb.position.set(x, y + 2.0, z);
+        scene.add(orb);
+        trackMeshes.push(orb);
+    }
+
+    // === EXISTING HELPERS (kept) ===
+
+    function createCrystal(scene, x, y, z, size, color, emColor) {
+        var cGeo = new THREE.CylinderGeometry(0, size * 0.4, size, 6);
+        var cMat = new THREE.MeshLambertMaterial({
+            color: color, emissive: emColor, emissiveIntensity: 0.35,
+            transparent: true, opacity: 0.85
+        });
+        var crystal = new THREE.Mesh(cGeo, cMat);
+        crystal.position.set(x, y + size / 2, z);
+        crystal.rotation.set(Math.random() * 0.3, Math.random() * Math.PI, Math.random() * 0.3);
+        crystal.castShadow = true;
+        scene.add(crystal);
+        trackMeshes.push(crystal);
+        var c2 = new THREE.Mesh(
+            new THREE.CylinderGeometry(0, size * 0.25, size * 0.6, 6), cMat
+        );
+        c2.position.set(x + (Math.random() - 0.5) * size, y + size * 0.3, z + (Math.random() - 0.5) * size);
+        c2.rotation.set(Math.random() * 0.5, Math.random() * Math.PI, 0.2 + Math.random() * 0.3);
+        scene.add(c2);
+        trackMeshes.push(c2);
+    }
+
+    function createFloatingOrb(scene, x, y, z, color, size) {
+        var oGeo = new THREE.SphereGeometry(size, 6, 6);
+        var oMat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.7 });
+        var orb = new THREE.Mesh(oGeo, oMat);
+        orb.position.set(x, y, z);
+        scene.add(orb);
+        trackMeshes.push(orb);
+        var gGeo = new THREE.SphereGeometry(size * 3, 6, 6);
+        var gMat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.08 });
+        var glow = new THREE.Mesh(gGeo, gMat);
+        glow.position.set(x, y, z);
+        scene.add(glow);
+        trackMeshes.push(glow);
+    }
+
+    function createLampPost(scene, x, y, z, color) {
+        var pGeo = new THREE.CylinderGeometry(0.15, 0.2, 5, 6);
+        var pMat = new THREE.MeshLambertMaterial({ color: 0x8899AA });
+        var pole = new THREE.Mesh(pGeo, pMat);
+        pole.position.set(x, y + 2.5, z);
+        pole.castShadow = true;
+        scene.add(pole);
+        trackMeshes.push(pole);
+        var oGeo = new THREE.SphereGeometry(0.6, 8, 8);
+        var oMat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.9 });
+        var orb = new THREE.Mesh(oGeo, oMat);
+        orb.position.set(x, y + 5.3, z);
+        scene.add(orb);
+        trackMeshes.push(orb);
+        var glGeo = new THREE.SphereGeometry(1.8, 8, 8);
+        var glMat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.12 });
+        var glow = new THREE.Mesh(glGeo, glMat);
+        glow.position.set(x, y + 5.3, z);
+        scene.add(glow);
+        trackMeshes.push(glow);
+    }
+
+    function createFlowerCluster(scene, x, y, z, color1, color2) {
+        var numFlowers = 3 + Math.floor(Math.random() * 3);
+        for (var f = 0; f < numFlowers; f++) {
+            var fc = (f % 2 === 0) ? color1 : color2;
+            var fGeo = new THREE.SphereGeometry(0.2 + Math.random() * 0.2, 5, 5);
+            var fMat = new THREE.MeshLambertMaterial({
+                color: fc, emissive: fc, emissiveIntensity: 0.15
+            });
+            var flower = new THREE.Mesh(fGeo, fMat);
+            flower.position.set(x + (Math.random() - 0.5) * 1.8, y + 0.15, z + (Math.random() - 0.5) * 1.8);
+            scene.add(flower);
+            trackMeshes.push(flower);
+        }
+        var leafGeo = new THREE.CylinderGeometry(0.9, 1.1, 0.1, 6);
+        var leafMat = new THREE.MeshLambertMaterial({ color: 0x3A8855 });
+        var leaf = new THREE.Mesh(leafGeo, leafMat);
+        leaf.position.set(x, y + 0.05, z);
+        scene.add(leaf);
+        trackMeshes.push(leaf);
+    }
+
+    // === Guardrails ===
+    buildGuardrails(scene);
+
+    // ================================================================
+    // MAIN DECORATION LOOP: 3 layers per node
+    // Layer 1 (NEAR):  road shoulder, dist HW+1 to HW+6 — crystal shards, bushes, flowers, bollards
+    // Layer 2 (MID):   dist HW+8 to 30 — ground cover, small trees, rocks, zone features
+    // Layer 3 (FAR):   dist 30+ — large trees, buildings, landmarks
+    // ================================================================
+    for (var i = 0; i < TRACK_POINTS; i++) {
+        var zone = getZone(i);
+        var zc = getZoneColors(zone);
+
+        // ---- LAYER 1: NEAR (road shoulder) ---- every node gets 2-4 small objects
+
+        // Crystal shards: both sides every node (staggered offset for variety)
+        placeAtTrack(i, 1, HW + 1.5 + (i % 3) * 0.4, function(px, py, pz) {
+            createCrystalShard(scene, px, py, pz, zc.pri);
+        });
+        if (i % 2 === 0) {
+            placeAtTrack(i, -1, HW + 1.5 + ((i + 1) % 3) * 0.4, function(px, py, pz) {
+                createCrystalShard(scene, px, py, pz, zc.pri);
+            });
         }
 
-        // Add second tree on opposite side every 3rd node for density
+        // Bushes: every 2 nodes, alternating sides
+        if (i % 2 === 0) {
+            placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 3 + (i % 3), function(px, py, pz) {
+                createBush(scene, px, py, pz, zc.bush);
+            });
+        }
+
+        // Flowers: every 3 nodes
         if (i % 3 === 0) {
-            var dist2 = treeDists[(band + 2) % treeDists.length];
-            var tx2 = node.x + perpX * (-1) * dist2;
-            var tz2 = node.z + perpZ * (-1) * dist2;
-            var ty2 = getTerrainHeight(tx2, tz2);
-            var type2 = treeTypes[(i + 1) % 3];
-            var scale2 = treeScales[(band + 2) % treeScales.length];
-            if (useGLB && envModelCache[type2]) {
-                placeEnvModel(scene, type2, tx2, ty2, tz2, scale2, (i * 2.47) % (Math.PI * 2));
-            } else {
-                createPineTree(scene, tx2, ty2, tz2);
+            placeAtTrack(i, (i % 6 < 3) ? 1 : -1, HW + 2.5, function(px, py, pz) {
+                createFlowerCluster(scene, px, py, pz, zc.pri, zc.sec);
+            });
+        }
+
+        // Bollards: every 4 nodes (glowing road markers)
+        if (i % 4 === 0) {
+            placeAtTrack(i, 1, HW + 1, function(px, py, pz) {
+                createBollard(scene, px, py, pz, zc.pri);
+            });
+            placeAtTrack(i, -1, HW + 1, function(px, py, pz) {
+                createBollard(scene, px, py, pz, zc.pri);
+            });
+        }
+
+        // Rocks: every 5 nodes
+        if (i % 5 === 0) {
+            placeAtTrack(i, (i % 2 === 0) ? 1 : -1, HW + 4 + (i % 3), function(px, py, pz) {
+                createRock(scene, px, py, pz);
+            });
+        }
+
+        // Lamp posts: every 5 nodes, at road level (GLB if available)
+        if (i % 5 === 0) {
+            placeAtTrack(i, (i % 10 < 5) ? 1 : -1, HW + 2.5, function(px, py, pz, a, nd) {
+                if (useGLB && envModelCache['lamp']) {
+                    placeEnvModel(scene, 'lamp', px, nd.y, pz, 8, a + Math.PI / 2);
+                } else {
+                    createLampPost(scene, px, nd.y, pz, zc.lamp);
+                }
+            });
+        }
+
+        // ---- LAYER 2: MID (ground cover, dist HW+8 to 30) ----
+
+        // Bushes in mid-range every 2 nodes
+        if (i % 2 === 0) {
+            placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 10 + (i % 5) * 2, function(px, py, pz) {
+                createBush(scene, px, py, pz, zc.bush);
+            });
+        }
+        // Rocks in mid-range every 3 nodes
+        if (i % 3 === 0) {
+            placeAtTrack(i, (i % 2 === 0) ? -1 : 1, HW + 12 + (i % 4) * 3, function(px, py, pz) {
+                createRock(scene, px, py, pz);
+            });
+        }
+        // Flower patches in mid-range every 4 nodes
+        if (i % 4 === 0) {
+            placeAtTrack(i, (i % 8 < 4) ? 1 : -1, HW + 9 + (i % 3) * 3, function(px, py, pz) {
+                createFlowerCluster(scene, px, py, pz, zc.sec, 0xFFFFFF);
+            });
+        }
+        // Floating orbs over track every 4 nodes
+        if (i % 4 === 0) {
+            placeAtTrack(i, (i % 2 ? 1 : -1), HW + 2, function(px, py, pz, a, nd) {
+                createFloatingOrb(scene, px, nd.y + 4 + (i % 4), pz, zc.pri, 0.2);
+            });
+        }
+
+        // ---- LAYER 3: FAR (zone-specific landmarks, MUCH CLOSER than before) ----
+
+        if (zone === 'forest') {
+            // Trees: both sides, dist 25-45 (was 35-95)
+            var fSide = (i % 2 === 0) ? 1 : -1;
+            placeAtTrack(i, fSide, 25 + (i % 4) * 5, function(px, py, pz) {
+                var tt = treeTypes[i % 3];
+                if (useGLB && envModelCache[tt]) {
+                    placeEnvModel(scene, tt, px, py, pz, 22 + (i % 4) * 5, i * 1.37);
+                } else {
+                    createPineTree(scene, px, py, pz);
+                }
+            });
+            if (i % 2 === 0) {
+                placeAtTrack(i, -fSide, 30 + (i % 3) * 6, function(px, py, pz) {
+                    var tt2 = treeTypes[(i + 1) % 3];
+                    if (useGLB && envModelCache[tt2]) {
+                        placeEnvModel(scene, tt2, px, py, pz, 25, i * 2.1);
+                    } else {
+                        createPineTree(scene, px, py, pz);
+                    }
+                });
+            }
+            // Crystals every 2 nodes (dist 20-35, was 28-58)
+            if (i % 2 === 0) {
+                placeAtTrack(i, ((i / 2 | 0) % 2 === 0) ? 1 : -1, 20 + (i % 5) * 3, function(px, py, pz) {
+                    if (useGLB && envModelCache['crystal']) {
+                        placeEnvModel(scene, 'crystal', px, py, pz, 12 + (i % 3) * 3, i * 0.83);
+                    } else {
+                        createCrystal(scene, px, py, pz, 2 + (i % 3), 0x4488DD, 0x2266AA);
+                    }
+                });
+            }
+            // Floating orbs denser
+            if (i % 2 === 0) {
+                placeAtTrack(i, (i % 2 ? 1 : -1), HW + 5 + (i % 4) * 3, function(px, py, pz, a, nd) {
+                    createFloatingOrb(scene, px, nd.y + 3 + (i % 4), pz, 0x4488DD, 0.25);
+                });
+            }
+            // Crystal obelisks in forest clearings
+            if ((i === 8 || i === 14 || i === 20) && useGLB && envModelCache['obelisk']) {
+                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 22 + (i % 3) * 4, function(px, py, pz) {
+                    placeEnvModel(scene, 'obelisk', px, py, pz, 14, i * 0.9);
+                });
+            }
+        }
+
+        else if (zone === 'castle') {
+            // Trees every 2 nodes (dist 28-42, was 55-70)
+            if (i % 2 === 0) {
+                placeAtTrack(i, (i % 4 < 2) ? 1 : -1, 28 + (i % 3) * 7, function(px, py, pz) {
+                    var tt = treeTypes[i % 3];
+                    if (useGLB && envModelCache[tt]) {
+                        placeEnvModel(scene, tt, px, py, pz, 28, i * 1.5);
+                    } else {
+                        createPineTree(scene, px, py, pz);
+                    }
+                });
+            }
+            // Castles CLOSER (dist 40, was 65)
+            if (i === 30 || i === 40) {
+                placeAtTrack(i, (i === 30) ? -1 : 1, 40, function(px, py, pz) {
+                    if (useGLB && envModelCache['castle']) {
+                        placeEnvModel(scene, 'castle', px, py, pz, 45, i * 0.5);
+                    } else {
+                        createBuilding(scene, px, py, pz);
+                    }
+                });
+            }
+            // Houses CLOSER (dist 32, was 50)
+            if (i === 27 || i === 31 || i === 33 || i === 36 || i === 38 || i === 43) {
+                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 32, function(px, py, pz) {
+                    if (useGLB && envModelCache['house-a']) {
+                        placeEnvModel(scene, 'house-a', px, py, pz, 28, i * 1.05);
+                    } else {
+                        createBuilding(scene, px, py, pz);
+                    }
+                });
+            }
+            // Fountain CLOSER (dist 25, was 38)
+            if (i === 35) {
+                placeAtTrack(i, 1, 25, function(px, py, pz) {
+                    if (useGLB && envModelCache['fountain']) {
+                        placeEnvModel(scene, 'fountain', px, py, pz, 20, 0);
+                    }
+                });
+            }
+            // Arch gate
+            if (i === 28 || i === 42) {
+                placeAtTrack(i, (i === 28) ? 1 : -1, 26, function(px, py, pz) {
+                    if (useGLB && envModelCache['archgate']) {
+                        placeEnvModel(scene, 'archgate', px, py, pz, 28, i * 0.06);
+                    }
+                });
+            }
+            // Flowerbeds along castle streets
+            if ((i === 26 || i === 29 || i === 32 || i === 37 || i === 41 || i === 44) && useGLB && envModelCache['flowerbed']) {
+                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, HW + 6, function(px, py, pz) {
+                    placeEnvModel(scene, 'flowerbed', px, py, pz, 10, i * 1.2);
+                });
+            }
+        }
+
+        else if (zone === 'lake') {
+            // Trees sparse but closer (dist 30-50, was 60-100)
+            if (i % 3 === 0) {
+                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 30 + (i % 3) * 10, function(px, py, pz) {
+                    var tt = treeTypes[i % 3];
+                    if (useGLB && envModelCache[tt]) {
+                        placeEnvModel(scene, tt, px, py, pz, 32, i * 1.8);
+                    } else {
+                        createPineTree(scene, px, py, pz);
+                    }
+                });
+            }
+            // Crystals every 2 nodes, CLOSER (dist 18-30, was 30-62)
+            if (i % 2 === 0) {
+                placeAtTrack(i, ((i / 2 | 0) % 2 === 0) ? 1 : -1, 18 + (i % 4) * 4, function(px, py, pz) {
+                    if (useGLB && envModelCache['crystal']) {
+                        placeEnvModel(scene, 'crystal', px, py, pz, 16 + (i % 3) * 4, i * 0.7);
+                    } else {
+                        createCrystal(scene, px, py, pz, 3 + (i % 3), 0xE8EEFF, 0x6688CC);
+                    }
+                });
+            }
+            // Dense floating orbs
+            if (i % 2 === 0) {
+                placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 4 + (i % 5) * 2, function(px, py, pz, a, nd) {
+                    createFloatingOrb(scene, px, nd.y + 2 + (i % 5), pz, 0xE8EEFF, 0.22 + (i % 3) * 0.06);
+                });
+            }
+            // Crystal obelisks by the lakeside
+            if ((i === 48 || i === 55 || i === 62) && useGLB && envModelCache['obelisk']) {
+                placeAtTrack(i, (i % 2 === 0) ? -1 : 1, 20 + (i % 3) * 5, function(px, py, pz) {
+                    placeEnvModel(scene, 'obelisk', px, py, pz, 16, i * 0.75);
+                });
+            }
+        }
+
+        else if (zone === 'mountain') {
+            // Trees CLOSER (dist 25-42, was 45-93)
+            if (i % 2 === 0) {
+                placeAtTrack(i, (i % 4 < 2) ? 1 : -1, 25 + (i % 4) * 5, function(px, py, pz) {
+                    var tt = treeTypes[i % 3];
+                    if (useGLB && envModelCache[tt]) {
+                        placeEnvModel(scene, tt, px, py, pz, 30, i * 1.6);
+                    } else {
+                        createPineTree(scene, px, py, pz);
+                    }
+                });
+            }
+            // Amethyst crystals every 3 nodes, CLOSER (dist 20-34, was 32-62)
+            if (i % 3 === 0) {
+                placeAtTrack(i, ((i / 3 | 0) % 2 === 0) ? 1 : -1, 20 + (i % 5) * 3, function(px, py, pz) {
+                    if (useGLB && envModelCache['crystal']) {
+                        placeEnvModel(scene, 'crystal', px, py, pz, 14 + (i % 3) * 3, i * 0.9);
+                    } else {
+                        createCrystal(scene, px, py, pz, 2.5 + (i % 3), 0x8866BB, 0x5533AA);
+                    }
+                });
+            }
+            // Windmills CLOSER
+            if (i === 70 || i === 78) {
+                placeAtTrack(i, (i === 70) ? 1 : -1, 40, function(px, py, pz) {
+                    if (useGLB && envModelCache['windmill']) {
+                        placeEnvModel(scene, 'windmill', px, py, pz, 35, i * 1.57);
+                    }
+                });
+            }
+        }
+
+        else if (zone === 'garden') {
+            // Decorative trees every node, CLOSER (dist 25-38, was 40-64)
+            var gSide = (i % 2 === 0) ? 1 : -1;
+            placeAtTrack(i, gSide, 25 + (i % 3) * 5, function(px, py, pz) {
+                var tt = treeTypes[i % 3];
+                if (useGLB && envModelCache[tt]) {
+                    placeEnvModel(scene, tt, px, py, pz, 25, i * 1.4);
+                } else {
+                    createPineTree(scene, px, py, pz);
+                }
+            });
+            // Extra dense flower clusters (every node, both sides)
+            placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 4 + (i % 3) * 1.5, function(px, py, pz) {
+                createFlowerCluster(scene, px, py, pz, 0x9988CC, 0xDDA0BB);
+            });
+            // Fountain CLOSER
+            if (i === 92) {
+                placeAtTrack(i, 1, 24, function(px, py, pz) {
+                    if (useGLB && envModelCache['fountain']) {
+                        placeEnvModel(scene, 'fountain', px, py, pz, 26, 0);
+                    }
+                });
+            }
+            // Gold arch CLOSER
+            if (i === 90 || i === 98) {
+                placeAtTrack(i, (i === 90) ? -1 : 1, 28, function(px, py, pz) {
+                    if (useGLB && envModelCache['archgate']) {
+                        placeEnvModel(scene, 'archgate', px, py, pz, 30, i * 0.06);
+                    }
+                });
+            }
+            // Flowerbeds lining the royal garden paths
+            if ((i === 86 || i === 89 || i === 93 || i === 96 || i === 0 || i === 3) && useGLB && envModelCache['flowerbed']) {
+                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, HW + 5, function(px, py, pz) {
+                    placeEnvModel(scene, 'flowerbed', px, py, pz, 10, i * 1.1);
+                });
             }
         }
     }
 
-    // Crystal rocks - deterministic placement every 3 nodes
-    for (var i = 7; i < trackNodes.length - 5; i += 3) {
-        var node = trackNodes[i];
-        var angle = getTrackAngle(i);
-
-        var side = ((i / 3 | 0) % 2 === 0) ? 1 : -1;
-        var distance = 30 + (i % 5) * 8;
-
-        var perpX = -Math.sin(angle) * side;
-        var perpZ = Math.cos(angle) * side;
-
-        var rockX = node.x + perpX * distance;
-        var rockZ = node.z + perpZ * distance;
-        var rockY = getTerrainHeight(rockX, rockZ);
-        var rockScale = 16 + (i % 4) * 4;
-        var rockRot = (i * 0.83) % (Math.PI * 2);
-
-        if (useGLB && envModelCache['crystal']) {
-            placeEnvModel(scene, 'crystal', rockX, rockY, rockZ, rockScale, rockRot);
-        } else {
-            var rockSize = 1 + (i % 3);
-            var rockGeometry = new THREE.DodecahedronGeometry(rockSize, 0);
-            var rockMaterial = new THREE.MeshLambertMaterial({
-                color: 0x8855CC, roughness: 0.3, metalness: 0.6,
-                emissive: 0x4422AA, emissiveIntensity: 0.2
-            });
-            var rock = new THREE.Mesh(rockGeometry, rockMaterial);
-            rock.position.set(rockX, rockY + rockSize / 2, rockZ);
-            rock.rotation.set(i * 0.5, i * 0.7, i * 0.3);
-            rock.receiveShadow = true;
-            rock.castShadow = true;
-            scene.add(rock);
-            trackMeshes.push(rock);
-        }
-    }
-
-    // Glowing energy barrier guardrails
-    buildGuardrails(scene);
-
-    // Fantasy buildings: Star Houses and Dream Tower
-    var buildingPositions = [
-        { trackIdx: 15, side: 1, distance: 60, type: 'house-a' },
-        { trackIdx: 30, side: -1, distance: 70, type: 'castle' },
-        { trackIdx: 45, side: 1, distance: 65, type: 'house-a' },
-        { trackIdx: 60, side: -1, distance: 55, type: 'castle' },
-        { trackIdx: 75, side: 1, distance: 75, type: 'house-a' },
-        { trackIdx: 85, side: -1, distance: 80, type: 'castle' }
-    ];
-
-    for (var i = 0; i < buildingPositions.length; i++) {
-        var bp = buildingPositions[i];
-        var node = trackNodes[bp.trackIdx];
-        var angle = getTrackAngle(bp.trackIdx);
-
-        var perpX = -Math.sin(angle) * bp.side;
-        var perpZ = Math.cos(angle) * bp.side;
-
-        var buildingX = node.x + perpX * bp.distance;
-        var buildingZ = node.z + perpZ * bp.distance;
-        var buildingY = getTerrainHeight(buildingX, buildingZ);
-        var bScale = (bp.type === 'castle') ? 55 : 35;
-
-        if (useGLB && envModelCache[bp.type]) {
-            placeEnvModel(scene, bp.type, buildingX, buildingY, buildingZ, bScale, i * 1.05);
-        } else {
-            createBuilding(scene, buildingX, buildingY, buildingZ);
-        }
-    }
-
-    // Floating islands (replacing background mountains)
+    // === Background mountains (faraway, more and closer) ===
     var mountainPositions = [
-        { x: 400, z: 400, h: 40 },
-        { x: -400, z: 400, h: 60 },
-        { x: 400, z: -400, h: 30 },
-        { x: -400, z: -400, h: 50 },
-        { x: 0, z: 500, h: 70 },
-        { x: 500, z: 0, h: 45 },
-        { x: -500, z: 0, h: 55 },
-        { x: 0, z: -500, h: 35 }
+        { x: 300, z: 300, h: 35 },
+        { x: -300, z: 300, h: 50 },
+        { x: 300, z: -300, h: 25 },
+        { x: -300, z: -300, h: 45 },
+        { x: 0, z: 400, h: 60 },
+        { x: 400, z: 0, h: 38 },
+        { x: -400, z: 0, h: 48 },
+        { x: 0, z: -400, h: 30 },
+        { x: 200, z: 450, h: 42 },
+        { x: -200, z: -450, h: 55 },
+        { x: 450, z: 200, h: 32 },
+        { x: -450, z: -200, h: 40 }
     ];
-
     for (var i = 0; i < mountainPositions.length; i++) {
         var mp = mountainPositions[i];
-        var mScale = 80 + i * 5;
-        var mRot = i * 0.79;
-
+        var mScale = 70 + i * 4;
         if (useGLB && envModelCache['mountain']) {
-            placeEnvModel(scene, 'mountain', mp.x, mp.h, mp.z, mScale, mRot);
+            placeEnvModel(scene, 'mountain', mp.x, mp.h, mp.z, mScale, i * 0.79);
         } else {
-            // Fallback: cone mountain
-            var mountainHeight = 80 + Math.random() * 60;
-            var mountainRadius = 60 + Math.random() * 40;
-            var mountainGeometry = new THREE.ConeGeometry(mountainRadius, mountainHeight, 8);
-            var mountainMaterial = new THREE.MeshLambertMaterial({
-                color: new THREE.Color().setHSL(0.75, 0.4, 0.5),
-                roughness: 0.6, metalness: 0.2
+            var mH = 70 + Math.random() * 50;
+            var mR = 50 + Math.random() * 35;
+            var mGeo = new THREE.ConeGeometry(mR, mH, 8);
+            var mMat = new THREE.MeshLambertMaterial({
+                color: new THREE.Color().setHSL(0.6, 0.3, 0.4)
             });
-            var mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
-            mountain.position.set(mp.x, mountainHeight / 2, mp.z);
-            mountain.receiveShadow = true;
-            scene.add(mountain);
-            trackMeshes.push(mountain);
+            var mMesh = new THREE.Mesh(mGeo, mMat);
+            mMesh.position.set(mp.x, mH / 2, mp.z);
+            mMesh.receiveShadow = true;
+            scene.add(mMesh);
+            trackMeshes.push(mMesh);
         }
     }
 
-    // 魔法の水面 - ShaderMaterialで波アニメーション + 反射
+    // === Crystal Lake water surfaces (zone: lake, nodes 45-65) ===
     var waterVS = [
         'uniform float uTime;',
         'varying vec2 vUv;',
@@ -757,7 +1165,6 @@ function buildTrackDecorations(scene) {
         'void main() {',
         '  vUv = uv;',
         '  vec3 pos = position;',
-        '  // 複数の波を重ね合わせ',
         '  float wave1 = sin(pos.x * 0.3 + uTime * 1.5) * 0.15;',
         '  float wave2 = sin(pos.y * 0.5 + uTime * 2.0) * 0.1;',
         '  float wave3 = cos(pos.x * 0.2 + pos.y * 0.3 + uTime) * 0.08;',
@@ -776,22 +1183,19 @@ function buildTrackDecorations(scene) {
         'varying vec3 vWorldPos;',
         'varying vec3 vNormal;',
         'void main() {',
-        '  // 波紋パターン',
         '  float ripple1 = sin(vUv.x * 20.0 + uTime * 2.0) * 0.5 + 0.5;',
         '  float ripple2 = sin(vUv.y * 15.0 - uTime * 1.5) * 0.5 + 0.5;',
         '  float ripple = ripple1 * ripple2;',
-        '  // 水面の色',
         '  vec3 baseColor = mix(uDeepColor, uWaterColor, ripple * 0.4 + 0.3);',
-        '  // 光の反射（フレネル近似）',
         '  float fresnel = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 2.0);',
-        '  vec3 highlight = vec3(0.8, 0.7, 1.0) * fresnel * 0.5;',
-        '  // きらめき',
+        '  vec3 highlight = vec3(0.7, 0.75, 0.9) * fresnel * 0.5;',
         '  float sparkle = pow(sin(vUv.x * 40.0 + uTime * 3.0) * sin(vUv.y * 35.0 - uTime * 2.5), 8.0) * 0.3;',
         '  vec3 finalColor = baseColor + highlight + vec3(sparkle);',
         '  gl_FragColor = vec4(finalColor, 0.7);',
         '}'
     ].join('\n');
 
+    // Place water near Crystal Lake zone
     var waterPositions = [
         {x: 200, z: 200, w: 150, h: 100},
         {x: -300, z: 150, w: 80, h: 120},
@@ -803,8 +1207,8 @@ function buildTrackDecorations(scene) {
         var waterMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 uTime: { value: 0 },
-                uWaterColor: { value: new THREE.Color(0x5533EE) },
-                uDeepColor: { value: new THREE.Color(0x2211AA) }
+                uWaterColor: { value: new THREE.Color(0x4477CC) },
+                uDeepColor: { value: new THREE.Color(0x1A2E4A) }
             },
             vertexShader: waterVS,
             fragmentShader: waterFS,
@@ -818,204 +1222,6 @@ function buildTrackDecorations(scene) {
         water.userData.isWater = true;
         scene.add(water);
         trackMeshes.push(water);
-    }
-
-    // Fantasy lamp posts along the track every 10 nodes
-    var lampColors = [0x00CCFF, 0xFF66AA, 0xAAFF44, 0xFFCC00, 0xCC77FF, 0xFF8844];
-    for (var i = 0; i < trackNodes.length; i += 10) {
-        var node = trackNodes[i];
-        var angle = getTrackAngle(i);
-        var side = (i % 20 === 0) ? 1 : -1;
-        var lampDist = TRACK_WIDTH / 2 + 4;
-        var perpX = -Math.sin(angle) * side;
-        var perpZ = Math.cos(angle) * side;
-        var lx = node.x + perpX * lampDist;
-        var lz = node.z + perpZ * lampDist;
-
-        // Pole
-        var poleGeom = new THREE.CylinderGeometry(0.15, 0.2, 5, 6);
-        var poleMat = new THREE.MeshLambertMaterial({
-            color: 0x888899, metalness: 0.7, roughness: 0.2
-        });
-        var pole = new THREE.Mesh(poleGeom, poleMat);
-        pole.position.set(lx, node.y + 2.5, lz);
-        pole.castShadow = true;
-        scene.add(pole);
-        trackMeshes.push(pole);
-
-        // Lamp orb on top
-        var lampColor = lampColors[Math.floor(i / 10) % lampColors.length];
-        var orbGeom = new THREE.SphereGeometry(0.6, 8, 8);
-        var orbMat = new THREE.MeshBasicMaterial({
-            color: lampColor,
-            transparent: true,
-            opacity: 0.9
-        });
-        var orb = new THREE.Mesh(orbGeom, orbMat);
-        orb.position.set(lx, node.y + 5.3, lz);
-        scene.add(orb);
-        trackMeshes.push(orb);
-
-        // Lamp glow halo
-        var glowGeom = new THREE.SphereGeometry(1.8, 8, 8);
-        var glowMat = new THREE.MeshBasicMaterial({
-            color: lampColor,
-            transparent: true,
-            opacity: 0.12
-        });
-        var glow = new THREE.Mesh(glowGeom, glowMat);
-        glow.position.set(lx, node.y + 5.3, lz);
-        scene.add(glow);
-        trackMeshes.push(glow);
-    }
-
-    // Floating light orbs scattered in the air near the track
-    var orbColors = [0x88EEFF, 0xFFBBDD, 0xBBFFAA, 0xFFEE88, 0xDDBBFF];
-    for (var i = 0; i < 60; i++) {
-        var trackIdx = Math.floor(Math.random() * trackNodes.length);
-        var node = trackNodes[trackIdx];
-        var angle = getTrackAngle(trackIdx);
-        var side = (Math.random() > 0.5) ? 1 : -1;
-        var dist = 5 + Math.random() * 30;
-        var perpX = -Math.sin(angle) * side;
-        var perpZ = Math.cos(angle) * side;
-        var ox = node.x + perpX * dist;
-        var oz = node.z + perpZ * dist;
-        var oy = node.y + 3 + Math.random() * 12;
-
-        var oColor = orbColors[Math.floor(Math.random() * orbColors.length)];
-        var oSize = 0.2 + Math.random() * 0.4;
-
-        var fOrbGeom = new THREE.SphereGeometry(oSize, 6, 6);
-        var fOrbMat = new THREE.MeshBasicMaterial({
-            color: oColor,
-            transparent: true,
-            opacity: 0.7
-        });
-        var fOrb = new THREE.Mesh(fOrbGeom, fOrbMat);
-        fOrb.position.set(ox, oy, oz);
-        scene.add(fOrb);
-        trackMeshes.push(fOrb);
-
-        // Each floating orb has a soft glow
-        var fGlowGeom = new THREE.SphereGeometry(oSize * 3, 6, 6);
-        var fGlowMat = new THREE.MeshBasicMaterial({
-            color: oColor,
-            transparent: true,
-            opacity: 0.06
-        });
-        var fGlow = new THREE.Mesh(fGlowGeom, fGlowMat);
-        fGlow.position.set(ox, oy, oz);
-        scene.add(fGlow);
-        trackMeshes.push(fGlow);
-    }
-
-    // Trackside flower gardens (small colorful patches near the road)
-    var gardenColors = [0xFF66AA, 0xFFAA33, 0xAA44FF, 0x44CCFF, 0xFFDD44];
-    for (var i = 0; i < 25; i++) {
-        var trackIdx = Math.floor(Math.random() * trackNodes.length);
-        var node = trackNodes[trackIdx];
-        var angle = getTrackAngle(trackIdx);
-        var side = (Math.random() > 0.5) ? 1 : -1;
-        var dist = TRACK_WIDTH / 2 + 3 + Math.random() * 8;
-        var perpX = -Math.sin(angle) * side;
-        var perpZ = Math.cos(angle) * side;
-        var gx = node.x + perpX * dist;
-        var gz = node.z + perpZ * dist;
-
-        // Small cluster of colorful sphere "flowers"
-        var clusterColor = gardenColors[Math.floor(Math.random() * gardenColors.length)];
-        var numFlowers = 4 + Math.floor(Math.random() * 6);
-        for (var f = 0; f < numFlowers; f++) {
-            var fGeom = new THREE.SphereGeometry(0.3 + Math.random() * 0.3, 6, 6);
-            var fMat = new THREE.MeshLambertMaterial({
-                color: clusterColor,
-                emissive: clusterColor,
-                emissiveIntensity: 0.2,
-                roughness: 0.5
-            });
-            var flower = new THREE.Mesh(fGeom, fMat);
-            flower.position.set(
-                gx + (Math.random() - 0.5) * 3,
-                node.y + 0.2 + Math.random() * 0.3,
-                gz + (Math.random() - 0.5) * 3
-            );
-            scene.add(flower);
-            trackMeshes.push(flower);
-        }
-        // Stem/leaf underneath
-        var leafGeom = new THREE.CylinderGeometry(1.5, 2, 0.15, 8);
-        var leafMat = new THREE.MeshLambertMaterial({color: 0x33AA55, roughness: 0.8});
-        var leaf = new THREE.Mesh(leafGeom, leafMat);
-        leaf.position.set(gx, node.y + 0.08, gz);
-        scene.add(leaf);
-        trackMeshes.push(leaf);
-    }
-
-    // Fantasy windmills scattered along the track
-    var windmillPositions = [
-        { trackIdx: 10, side: 1, distance: 50 },
-        { trackIdx: 35, side: -1, distance: 60 },
-        { trackIdx: 55, side: 1, distance: 55 },
-        { trackIdx: 80, side: -1, distance: 65 }
-    ];
-    for (var i = 0; i < windmillPositions.length; i++) {
-        var wp = windmillPositions[i];
-        var node = trackNodes[wp.trackIdx];
-        var angle = getTrackAngle(wp.trackIdx);
-        var perpX = -Math.sin(angle) * wp.side;
-        var perpZ = Math.cos(angle) * wp.side;
-        var wmX = node.x + perpX * wp.distance;
-        var wmZ = node.z + perpZ * wp.distance;
-        var wmY = getTerrainHeight(wmX, wmZ);
-        var wmScale = 40;
-        if (useGLB && envModelCache['windmill']) {
-            placeEnvModel(scene, 'windmill', wmX, wmY, wmZ, wmScale, i * 1.57);
-        }
-    }
-
-    // Crystal fountains at scenic points along the track
-    var fountainPositions = [
-        { trackIdx: 20, side: 1, distance: 35 },
-        { trackIdx: 45, side: -1, distance: 40 },
-        { trackIdx: 70, side: 1, distance: 38 },
-        { trackIdx: 90, side: -1, distance: 42 }
-    ];
-    for (var i = 0; i < fountainPositions.length; i++) {
-        var fp = fountainPositions[i];
-        var node = trackNodes[fp.trackIdx];
-        var angle = getTrackAngle(fp.trackIdx);
-        var perpX = -Math.sin(angle) * fp.side;
-        var perpZ = Math.cos(angle) * fp.side;
-        var ftX = node.x + perpX * fp.distance;
-        var ftZ = node.z + perpZ * fp.distance;
-        var ftY = getTerrainHeight(ftX, ftZ);
-        var ftScale = 26;
-        if (useGLB && envModelCache['fountain']) {
-            placeEnvModel(scene, 'fountain', ftX, ftY, ftZ, ftScale, i * 1.57);
-        }
-    }
-
-    // Magical arch gates along the track
-    var archgatePositions = [
-        { trackIdx: 15, side: 1, distance: 32 },
-        { trackIdx: 40, side: -1, distance: 36 },
-        { trackIdx: 60, side: 1, distance: 34 },
-        { trackIdx: 85, side: -1, distance: 38 }
-    ];
-    for (var i = 0; i < archgatePositions.length; i++) {
-        var ag = archgatePositions[i];
-        var node = trackNodes[ag.trackIdx];
-        var angle = getTrackAngle(ag.trackIdx);
-        var perpX = -Math.sin(angle) * ag.side;
-        var perpZ = Math.cos(angle) * ag.side;
-        var agX = node.x + perpX * ag.distance;
-        var agZ = node.z + perpZ * ag.distance;
-        var agY = getTerrainHeight(agX, agZ);
-        var agScale = 32;
-        if (useGLB && envModelCache['archgate']) {
-            placeEnvModel(scene, 'archgate', agX, agY, agZ, agScale, ag.trackIdx * 0.06);
-        }
     }
 
     // Build track structures (bridges, tunnels, ramps)
@@ -1170,9 +1376,9 @@ function buildGuardrails(scene) {
     var halfWidth = TRACK_WIDTH / 2;
     var railDist = halfWidth + 1.5;
 
-    // Clean neon colors - cyan left, pink right
-    var leftColor = 0x00CCFF;
-    var rightColor = 0xFF44AA;
+    // Crystal Kingdom - sapphire left, amethyst right
+    var leftColor = 0x4488DD;
+    var rightColor = 0x8866BB;
 
     // Translucent post material
     var postMat = new THREE.MeshLambertMaterial({

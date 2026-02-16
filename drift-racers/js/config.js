@@ -90,7 +90,10 @@ var ENV_MODEL_FILES = {
   'mountain': 'models/env-mountain.glb',
   'windmill': 'models/env-windmill.glb',
   'fountain': 'models/env-fountain.glb',
-  'archgate': 'models/env-archgate.glb'
+  'archgate': 'models/env-archgate.glb',
+  'lamp':     'models/env-lamp.glb',
+  'flowerbed':'models/env-flowerbed.glb',
+  'obelisk':  'models/env-obelisk.glb'
 };
 // Trellisで逆さに出力されたモデルのY反転フラグ
 var ENV_MODEL_FLIP_Y = {

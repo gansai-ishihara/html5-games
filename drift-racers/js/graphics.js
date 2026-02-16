@@ -8,10 +8,10 @@ var particles = {driftLeft: null, driftRight: null, boostFlame: null, dustClouds
 var cloudMeshes = []; // For animating clouds
 
 function initScene() {
-  // Create scene - Dream Circuit vibrant fantasy theme
+  // Create scene - Crystal Kingdom theme
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x2A1155);
-  scene.fog = new THREE.FogExp2(0xBB88DD, 0.00018);
+  scene.background = new THREE.Color(0x1A2E4A);
+  scene.fog = new THREE.FogExp2(0x8899CC, 0.00018);
 
   // Camera setup
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.5, 1500);
@@ -37,14 +37,14 @@ function initScene() {
   // === Generate Environment Map for reflections ===
   generateEnvMap();
 
-  // === Lighting setup - ファンタジー風の明るく華やかなライティング ===
+  // === Lighting setup - Crystal Kingdom クールブルー＆ゴールド ===
 
-  // Ambient - 強めに設定してモデル全体を明るく
-  var ambientLight = new THREE.AmbientLight(0xFFEEFF, 0.7);
+  // Ambient - クールブルーホワイト
+  var ambientLight = new THREE.AmbientLight(0xCCDDFF, 0.6);
   scene.add(ambientLight);
 
-  // 太陽光 - 明るいウォームライト
-  var sunLight = new THREE.DirectionalLight(0xFFF0CC, 1.4);
+  // 太陽光 - 暖かいゴールド
+  var sunLight = new THREE.DirectionalLight(0xFFEEDD, 1.2);
   sunLight.position.set(100, 120, -150);
   if (!isMobile) {
     sunLight.castShadow = true;
@@ -62,22 +62,22 @@ function initScene() {
   scene.add(sunLight);
   window._sunLight = sunLight;
 
-  // Hemisphere light - 空＝明るいラベンダー、地＝明るい緑
-  var hemiLight = new THREE.HemisphereLight(0xFFCCFF, 0xAAFFAA, 0.7);
+  // Hemisphere light - 空＝クールブルー、地＝エメラルド
+  var hemiLight = new THREE.HemisphereLight(0xAABBDD, 0x88CCAA, 0.6);
   scene.add(hemiLight);
 
-  // Fill light - ファンタジーピンク（正面方向も照らす）
-  var fillLight = new THREE.DirectionalLight(0xFFAADD, 0.4);
+  // Fill light - ブルー系
+  var fillLight = new THREE.DirectionalLight(0x99BBEE, 0.35);
   fillLight.position.set(-80, 60, 100);
   scene.add(fillLight);
 
-  // Back/rim light - 魔法のパープル
-  var rimLight = new THREE.DirectionalLight(0xCC88FF, 0.35);
+  // Back/rim light - アメジスト
+  var rimLight = new THREE.DirectionalLight(0x8866BB, 0.3);
   rimLight.position.set(0, 40, -150);
   scene.add(rimLight);
 
-  // Ground bounce light - 草の反射
-  var bounceLight = new THREE.DirectionalLight(0x66CC88, 0.2);
+  // Ground bounce light - エメラルドの反射
+  var bounceLight = new THREE.DirectionalLight(0x44AA77, 0.15);
   bounceLight.position.set(0, -20, 0);
   scene.add(bounceLight);
 
@@ -96,8 +96,7 @@ function initScene() {
   // Sun + glow
   buildSunDecor();
 
-  // Rainbow
-  buildRainbow();
+  // Rainbow removed - Crystal Kingdom doesn't need rainbow
 
   clock = new THREE.Clock();
 
@@ -132,9 +131,9 @@ function generateEnvMap() {
     'varying vec3 vWorldPos;',
     'void main() {',
     '  float h = normalize(vWorldPos).y;',
-    '  vec3 top = vec3(0.15, 0.05, 0.35);',
-    '  vec3 mid = vec3(0.6, 0.25, 0.55);',
-    '  vec3 bot = vec3(1.0, 0.55, 0.3);',
+    '  vec3 top = vec3(0.10, 0.18, 0.29);',
+    '  vec3 mid = vec3(0.42, 0.36, 0.58);',
+    '  vec3 bot = vec3(0.78, 0.84, 0.91);',
     '  vec3 col = h > 0.0 ? mix(mid, top, h) : mix(mid, bot, -h);',
     '  gl_FragColor = vec4(col, 1.0);',
     '}'
@@ -301,8 +300,8 @@ function buildGround() {
   grassCanvas.height = 512;
   var ctx = grassCanvas.getContext('2d');
 
-  // Bright green base
-  ctx.fillStyle = '#66CC77';
+  // Emerald green base (blue-tinted)
+  ctx.fillStyle = '#4A9B6B';
   ctx.fillRect(0, 0, 512, 512);
 
   // Variation patches
@@ -328,8 +327,8 @@ function buildGround() {
     ctx.fillRect(gx, gy, 0.8, 2 + Math.random() * 4);
   }
 
-  // Flowers
-  var fColors = ['#FF88CC','#CC77FF','#FFDD44','#44EEDD'];
+  // Flowers - lavender and rose only
+  var fColors = ['#9988CC','#DDA0BB'];
   for (var i = 0; i < 120; i++) {
     var fx = Math.random() * 512;
     var fy = Math.random() * 512;
@@ -394,7 +393,7 @@ function buildGround() {
   var groundMaterial = new THREE.MeshLambertMaterial({
     map: grassTexture,
     vertexColors: true,
-    emissive: 0x224422,
+    emissive: 0x1A3322,
     emissiveIntensity: 0.1
   });
 
@@ -712,13 +711,13 @@ function buildSky() {
   ].join('\n');
   var skyMaterial = new THREE.ShaderMaterial({
     uniforms: {
-      zenithColor:   {value: new THREE.Color(0x1A0B44)},
-      upperColor:    {value: new THREE.Color(0x4422AA)},
-      midColor:      {value: new THREE.Color(0x9944CC)},
-      horizonColor:  {value: new THREE.Color(0xFF6699)},
-      belowColor:    {value: new THREE.Color(0xFFBB55)},
-      auroraColor1:  {value: new THREE.Color(0x44FFAA)},
-      auroraColor2:  {value: new THREE.Color(0x88BBFF)}
+      zenithColor:   {value: new THREE.Color(0x0D1B33)},
+      upperColor:    {value: new THREE.Color(0x1A2E4A)},
+      midColor:      {value: new THREE.Color(0x6B5B95)},
+      horizonColor:  {value: new THREE.Color(0xC8D5E8)},
+      belowColor:    {value: new THREE.Color(0x8899CC)},
+      auroraColor1:  {value: new THREE.Color(0x6688CC)},
+      auroraColor2:  {value: new THREE.Color(0xAABBEE)}
     },
     vertexShader: skyVertexShader,
     fragmentShader: skyFragmentShader,
@@ -752,16 +751,16 @@ function buildClouds() {
   for (var i = 0; i < cloudPuffs.length; i++) {
     var cp = cloudPuffs[i];
     var grad = cCtx.createRadialGradient(cp.x, cp.y, 0, cp.x, cp.y, cp.r);
-    grad.addColorStop(0, 'rgba(255,240,250,0.9)');
-    grad.addColorStop(0.5, 'rgba(255,220,240,0.5)');
-    grad.addColorStop(1, 'rgba(255,200,230,0)');
+    grad.addColorStop(0, 'rgba(221,232,255,0.9)');
+    grad.addColorStop(0.5, 'rgba(204,213,238,0.5)');
+    grad.addColorStop(1, 'rgba(187,204,221,0)');
     cCtx.fillStyle = grad;
     cCtx.fillRect(cp.x - cp.r, cp.y - cp.r, cp.r * 2, cp.r * 2);
   }
 
   var cloudTexture = new THREE.CanvasTexture(cloudCanvas);
 
-  var cloudTints = [0xFFEEFF, 0xFFDDEE, 0xEECCFF, 0xFFEEDD, 0xFFCCDD];
+  var cloudTints = [0xDDE8FF, 0xCCD5EE, 0xBBCCDD, 0xD5DDEE, 0xC8D5E8];
 
   for (var i = 0; i < 35; i++) {
     var sizeRoll = Math.random();
@@ -824,41 +823,25 @@ function buildStars() {
 
 function buildSunDecor() {
   var sunGeo = new THREE.SphereGeometry(40, 16, 16);
-  var sunMat = new THREE.MeshBasicMaterial({color: 0xFF8844});
+  var sunMat = new THREE.MeshBasicMaterial({color: 0xFFEECC});
   var sun = new THREE.Mesh(sunGeo, sunMat);
   sun.position.set(300, 80, -400);
   scene.add(sun);
 
   var flareGeo = new THREE.SphereGeometry(60, 16, 16);
-  var flareMat = new THREE.MeshBasicMaterial({color: 0xFFAA66, transparent: true, opacity: 0.12});
+  var flareMat = new THREE.MeshBasicMaterial({color: 0xFFEECC, transparent: true, opacity: 0.12});
   var flare = new THREE.Mesh(flareGeo, flareMat);
   flare.position.copy(sun.position);
   scene.add(flare);
 
   var flare2Geo = new THREE.SphereGeometry(90, 16, 16);
-  var flare2Mat = new THREE.MeshBasicMaterial({color: 0xFF6644, transparent: true, opacity: 0.06});
+  var flare2Mat = new THREE.MeshBasicMaterial({color: 0xFFDDAA, transparent: true, opacity: 0.06});
   var flare2 = new THREE.Mesh(flare2Geo, flare2Mat);
   flare2.position.copy(sun.position);
   scene.add(flare2);
 }
 
-function buildRainbow() {
-  var rainbowColors = [0xFF2244, 0xFF8800, 0xFFEE00, 0x00EE44, 0x0088FF, 0x7722FF, 0xFF00AA];
-  for (var rc = 0; rc < rainbowColors.length; rc++) {
-    var rRadius = 400 - rc * 6;
-    var rTube = 2.5 - rc * 0.2;
-    var rGeom = new THREE.TorusGeometry(rRadius, rTube, 8, 64, Math.PI);
-    var rMat = new THREE.MeshBasicMaterial({
-      color: rainbowColors[rc],
-      transparent: true,
-      opacity: 0.3
-    });
-    var arc = new THREE.Mesh(rGeom, rMat);
-    arc.rotation.x = Math.PI / 2;
-    arc.rotation.z = Math.PI * 0.15;
-    scene.add(arc);
-  }
-}
+// Rainbow removed for Crystal Kingdom theme
 
 // Camera
 var cameraOffset = {x: 0, y: 6, z: 12};
