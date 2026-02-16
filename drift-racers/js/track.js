@@ -536,8 +536,10 @@ function buildStartFinish(scene) {
     var startLine = new THREE.Mesh(lineGeom, lineMat);
 
     // Lay flat on the road, perpendicular to track direction
+    // YXZ order: first Rx (lay flat), then Ry (rotate to match track)
+    startLine.rotation.order = 'YXZ';
     startLine.rotation.x = -Math.PI / 2;
-    startLine.rotation.z = -angle;
+    startLine.rotation.y = -angle;
     startLine.position.set(startNode.x, startNode.y + 0.08, startNode.z);
     startLine.receiveShadow = false;
     scene.add(startLine);

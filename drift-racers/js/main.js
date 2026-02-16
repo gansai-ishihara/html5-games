@@ -20,13 +20,13 @@ function startRace() {
   buildTrackMesh(scene);
   buildTrackDecorations(scene);
 
-  // Create player racer with kart and equipment
+  // Create player racer with kart and equipment (back of grid)
   player = new Racer(selectedChar, true, selectedKart, EQUIPMENT[selectedEquip].type);
   player.placeAt(0);
   player.createMesh(scene);
   racers.push(player);
 
-  // Create AI racers
+  // Create AI racers (staggered ahead of player, like Mario Kart grid)
   var usedChars = [selectedChar];
   for (var i = 0; i < NUM_RACERS - 1; i++) {
     // Select a different character index for each AI
@@ -40,8 +40,14 @@ function startRace() {
     var aiKart = Math.floor(Math.random() * KARTS.length);
     var aiEquip = EQUIPMENT[Math.floor(Math.random() * EQUIPMENT.length)].type;
     var aiRacer = new Racer(aiCharIdx, false, aiKart, aiEquip);
-    // Place AI racers at staggered positions behind player
-    aiRacer.placeAt(TRACK_POINTS - 4 - i * 3);
+    // Place AI racers ahead of player in staggered grid
+    var gridIdx = 2 + i * 2;
+    aiRacer.placeAt(gridIdx);
+    // Lateral stagger (left/right alternating)
+    var lateralOffset = ((i % 2 === 0) ? -1 : 1) * 4;
+    var perpAng = getTrackAngle(gridIdx) + Math.PI / 2;
+    aiRacer.x += Math.cos(perpAng) * lateralOffset;
+    aiRacer.z += Math.sin(perpAng) * lateralOffset;
     aiRacer.createMesh(scene);
     racers.push(aiRacer);
   }

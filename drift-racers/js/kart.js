@@ -679,9 +679,51 @@ Racer.prototype.activateSkill = function(racers) {
 };
 
 Racer.prototype.update = function(input, racers, scene) {
-  // Handle finished state
+  // Handle finished state - auto-drive along track (like Mario Kart)
   if (this.finished) {
-    this.spd *= 0.95;
+    // Follow the track at moderate speed so finished racers don't block others
+    var autoSpd = this.maxSpd * 0.6;
+    if (this.spd < autoSpd) {
+      this.spd += this.accel * 0.5;
+    } else {
+      this.spd *= 0.98;
+    }
+
+    // Steer toward next waypoint
+    var targetPt = getTrackPoint(this.aiTargetIdx);
+    var dx = targetPt.x - this.x;
+    var dz = targetPt.z - this.z;
+    var targetAng = Math.atan2(dz, dx);
+    var angDiff = targetAng - this.ang;
+    while (angDiff > Math.PI) angDiff -= Math.PI * 2;
+    while (angDiff < -Math.PI) angDiff += Math.PI * 2;
+    var turnRate = this.handling;
+    if (Math.abs(angDiff) > turnRate) {
+      this.ang += turnRate * (angDiff > 0 ? 1 : -1);
+    } else {
+      this.ang += angDiff;
+    }
+    this.tilt = angDiff * 0.5;
+
+    // Advance waypoint
+    var dist = Math.sqrt(dx * dx + dz * dz);
+    if (dist < 12) {
+      this.aiTargetIdx += 3;
+      if (this.aiTargetIdx >= TRACK_POINTS) this.aiTargetIdx -= TRACK_POINTS;
+    }
+
+    // Apply movement
+    this.x += Math.cos(this.ang) * this.spd;
+    this.z += Math.sin(this.ang) * this.spd;
+
+    // Track Y position
+    var nearIdx = nearestTrackIndex(this.x, this.z);
+    var nearNode = trackNodes[nearIdx];
+    if (nearNode) {
+      this.y += (nearNode.y - this.y) * 0.15;
+    }
+    this.totalIdx = nearIdx;
+
     this.updateMesh();
     return;
   }
