@@ -43,8 +43,8 @@ function preloadModels(callback) {
         var size = new THREE.Vector3();
         box.getSize(size);
         var maxDim = Math.max(size.x, size.y, size.z);
-        // Target: character model roughly 1.2 units tall (sitting in kart)
-        var targetSize = 1.2;
+        // Target: character model roughly 2.0 units tall (Mario Kart style - character is the star)
+        var targetSize = 2.0;
         var scale = targetSize / maxDim;
         model.scale.set(scale, scale, scale);
 
@@ -343,14 +343,14 @@ Racer.prototype.createMesh = function(scene) {
   // === MAIN BODY - shape varies by kart style ===
   var kartStyle = KARTS[this.kartIdx] ? KARTS[this.kartIdx].style : 'medium';
 
-  // Style-specific dimensions
+  // Style-specific dimensions (flat go-kart style - character is the star)
   var baseW, baseD, shellW, shellH, shellD, noseLen, spoilerW;
   if (kartStyle === 'long') {
-    baseW = 1.3; baseD = 2.8; shellW = 1.1; shellH = 0.35; shellD = 2.3; noseLen = 1.5; spoilerW = 1.2;
+    baseW = 1.3; baseD = 2.8; shellW = 1.1; shellH = 0.22; shellD = 2.3; noseLen = 1.5; spoilerW = 1.2;
   } else if (kartStyle === 'wide') {
-    baseW = 1.7; baseD = 2.4; shellW = 1.5; shellH = 0.42; shellD = 2.0; noseLen = 1.1; spoilerW = 1.6;
+    baseW = 1.7; baseD = 2.4; shellW = 1.5; shellH = 0.26; shellD = 2.0; noseLen = 1.1; spoilerW = 1.6;
   } else {
-    baseW = 1.5; baseD = 2.5; shellW = 1.3; shellH = 0.38; shellD = 2.1; noseLen = 1.25; spoilerW = 1.4;
+    baseW = 1.5; baseD = 2.5; shellW = 1.3; shellH = 0.24; shellD = 2.1; noseLen = 1.25; spoilerW = 1.4;
   }
 
   // Lower chassis - tapered (wider at rear)
@@ -372,36 +372,36 @@ Racer.prototype.createMesh = function(scene) {
   chassis.castShadow = true;
   bodyGroup.add(chassis);
 
-  // Upper body shell - curved using sphere
+  // Upper body shell - low flat go-kart style
   var shell = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), bodyMat);
-  shell.position.set(0, 0.35, -0.05);
-  shell.scale.set(shellW * 0.52, shellH * 0.7, shellD * 0.48);
+  shell.position.set(0, 0.24, -0.05);
+  shell.scale.set(shellW * 0.52, shellH * 0.55, shellD * 0.48);
   shell.castShadow = true;
   bodyGroup.add(shell);
 
   // Front nose - elongated aerodynamic shape
   var nose = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 8), bodyMat);
-  nose.position.set(0, 0.28, -noseLen);
-  nose.scale.set(baseW * 0.55, 0.4, 0.8);
+  nose.position.set(0, 0.2, -noseLen);
+  nose.scale.set(baseW * 0.55, 0.28, 0.8);
   nose.castShadow = true;
   bodyGroup.add(nose);
 
   // Front splitter (chin)
   var splitter = new THREE.Mesh(new THREE.BoxGeometry(baseW * 0.9, 0.04, 0.35), darkMat);
-  splitter.position.set(0, 0.08, -noseLen - 0.1);
+  splitter.position.set(0, 0.06, -noseLen - 0.1);
   bodyGroup.add(splitter);
 
   // Chrome bumper
   var bumper = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, baseW * 0.85, 8), chromeMat);
-  bumper.position.set(0, 0.15, -noseLen - 0.15);
+  bumper.position.set(0, 0.12, -noseLen - 0.15);
   bumper.rotation.z = Math.PI / 2;
   bodyGroup.add(bumper);
 
   // Side pods / skirts - sculpted with spheres
   for (var s = -1; s <= 1; s += 2) {
     var pod = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 6), accentMat);
-    pod.position.set(s * (baseW * 0.42), 0.22, 0.15);
-    pod.scale.set(0.5, 0.55, 2.2);
+    pod.position.set(s * (baseW * 0.42), 0.16, 0.15);
+    pod.scale.set(0.5, 0.35, 2.2);
     pod.castShadow = true;
     bodyGroup.add(pod);
   }
@@ -409,32 +409,17 @@ Racer.prototype.createMesh = function(scene) {
   // Side air intakes
   var intakeMat = new THREE.MeshLambertMaterial({ color: 0x111115 });
   for (var s = -1; s <= 1; s += 2) {
-    var intake = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.45), intakeMat);
-    intake.position.set(s * (shellW * 0.52), 0.32, -0.4);
+    var intake = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.10, 0.45), intakeMat);
+    intake.position.set(s * (shellW * 0.52), 0.22, -0.4);
     bodyGroup.add(intake);
   }
 
-  // Cockpit windscreen
-  var windscreenMat = new THREE.MeshLambertMaterial({
-    color: 0x88BBEE, transparent: true, opacity: 0.35, side: THREE.DoubleSide
-  });
-  var windscreen = new THREE.Mesh(new THREE.PlaneGeometry(shellW * 0.7, 0.35), windscreenMat);
-  windscreen.position.set(0, 0.62, -0.35);
-  windscreen.rotation.x = -0.5;
-  bodyGroup.add(windscreen);
-
-  // Engine cowl (rear)
+  // Engine cowl (rear) - low profile
   var cowl = new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 8), accentMat);
-  cowl.position.set(0, 0.42, 0.9);
-  cowl.scale.set(1.15, 0.6, 0.85);
+  cowl.position.set(0, 0.22, 0.9);
+  cowl.scale.set(1.15, 0.35, 0.85);
   cowl.castShadow = true;
   bodyGroup.add(cowl);
-
-  // Engine intake scoop
-  var scoopMat = new THREE.MeshLambertMaterial({ color: 0x111115 });
-  var scoop = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.22, 0.25), scoopMat);
-  scoop.position.set(0, 0.58, 0.5);
-  bodyGroup.add(scoop);
 
   // Wheel arches / fenders
   var fenderMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
@@ -449,7 +434,7 @@ Racer.prototype.createMesh = function(scene) {
       new THREE.TorusGeometry(fr, 0.06, 6, 12, Math.PI),
       fenderMat
     );
-    fender.position.set(fp.x, 0.28, fp.z);
+    fender.position.set(fp.x, 0.22, fp.z);
     fender.rotation.y = Math.PI / 2;
     fender.rotation.x = -Math.PI / 2;
     bodyGroup.add(fender);
@@ -457,7 +442,7 @@ Racer.prototype.createMesh = function(scene) {
 
   // Spoiler - style-specific
   var spoilerMat = new THREE.MeshLambertMaterial({ color: mainColor });
-  var spoilerH = kartStyle === 'wide' ? 0.95 : 0.85;
+  var spoilerH = kartStyle === 'wide' ? 0.55 : 0.48;
   var spoiler = new THREE.Mesh(new THREE.BoxGeometry(spoilerW, 0.06, 0.25), spoilerMat);
   spoiler.position.set(0, spoilerH, 1.15);
   spoiler.rotation.x = -0.18;
@@ -476,131 +461,115 @@ Racer.prototype.createMesh = function(scene) {
   var exhMat = new THREE.MeshStandardMaterial({ color: 0xBBBBBB, metalness: 0.7, roughness: 0.2 });
   var exhGeom = new THREE.CylinderGeometry(0.06, 0.08, 0.4, 8);
   var lExh = new THREE.Mesh(exhGeom, exhMat);
-  lExh.position.set(-0.3, 0.2, 1.4); lExh.rotation.x = Math.PI / 2.3;
+  lExh.position.set(-0.3, 0.14, 1.4); lExh.rotation.x = Math.PI / 2.3;
   bodyGroup.add(lExh);
   var rExh = new THREE.Mesh(exhGeom, exhMat);
-  rExh.position.set(0.3, 0.2, 1.4); rExh.rotation.x = Math.PI / 2.3;
+  rExh.position.set(0.3, 0.14, 1.4); rExh.rotation.x = Math.PI / 2.3;
   bodyGroup.add(rExh);
   // Exhaust tips (glowing orange inside)
   var exhTipMat = new THREE.MeshLambertMaterial({ color: 0xFF6600, emissive: 0xFF4400, emissiveIntensity: 0.4 });
   var exhTipGeo = new THREE.CylinderGeometry(0.04, 0.05, 0.08, 8);
-  bodyGroup.add(new THREE.Mesh(exhTipGeo, exhTipMat).translateX(-0.3).translateY(0.18).translateZ(1.55).rotateX(Math.PI / 2.3));
-  bodyGroup.add(new THREE.Mesh(exhTipGeo, exhTipMat).translateX(0.3).translateY(0.18).translateZ(1.55).rotateX(Math.PI / 2.3));
+  bodyGroup.add(new THREE.Mesh(exhTipGeo, exhTipMat).translateX(-0.3).translateY(0.12).translateZ(1.55).rotateX(Math.PI / 2.3));
+  bodyGroup.add(new THREE.Mesh(exhTipGeo, exhTipMat).translateX(0.3).translateY(0.12).translateZ(1.55).rotateX(Math.PI / 2.3));
 
   // Headlights - larger, LED-style
   var hlMat = new THREE.MeshLambertMaterial({
     color: 0xffffdd, emissive: 0xffffaa, emissiveIntensity: 0.6
   });
   var hlGeo = new THREE.SphereGeometry(0.09, 8, 8);
-  bodyGroup.add(new THREE.Mesh(hlGeo, hlMat).translateX(-0.38).translateY(0.26).translateZ(-noseLen - 0.05));
-  bodyGroup.add(new THREE.Mesh(hlGeo, hlMat).translateX(0.38).translateY(0.26).translateZ(-noseLen - 0.05));
+  bodyGroup.add(new THREE.Mesh(hlGeo, hlMat).translateX(-0.38).translateY(0.18).translateZ(-noseLen - 0.05));
+  bodyGroup.add(new THREE.Mesh(hlGeo, hlMat).translateX(0.38).translateY(0.18).translateZ(-noseLen - 0.05));
   // Headlight housing
   var hlHouseMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
   var hlHouseGeo = new THREE.SphereGeometry(0.12, 8, 8);
   hlHouseGeo.scale(1, 1, 0.5);
-  bodyGroup.add(new THREE.Mesh(hlHouseGeo, hlHouseMat).translateX(-0.38).translateY(0.26).translateZ(-noseLen + 0.01));
-  bodyGroup.add(new THREE.Mesh(hlHouseGeo, hlHouseMat).translateX(0.38).translateY(0.26).translateZ(-noseLen + 0.01));
+  bodyGroup.add(new THREE.Mesh(hlHouseGeo, hlHouseMat).translateX(-0.38).translateY(0.18).translateZ(-noseLen + 0.01));
+  bodyGroup.add(new THREE.Mesh(hlHouseGeo, hlHouseMat).translateX(0.38).translateY(0.18).translateZ(-noseLen + 0.01));
 
   // Tail lights - LED strip style
   var tlMat = new THREE.MeshLambertMaterial({ color: 0xff2222, emissive: 0xff0000, emissiveIntensity: 0.5 });
-  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.03), tlMat).translateX(-0.42).translateY(0.32).translateZ(1.25));
-  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.03), tlMat).translateX(0.42).translateY(0.32).translateZ(1.25));
+  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.03), tlMat).translateX(-0.42).translateY(0.22).translateZ(1.25));
+  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.03), tlMat).translateX(0.42).translateY(0.22).translateZ(1.25));
   // Center brake light
   bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.04, 0.03), tlMat).translateY(spoilerH - 0.12).translateZ(1.22));
 
-  // === CHARACTER-SPECIFIC DECORATIONS based on body type ===
+  // === CHARACTER-SPECIFIC DECORATIONS based on body type (low kart style) ===
   if (bodyType === 'dragon') {
-    // Flame stripes + flame tip
     var flameMat = new THREE.MeshLambertMaterial({
       color: 0xFF6600, emissive: 0xFF4400, emissiveIntensity: 0.5, side: THREE.DoubleSide
     });
-    bodyGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.25), flameMat).translateX(-0.67).translateY(0.32).translateZ(-0.2).rotateY(Math.PI / 2));
-    bodyGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.25), flameMat).translateX(0.67).translateY(0.32).translateZ(-0.2).rotateY(Math.PI / 2));
-    bodyGroup.add(new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.4, 6), flameMat).translateY(0.45).translateZ(-1.5).rotateX(Math.PI / 2));
+    bodyGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.18), flameMat).translateX(-0.67).translateY(0.22).translateZ(-0.2).rotateY(Math.PI / 2));
+    bodyGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.18), flameMat).translateX(0.67).translateY(0.22).translateZ(-0.2).rotateY(Math.PI / 2));
+    bodyGroup.add(new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.4, 6), flameMat).translateY(0.28).translateZ(-1.5).rotateX(Math.PI / 2));
   } else if (bodyType === 'mermaid') {
-    // Fin + side vents
     var finMat = new THREE.MeshLambertMaterial({ color: mainColor });
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.35, 0.6), finMat).translateY(0.65).translateZ(0.3));
+    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.25, 0.6), finMat).translateY(0.35).translateZ(0.3));
     var ventMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, 0.4), ventMat).translateX(-0.66).translateY(0.38).translateZ(-0.5));
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, 0.4), ventMat).translateX(0.66).translateY(0.38).translateZ(-0.5));
+    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.10, 0.4), ventMat).translateX(-0.66).translateY(0.24).translateZ(-0.5));
+    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.10, 0.4), ventMat).translateX(0.66).translateY(0.24).translateZ(-0.5));
   } else if (bodyType === 'golem') {
-    // Leaf emblem + vine trim
     var leafMat = new THREE.MeshLambertMaterial({ color: 0x44DD44, emissive: 0x22AA22, emissiveIntensity: 0.3 });
     var leaf = new THREE.Mesh(new THREE.SphereGeometry(0.2, 6, 4), leafMat);
-    leaf.position.set(0, 0.52, -0.6); leaf.scale.set(1, 0.3, 1.5);
+    leaf.position.set(0, 0.30, -0.6); leaf.scale.set(1, 0.3, 1.5);
     bodyGroup.add(leaf);
     var vineMat = new THREE.MeshLambertMaterial({ color: 0x33AA33 });
     var vine = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.03, 4, 12, Math.PI), vineMat);
-    vine.position.set(-0.7, 0.28, 0); vine.rotation.y = Math.PI / 2;
+    vine.position.set(-0.7, 0.20, 0); vine.rotation.y = Math.PI / 2;
     bodyGroup.add(vine);
   } else if (bodyType === 'phantom') {
-    // Bat wings + glowing accents
     var wingMat = new THREE.MeshLambertMaterial({ color: 0x6633AA });
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.02), wingMat).translateX(-0.85).translateY(0.6).translateZ(0.9).rotateZ(0.4));
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.02), wingMat).translateX(0.85).translateY(0.6).translateZ(0.9).rotateZ(-0.4));
+    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.02), wingMat).translateX(-0.85).translateY(0.35).translateZ(0.9).rotateZ(0.4));
+    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.02), wingMat).translateX(0.85).translateY(0.35).translateZ(0.9).rotateZ(-0.4));
     var glowMat = new THREE.MeshLambertMaterial({ color: 0xBB77FF, emissive: 0x8844CC, emissiveIntensity: 0.8 });
-    bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), glowMat).translateX(-0.5).translateY(0.25).translateZ(-1.3));
-    bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), glowMat).translateX(0.5).translateY(0.25).translateZ(-1.3));
+    bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), glowMat).translateX(-0.5).translateY(0.18).translateZ(-1.3));
+    bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), glowMat).translateX(0.5).translateY(0.18).translateZ(-1.3));
   } else if (bodyType === 'angel') {
-    // Star emblem + sun ray stripes
     var starMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00, emissive: 0xFFAA00, emissiveIntensity: 0.6 });
     var star = new THREE.Mesh(new THREE.OctahedronGeometry(0.2, 0), starMat);
-    star.position.set(0, 0.55, -0.7); star.scale.set(1.2, 0.4, 1.2);
+    star.position.set(0, 0.30, -0.7); star.scale.set(1.2, 0.4, 1.2);
     bodyGroup.add(star);
     var rayMat = new THREE.MeshLambertMaterial({ color: 0xFFDD44, emissive: 0xFFAA00, emissiveIntensity: 0.3 });
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.08, 1.2), rayMat).translateX(-0.67).translateY(0.42).translateZ(-0.1));
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.08, 1.2), rayMat).translateX(0.67).translateY(0.42).translateZ(-0.1));
+    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.08, 1.2), rayMat).translateX(-0.67).translateY(0.26).translateZ(-0.1));
+    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.08, 1.2), rayMat).translateX(0.67).translateY(0.26).translateZ(-0.1));
   } else if (bodyType === 'robot') {
-    // Antenna + circuit lines
     var antMat = new THREE.MeshLambertMaterial({ color: 0x44DDDD, emissive: 0x00AAAA, emissiveIntensity: 0.5 });
-    bodyGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.015, 0.4, 4), antMat).translateY(0.9).translateZ(0.5));
-    bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), antMat).translateY(1.1).translateZ(0.5));
-    // Circuit pattern on sides
+    bodyGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.015, 0.4, 4), antMat).translateY(0.50).translateZ(0.5));
+    bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), antMat).translateY(0.70).translateZ(0.5));
     var circMat = new THREE.MeshLambertMaterial({ color: 0x00FFFF, emissive: 0x00CCCC, emissiveIntensity: 0.4, side: THREE.DoubleSide });
-    bodyGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.06), circMat).translateX(-0.67).translateY(0.35).translateZ(0).rotateY(Math.PI / 2));
-    bodyGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.06), circMat).translateX(0.67).translateY(0.35).translateZ(0).rotateY(Math.PI / 2));
+    bodyGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.06), circMat).translateX(-0.67).translateY(0.22).translateZ(0).rotateY(Math.PI / 2));
+    bodyGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.06), circMat).translateX(0.67).translateY(0.22).translateZ(0).rotateY(Math.PI / 2));
   } else if (bodyType === 'ninja') {
-    // Shuriken emblem + stealth trim
     var shurikenMat = new THREE.MeshLambertMaterial({ color: 0xFFAACC, emissive: 0xFF77AA, emissiveIntensity: 0.4 });
     var shuriken = new THREE.Mesh(new THREE.OctahedronGeometry(0.15, 0), shurikenMat);
-    shuriken.position.set(0, 0.55, -0.8); shuriken.scale.set(1.5, 0.3, 1.5);
+    shuriken.position.set(0, 0.30, -0.8); shuriken.scale.set(1.5, 0.3, 1.5);
     bodyGroup.add(shuriken);
-    // Sakura petal-like side trim
     var petalMat = new THREE.MeshLambertMaterial({ color: 0xFF88BB, emissive: 0xFF5599, emissiveIntensity: 0.2 });
     for (var p = 0; p < 3; p++) {
-      var petal = new THREE.Mesh(new THREE.SphereGeometry(0.06, 4, 4), petalMat);
-      petal.position.set(-0.68, 0.35, -0.5 + p * 0.4);
-      bodyGroup.add(petal);
-      var petal2 = new THREE.Mesh(new THREE.SphereGeometry(0.06, 4, 4), petalMat);
-      petal2.position.set(0.68, 0.35, -0.5 + p * 0.4);
-      bodyGroup.add(petal2);
+      bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 4, 4), petalMat).translateX(-0.68).translateY(0.22).translateZ(-0.5 + p * 0.4));
+      bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 4, 4), petalMat).translateX(0.68).translateY(0.22).translateZ(-0.5 + p * 0.4));
     }
   } else if (bodyType === 'king') {
-    // Crown ridge + gold trim
     var crownMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00, emissive: 0xFFAA00, emissiveIntensity: 0.3 });
-    // Gold crown emblem on hood
     var crown = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.04, 4, 8), crownMat);
-    crown.position.set(0, 0.52, -0.6); crown.rotation.x = Math.PI / 2;
+    crown.position.set(0, 0.30, -0.6); crown.rotation.x = Math.PI / 2;
     bodyGroup.add(crown);
-    // Gold side stripe
     var goldMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00 });
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 1.6), goldMat).translateX(-0.68).translateY(0.42).translateZ(0));
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 1.6), goldMat).translateX(0.68).translateY(0.42).translateZ(0));
+    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 1.6), goldMat).translateX(-0.68).translateY(0.26).translateZ(0));
+    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 1.6), goldMat).translateX(0.68).translateY(0.26).translateZ(0));
   }
 
   // Number circle
   var numMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
   var numGeom = new THREE.CylinderGeometry(0.18, 0.18, 0.02, 12);
-  bodyGroup.add(new THREE.Mesh(numGeom, numMat).translateX(-0.73).translateY(0.38).translateZ(-0.1).rotateZ(Math.PI / 2));
-  bodyGroup.add(new THREE.Mesh(numGeom, numMat).translateX(0.73).translateY(0.38).translateZ(-0.1).rotateZ(Math.PI / 2));
+  bodyGroup.add(new THREE.Mesh(numGeom, numMat).translateX(-0.73).translateY(0.24).translateZ(-0.1).rotateZ(Math.PI / 2));
+  bodyGroup.add(new THREE.Mesh(numGeom, numMat).translateX(0.73).translateY(0.24).translateZ(-0.1).rotateZ(Math.PI / 2));
 
   this.bodyMesh = bodyGroup;
   this.mesh.add(bodyGroup);
 
-  // === DRIVER ===
+  // === DRIVER (Mario Kart style - character is the star) ===
   var driverGroup = new THREE.Group();
-  driverGroup.position.set(0, 0.55, 0.15);
+  driverGroup.position.set(0, 0.28, 0.05);
 
   // Check if GLB model is available for this character
   var hasGLBModel = glbModelCache[bodyType] !== undefined;

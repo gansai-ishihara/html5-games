@@ -21,8 +21,8 @@ function initPreview3D() {
   previewScene.background = new THREE.Color(0x1A2E4A);
 
   previewCamera = new THREE.PerspectiveCamera(30, w / h, 0.1, 100);
-  previewCamera.position.set(5, 3.5, 5);
-  previewCamera.lookAt(0, 0.5, 0);
+  previewCamera.position.set(4.5, 3, 4.5);
+  previewCamera.lookAt(0, 1.0, 0);
 
   previewRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
   previewRenderer.setSize(w, h);
@@ -400,24 +400,20 @@ function buildCharSelect() {
     type.textContent = c.d;
     card.appendChild(type);
 
+    // Compact stat bar (single line)
     var attrs = [c.s, c.a, c.h];
-    var labels = ['SPD', 'ACC', 'HND'];
+    var labels = ['S', 'A', 'H'];
+    var statRow = document.createElement('div');
+    statRow.className = 'char-stat-compact';
     for (var j = 0; j < 3; j++) {
-      var row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:center;gap:2px;font-size:9px;color:rgba(255,255,255,.5)';
-      var lbl = document.createElement('span');
-      lbl.textContent = labels[j];
-      row.appendChild(lbl);
-      var bar = document.createElement('div');
-      bar.className = 'char-stats';
-      for (var k = 0; k < 10; k++) {
-        var dot = document.createElement('span');
-        if (k < attrs[j]) dot.className = 'filled';
-        bar.appendChild(dot);
-      }
-      row.appendChild(bar);
-      card.appendChild(row);
+      var seg = document.createElement('span');
+      seg.className = 'stat-seg';
+      seg.textContent = labels[j] + attrs[j];
+      if (attrs[j] >= 9) seg.style.color = '#FFCC66';
+      else if (attrs[j] >= 7) seg.style.color = 'rgba(200,213,232,.7)';
+      statRow.appendChild(seg);
     }
+    card.appendChild(statRow);
 
     card.onclick = function() {
       AUDIO.init();
@@ -517,4 +513,31 @@ function buildCharSelect() {
       equipCont.appendChild(card);
     });
   }
+
+  // === Character scroll arrows ===
+  var charScrollPage = 0;
+  var charsPerPage = 8; // 4 columns x 2 rows
+  var totalPages = Math.ceil(CHARACTERS.length / charsPerPage);
+  var leftBtn = document.getElementById('char-arrow-left');
+  var rightBtn = document.getElementById('char-arrow-right');
+  function updateCharScroll() {
+    var grid = document.getElementById('char-select');
+    if (grid) {
+      // Calculate scroll offset based on viewport width
+      var viewport = document.querySelector('.char-grid-viewport');
+      if (viewport) {
+        var scrollAmount = viewport.offsetWidth * charScrollPage;
+        grid.style.transform = 'translateX(-' + scrollAmount + 'px)';
+      }
+    }
+    if (leftBtn) leftBtn.style.opacity = charScrollPage > 0 ? '1' : '0.3';
+    if (rightBtn) rightBtn.style.opacity = charScrollPage < totalPages - 1 ? '1' : '0.3';
+  }
+  if (leftBtn) leftBtn.onclick = function() {
+    if (charScrollPage > 0) { charScrollPage--; updateCharScroll(); }
+  };
+  if (rightBtn) rightBtn.onclick = function() {
+    if (charScrollPage < totalPages - 1) { charScrollPage++; updateCharScroll(); }
+  };
+  updateCharScroll();
 }
