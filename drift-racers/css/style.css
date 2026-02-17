@@ -27,11 +27,11 @@ canvas{display:block}
 .skill-preview .sk-cd{color:rgba(255,255,255,.35);font-size:10px;margin-top:1px}
 
 .char-select{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.char-card{width:80px;height:105px;border-radius:14px;border:2.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);backdrop-filter:blur(8px);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .2s;padding:6px}
+.char-card{width:80px;min-height:105px;border-radius:14px;border:2.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);backdrop-filter:blur(8px);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .2s;padding:6px;overflow:hidden}
 .char-card:hover{border-color:rgba(255,255,255,.4);transform:scale(1.05)}
 .char-card.sel{border-color:#ffd700;background:rgba(255,215,0,.15);transform:scale(1.08);box-shadow:0 0 20px rgba(255,215,0,.3)}
 .char-card .emoji{font-size:28px;margin-bottom:2px}
-.char-card .char-portrait{width:56px;height:56px;border-radius:10px;object-fit:cover;margin-bottom:2px}
+.char-card .char-portrait{width:52px;height:52px;border-radius:10px;object-fit:cover;margin-bottom:2px;flex-shrink:0}
 .char-card .name{color:#fff;font-size:11px;font-weight:700}
 .char-card .type{color:rgba(255,255,255,.5);font-size:9px}
 .char-stats{display:flex;gap:2px;margin-top:3px}

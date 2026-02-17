@@ -857,15 +857,7 @@ function buildTrackDecorations(scene) {
             });
         }
 
-        // Bollards: every 4 nodes (glowing road markers)
-        if (i % 4 === 0) {
-            placeAtTrack(i, 1, HW + 1, function(px, py, pz) {
-                createBollard(scene, px, py, pz, zc.pri);
-            });
-            placeAtTrack(i, -1, HW + 1, function(px, py, pz) {
-                createBollard(scene, px, py, pz, zc.pri);
-            });
-        }
+        // (Bollards removed - too confusing on the track)
 
         // Rocks: every 5 nodes
         if (i % 5 === 0) {

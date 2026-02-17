@@ -256,6 +256,7 @@ function Racer(charIdx, isPlayer, kartIdx, equipType) {
   this.totalIdx = 0;
   this.progress = 0;
   this.lastCP = 0;
+  this.crossedStartOnce = false; // Prevents false lap on first start-line crossing
 
   // Items and state
   this.item = null;
@@ -684,15 +685,20 @@ Racer.prototype.activateSkill = function(racers) {
 Racer.prototype.update = function(input, racers, scene) {
   // Handle finished state - auto-drive along track (like Mario Kart)
   if (this.finished) {
-    // Follow the track at moderate speed so finished racers don't block others
-    var autoSpd = this.maxSpd * 0.6;
+    var autoSpd = this.maxSpd * 0.5;
     if (this.spd < autoSpd) {
       this.spd += this.accel * 0.5;
     } else {
       this.spd *= 0.98;
     }
 
-    // Steer toward next waypoint
+    // Use nearest track index to keep waypoint in sync with actual position
+    var nearIdx = nearestTrackIndex(this.x, this.z);
+    var lookAhead = nearIdx + 5;
+    if (lookAhead >= TRACK_POINTS) lookAhead -= TRACK_POINTS;
+    this.aiTargetIdx = lookAhead;
+
+    // Steer toward track waypoint
     var targetPt = getTrackPoint(this.aiTargetIdx);
     var dx = targetPt.x - this.x;
     var dz = targetPt.z - this.z;
@@ -700,19 +706,19 @@ Racer.prototype.update = function(input, racers, scene) {
     var angDiff = targetAng - this.ang;
     while (angDiff > Math.PI) angDiff -= Math.PI * 2;
     while (angDiff < -Math.PI) angDiff += Math.PI * 2;
-    var turnRate = this.handling;
+    var turnRate = this.handling * 1.5; // Faster turning for track following
     if (Math.abs(angDiff) > turnRate) {
       this.ang += turnRate * (angDiff > 0 ? 1 : -1);
     } else {
       this.ang += angDiff;
     }
-    this.tilt = angDiff * 0.5;
+    this.tilt = angDiff * 0.3;
 
-    // Advance waypoint
-    var dist = Math.sqrt(dx * dx + dz * dz);
-    if (dist < 12) {
-      this.aiTargetIdx += 3;
-      if (this.aiTargetIdx >= TRACK_POINTS) this.aiTargetIdx -= TRACK_POINTS;
+    // Pull toward track center to prevent drifting off-road
+    var nearNode = trackNodes[nearIdx];
+    if (nearNode) {
+      this.x += (nearNode.x - this.x) * 0.03;
+      this.z += (nearNode.z - this.z) * 0.03;
     }
 
     // Apply movement
@@ -720,8 +726,6 @@ Racer.prototype.update = function(input, racers, scene) {
     this.z += Math.sin(this.ang) * this.spd;
 
     // Track Y position
-    var nearIdx = nearestTrackIndex(this.x, this.z);
-    var nearNode = trackNodes[nearIdx];
     if (nearNode) {
       this.y += (nearNode.y - this.y) * 0.15;
     }
@@ -1098,11 +1102,16 @@ Racer.prototype.update = function(input, racers, scene) {
 
   // Lap detection
   if (prevIdx > TRACK_POINTS - 50 && this.totalIdx < 50) {
-    this.lap++;
-    if (this.isPlayer && this.lap < TOTAL_LAPS && SND && SND.lap) SND.lap();
-    if (this.lap >= TOTAL_LAPS && !this.finished) {
-      this.finished = true;
-      this.finTime = fr;
+    if (!this.crossedStartOnce) {
+      // First crossing from behind start line - don't count as lap
+      this.crossedStartOnce = true;
+    } else {
+      this.lap++;
+      if (this.isPlayer && this.lap < TOTAL_LAPS && SND && SND.lap) SND.lap();
+      if (this.lap >= TOTAL_LAPS && !this.finished) {
+        this.finished = true;
+        this.finTime = fr;
+      }
     }
   }
 

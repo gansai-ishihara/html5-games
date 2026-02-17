@@ -20,18 +20,19 @@ function startRace() {
   buildTrackMesh(scene);
   buildTrackDecorations(scene);
 
-  // Create all racers in Mario Kart-style 2-column starting grid
+  // Mario Kart-style 2-column starting grid BEHIND the start/finish line
+  // Start line is at node 0, racers line up at nodes 97-99 (behind it)
   // Grid layout (3 rows x 2 columns, player at back):
-  //   Row 1 (front): AI1  AI2    (node 5)
-  //   Row 2 (mid):   AI3  AI4    (node 3)
-  //   Row 3 (back):  AI5  Player (node 1)
+  //   Row 1 (front, closest to line): AI1  AI2    (node 99)
+  //   Row 2 (mid):                    AI3  AI4    (node 97)
+  //   Row 3 (back, furthest):         AI5  Player (node 95)
   var gridPositions = [
-    { node: 5, lateral: -3.5 },  // Row 1 left
-    { node: 5, lateral:  3.5 },  // Row 1 right
-    { node: 3, lateral: -3.5 },  // Row 2 left
-    { node: 3, lateral:  3.5 },  // Row 2 right
-    { node: 1, lateral: -3.5 },  // Row 3 left  (AI)
-    { node: 1, lateral:  3.5 },  // Row 3 right (Player)
+    { node: 99, lateral: -3.5 },  // Row 1 left
+    { node: 99, lateral:  3.5 },  // Row 1 right
+    { node: 97, lateral: -3.5 },  // Row 2 left
+    { node: 97, lateral:  3.5 },  // Row 2 right
+    { node: 95, lateral: -3.5 },  // Row 3 left  (AI)
+    { node: 95, lateral:  3.5 },  // Row 3 right (Player)
   ];
 
   // Player goes in last grid slot (back-right)
