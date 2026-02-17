@@ -29,7 +29,7 @@ function initScene() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   }
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.0;
+  renderer.toneMappingExposure = 0.95;
   renderer.outputEncoding = THREE.sRGBEncoding;
   // No CSS filter - post-processing handles color grading
   document.body.insertBefore(renderer.domElement, document.body.firstChild);
@@ -40,7 +40,7 @@ function initScene() {
   // === Lighting setup - Crystal Kingdom クールブルー＆ゴールド ===
 
   // Ambient - クールブルーホワイト
-  var ambientLight = new THREE.AmbientLight(0xCCDDFF, 0.6);
+  var ambientLight = new THREE.AmbientLight(0xCCDDFF, 0.55);
   scene.add(ambientLight);
 
   // 太陽光 - 暖かいゴールド
@@ -305,8 +305,8 @@ function buildGround() {
   grassCanvas.height = 512;
   var ctx = grassCanvas.getContext('2d');
 
-  // Emerald green base (blue-tinted)
-  ctx.fillStyle = '#4A9B6B';
+  // Rich emerald green (saturated)
+  ctx.fillStyle = '#2E8B57';
   ctx.fillRect(0, 0, 512, 512);
 
   // Variation patches
@@ -856,8 +856,8 @@ var currentFOV = 70;
 function updateCamera(pl) {
   if (!pl || !camera) return;
 
-  // Fixed camera distance - no pullback on speed
-  var camDist = 7, camH = 3.2;
+  // Close camera behind the kart (Mario Kart style)
+  var camDist = 5.0, camH = 2.8;
 
   var idealX = pl.x - Math.cos(pl.ang) * camDist;
   var idealZ = pl.z - Math.sin(pl.ang) * camDist;
@@ -880,7 +880,7 @@ function updateCamera(pl) {
   var lookAhead = 2.0;
   var lookX = pl.x + Math.cos(pl.ang) * lookAhead;
   var lookZ = pl.z + Math.sin(pl.ang) * lookAhead;
-  camera.lookAt(new THREE.Vector3(lookX, pl.y + 1.0, lookZ));
+  camera.lookAt(new THREE.Vector3(lookX, pl.y + 1.4, lookZ));
 
   // 影をプレイヤーに追従させる（近くシャープ、遠くはカット）
   if (window._sunLight && window._sunLight.shadow) {

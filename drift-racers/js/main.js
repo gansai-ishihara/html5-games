@@ -262,9 +262,13 @@ setupMobile();
 // Initialize 3D preview on title screen
 initPreview3D();
 
-// Eagerly preload character models for preview
+// Eagerly preload character models and kart models for preview
 preloadModels(function() {
   // Refresh preview with GLB models now available
+  buildPreviewKart();
+});
+preloadKartModels(function() {
+  // Refresh preview with kart GLB models now available
   buildPreviewKart();
 });
 
@@ -274,15 +278,17 @@ document.getElementById('start-btn').onclick = function() {
   var btn = document.getElementById('start-btn');
   var needCharModels = !glbModelsLoaded;
   var needEnvModels = !envModelsLoaded;
+  var needKartModels = !kartModelsLoaded;
 
-  if (needCharModels || needEnvModels) {
+  if (needCharModels || needEnvModels || needKartModels) {
     btn.textContent = 'LOADING MODELS...';
     btn.disabled = true;
     var charDone = !needCharModels;
     var envDone = !needEnvModels;
+    var kartDone = !needKartModels;
 
     function checkAllDone() {
-      if (charDone && envDone) {
+      if (charDone && envDone && kartDone) {
         btn.textContent = 'START RACE';
         btn.disabled = false;
         startRace();
@@ -294,6 +300,9 @@ document.getElementById('start-btn').onclick = function() {
     }
     if (needEnvModels) {
       preloadEnvModels(function() { envDone = true; checkAllDone(); });
+    }
+    if (needKartModels) {
+      preloadKartModels(function() { kartDone = true; checkAllDone(); });
     }
   } else {
     startRace();

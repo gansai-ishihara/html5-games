@@ -66,13 +66,38 @@ function nearestTrackIndex(wx, wz) {
     return nearestIdx;
 }
 
-// Distance from world position to nearest track point
+// Distance from world position to nearest track SEGMENT (perpendicular projection)
+// This is much more accurate than nearest-node distance, especially on curves
 function trackDist(wx, wz) {
     var idx = nearestTrackIndex(wx, wz);
-    var node = trackNodes[idx];
-    var dx = node.x - wx;
-    var dz = node.z - wz;
-    return Math.sqrt(dx * dx + dz * dz);
+    var minDist = Infinity;
+
+    // Check the segment before and after the nearest node
+    for (var offset = -1; offset <= 0; offset++) {
+        var i1 = ((idx + offset) % TRACK_POINTS + TRACK_POINTS) % TRACK_POINTS;
+        var i2 = (i1 + 1) % TRACK_POINTS;
+        var p1 = trackNodes[i1];
+        var p2 = trackNodes[i2];
+
+        var segDx = p2.x - p1.x;
+        var segDz = p2.z - p1.z;
+        var segLenSq = segDx * segDx + segDz * segDz;
+        if (segLenSq === 0) continue;
+
+        // Project point onto line segment, clamped to [0,1]
+        var t = ((wx - p1.x) * segDx + (wz - p1.z) * segDz) / segLenSq;
+        t = Math.max(0, Math.min(1, t));
+
+        var projX = p1.x + t * segDx;
+        var projZ = p1.z + t * segDz;
+        var dx = wx - projX;
+        var dz = wz - projZ;
+        var dist = Math.sqrt(dx * dx + dz * dz);
+
+        if (dist < minDist) minDist = dist;
+    }
+
+    return minDist;
 }
 
 // Create road texture - bright base with neon lane markings
@@ -82,16 +107,16 @@ function createAsphaltTexture() {
     canvas.height = 512;
     var ctx = canvas.getContext('2d');
 
-    // Crystal white base
-    ctx.fillStyle = '#DDE5F0';
+    // Rich blue-gray base (darker, more saturated)
+    ctx.fillStyle = '#7888AA';
     ctx.fillRect(0, 0, 512, 512);
 
     // Subtle sparkle dots
     for (var i = 0; i < 200; i++) {
         var sx = Math.random() * 512;
         var sy = Math.random() * 512;
-        ctx.globalAlpha = 0.2 + Math.random() * 0.3;
-        ctx.fillStyle = ['#CCddFF','#E8EEFF','#BBCCEE'][Math.floor(Math.random() * 3)];
+        ctx.globalAlpha = 0.15 + Math.random() * 0.2;
+        ctx.fillStyle = ['#8899BB','#99AACC','#7788AA'][Math.floor(Math.random() * 3)];
         ctx.beginPath();
         ctx.arc(sx, sy, 0.5 + Math.random(), 0, Math.PI * 2);
         ctx.fill();
@@ -184,11 +209,13 @@ function buildTrackMesh(scene) {
     geometry.computeVertexNormals();
 
     var asphaltTexture = createAsphaltTexture();
-    var material = new THREE.MeshLambertMaterial({
+    var material = new THREE.MeshStandardMaterial({
         map: asphaltTexture,
-        color: 0x99AACC,
+        color: 0x8899BB,
         emissive: 0x1A2244,
-        emissiveIntensity: 0.1
+        emissiveIntensity: 0.2,
+        metalness: 0.02,
+        roughness: 0.75
     });
 
     var trackMesh = new THREE.Mesh(geometry, material);
@@ -821,6 +848,216 @@ function buildTrackDecorations(scene) {
     // === Guardrails ===
     buildGuardrails(scene);
 
+    // === CRYSTAL ARCH GATES over the track (player drives through) ===
+    var archNodes = [10, 20, 30, 42, 52, 62, 72, 82, 92];
+    for (var ai = 0; ai < archNodes.length; ai++) {
+        var aIdx = archNodes[ai];
+        var aNode = trackNodes[aIdx];
+        var aAngle = getTrackAngle(aIdx);
+        var aPerpX = -Math.sin(aAngle);
+        var aPerpZ = Math.cos(aAngle);
+        var aZone = getZone(aIdx);
+        var aZC = getZoneColors(aZone);
+        var archW = TRACK_WIDTH + 4;
+        var archH = 10;
+        var pillarR = 0.5;
+
+        // Crystal pillar material
+        var pillarMat = new THREE.MeshLambertMaterial({
+            color: aZC.pri, emissive: aZC.em, emissiveIntensity: 0.3,
+            transparent: true, opacity: 0.85
+        });
+        // Left pillar
+        var lpGeo = new THREE.CylinderGeometry(pillarR, pillarR * 1.3, archH, 6);
+        var lp = new THREE.Mesh(lpGeo, pillarMat);
+        lp.position.set(
+            aNode.x + aPerpX * archW / 2, aNode.y + archH / 2, aNode.z + aPerpZ * archW / 2
+        );
+        scene.add(lp); trackMeshes.push(lp);
+        // Right pillar
+        var rp = new THREE.Mesh(lpGeo, pillarMat);
+        rp.position.set(
+            aNode.x - aPerpX * archW / 2, aNode.y + archH / 2, aNode.z - aPerpZ * archW / 2
+        );
+        scene.add(rp); trackMeshes.push(rp);
+        // Cross beam (crystal bar)
+        var beamLen = archW;
+        var beamGeo = new THREE.BoxGeometry(beamLen, 0.8, 0.6);
+        var beamMat = new THREE.MeshLambertMaterial({
+            color: aZC.sec, emissive: aZC.pri, emissiveIntensity: 0.4,
+            transparent: true, opacity: 0.8
+        });
+        var beam = new THREE.Mesh(beamGeo, beamMat);
+        beam.position.set(aNode.x, aNode.y + archH, aNode.z);
+        beam.rotation.y = -aAngle;
+        scene.add(beam); trackMeshes.push(beam);
+        // Gem on top center
+        var gemGeo = new THREE.OctahedronGeometry(0.8, 0);
+        var gemMat = new THREE.MeshLambertMaterial({
+            color: aZC.pri, emissive: aZC.pri, emissiveIntensity: 0.6,
+            transparent: true, opacity: 0.9
+        });
+        var gem = new THREE.Mesh(gemGeo, gemMat);
+        gem.position.set(aNode.x, aNode.y + archH + 0.8, aNode.z);
+        scene.add(gem); trackMeshes.push(gem);
+    }
+
+    // === CRYSTAL FENCE along both sides (continuous visual boundary) ===
+    for (var fi = 0; fi < TRACK_POINTS; fi += 2) {
+        var fNode = trackNodes[fi];
+        var fAngle = getTrackAngle(fi);
+        var fPerpX = -Math.sin(fAngle);
+        var fPerpZ = Math.cos(fAngle);
+        var fZone = getZone(fi);
+        var fZC = getZoneColors(fZone);
+        var fDist = HW + 4; // just past curb
+        var fenceH = 1.2;
+
+        for (var fSide = -1; fSide <= 1; fSide += 2) {
+            var fx = fNode.x + fPerpX * fSide * fDist;
+            var fz = fNode.z + fPerpZ * fSide * fDist;
+
+            // Crystal post
+            var fpGeo = new THREE.BoxGeometry(0.3, fenceH, 0.3);
+            var fpMat = new THREE.MeshLambertMaterial({
+                color: fZC.pri, emissive: fZC.em, emissiveIntensity: 0.25,
+                transparent: true, opacity: 0.7
+            });
+            var fp = new THREE.Mesh(fpGeo, fpMat);
+            fp.position.set(fx, fNode.y + fenceH / 2, fz);
+            scene.add(fp); trackMeshes.push(fp);
+
+            // Glowing cap on every 4th post
+            if (fi % 4 === 0) {
+                var capGeo = new THREE.SphereGeometry(0.25, 6, 6);
+                var capMat = new THREE.MeshBasicMaterial({
+                    color: fZC.pri, transparent: true, opacity: 0.8
+                });
+                var cap = new THREE.Mesh(capGeo, capMat);
+                cap.position.set(fx, fNode.y + fenceH + 0.2, fz);
+                scene.add(cap); trackMeshes.push(cap);
+            }
+        }
+    }
+
+    // === GROUND ZONE TILES (replace uniform grass near track) ===
+    for (var gi = 0; gi < TRACK_POINTS; gi += 3) {
+        var gNode = trackNodes[gi];
+        var gAngle = getTrackAngle(gi);
+        var gPerpX = -Math.sin(gAngle);
+        var gPerpZ = Math.cos(gAngle);
+        var gZone = getZone(gi);
+        var gZC = getZoneColors(gZone);
+
+        for (var gSide = -1; gSide <= 1; gSide += 2) {
+            // Ground tile strip (5-15m from track edge)
+            var tileW = 12;
+            var tileDist = HW + 3 + tileW / 2;
+            var tx = gNode.x + gPerpX * gSide * tileDist;
+            var tz = gNode.z + gPerpZ * gSide * tileDist;
+
+            var tileColor;
+            switch(gZone) {
+                case 'forest':  tileColor = 0x1A5533; break; // dark mossy
+                case 'castle':  tileColor = 0x887766; break; // cobblestone
+                case 'lake':    tileColor = 0x334466; break; // dark blue stone
+                case 'mountain':tileColor = 0x554455; break; // purple rock
+                case 'garden':  tileColor = 0x557744; break; // rich garden soil
+                default:        tileColor = 0x336644; break;
+            }
+
+            var tGeo = new THREE.PlaneGeometry(tileW, 8);
+            var tMat = new THREE.MeshLambertMaterial({ color: tileColor });
+            var tile = new THREE.Mesh(tGeo, tMat);
+            tile.rotation.x = -Math.PI / 2;
+            tile.rotation.z = -gAngle;
+            tile.position.set(tx, gNode.y - 1.8, tz);
+            scene.add(tile); trackMeshes.push(tile);
+        }
+    }
+
+    // === DENSE CRYSTAL STALAGMITE CLUSTERS (fill near-field void) ===
+    for (var si = 0; si < TRACK_POINTS; si += 4) {
+        var sZone = getZone(si);
+        var sZC = getZoneColors(sZone);
+        var sSide = ((si / 4 | 0) % 2 === 0) ? 1 : -1;
+
+        placeAtTrack(si, sSide, HW + 8 + (si % 5) * 2, function(px, py, pz) {
+            // Cluster of 5-8 crystal stalagmites
+            var count = 5 + (si % 4);
+            for (var ci = 0; ci < count; ci++) {
+                var ch = 1.5 + Math.random() * 4;
+                var cr = 0.15 + Math.random() * 0.25;
+                var cGeo = new THREE.CylinderGeometry(0, cr, ch, 5);
+                var cMat = new THREE.MeshLambertMaterial({
+                    color: sZC.pri, emissive: sZC.em, emissiveIntensity: 0.3,
+                    transparent: true, opacity: 0.8
+                });
+                var stal = new THREE.Mesh(cGeo, cMat);
+                stal.position.set(
+                    px + (Math.random() - 0.5) * 3,
+                    py + ch / 2,
+                    pz + (Math.random() - 0.5) * 3
+                );
+                stal.rotation.z = (Math.random() - 0.5) * 0.2;
+                scene.add(stal); trackMeshes.push(stal);
+            }
+        });
+    }
+
+    // === FLOATING CRYSTAL ISLANDS (mid/far skyline) ===
+    var islandPositions = [
+        {x: 150, z: 200, y: 35, s: 20}, {x: -200, z: 100, y: 45, s: 25},
+        {x: 100, z: -250, y: 40, s: 18}, {x: -150, z: -200, y: 50, s: 22},
+        {x: 250, z: -100, y: 38, s: 15}
+    ];
+    for (var ii = 0; ii < islandPositions.length; ii++) {
+        var ip = islandPositions[ii];
+        // Platform
+        var platGeo = new THREE.CylinderGeometry(ip.s * 0.6, ip.s * 0.3, ip.s * 0.3, 8);
+        var platMat = new THREE.MeshLambertMaterial({
+            color: 0x6677AA, emissive: 0x334466, emissiveIntensity: 0.2
+        });
+        var plat = new THREE.Mesh(platGeo, platMat);
+        plat.position.set(ip.x, ip.y, ip.z);
+        scene.add(plat); trackMeshes.push(plat);
+        // Crystals on top
+        for (var ci = 0; ci < 4; ci++) {
+            var cH = ip.s * 0.3 + Math.random() * ip.s * 0.4;
+            var cR = ip.s * 0.05 + Math.random() * ip.s * 0.05;
+            var cGeo = new THREE.CylinderGeometry(0, cR, cH, 5);
+            var cMat = new THREE.MeshLambertMaterial({
+                color: 0x6699FF, emissive: 0x4477DD, emissiveIntensity: 0.4,
+                transparent: true, opacity: 0.85
+            });
+            var c = new THREE.Mesh(cGeo, cMat);
+            c.position.set(
+                ip.x + (Math.random() - 0.5) * ip.s * 0.5,
+                ip.y + ip.s * 0.15 + cH / 2,
+                ip.z + (Math.random() - 0.5) * ip.s * 0.5
+            );
+            c.rotation.z = (Math.random() - 0.5) * 0.3;
+            scene.add(c); trackMeshes.push(c);
+        }
+    }
+
+    // === ROCKY SPIRES in mid-field (terrain shaping) ===
+    for (var ri = 0; ri < TRACK_POINTS; ri += 8) {
+        var rSide = ((ri / 8 | 0) % 2 === 0) ? 1 : -1;
+        placeAtTrack(ri, rSide, 25 + (ri % 6) * 4, function(px, py, pz) {
+            var spireH = 8 + Math.random() * 12;
+            var spireR = 1.5 + Math.random() * 2;
+            var spGeo = new THREE.ConeGeometry(spireR, spireH, 6);
+            var spMat = new THREE.MeshLambertMaterial({
+                color: new THREE.Color().setHSL(0.6 + Math.random() * 0.1, 0.3, 0.35)
+            });
+            var spire = new THREE.Mesh(spGeo, spMat);
+            spire.position.set(px, py + spireH / 2, pz);
+            spire.scale.set(0.7 + Math.random() * 0.6, 1, 0.7 + Math.random() * 0.6);
+            scene.add(spire); trackMeshes.push(spire);
+        });
+    }
+
     // ================================================================
     // MAIN DECORATION LOOP: 3 layers per node
     // Layer 1 (NEAR):  road shoulder, dist HW+1 to HW+6 — crystal shards, bushes, flowers, bollards
@@ -943,9 +1180,9 @@ function buildTrackDecorations(scene) {
                     createFloatingOrb(scene, px, nd.y + 3 + (i % 4), pz, 0x4488DD, 0.25);
                 });
             }
-            // Crystal obelisks in forest clearings
+            // Crystal obelisks in forest clearings (dist 35+)
             if ((i === 8 || i === 14 || i === 20) && useGLB && envModelCache['obelisk']) {
-                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 22 + (i % 3) * 4, function(px, py, pz) {
+                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 35 + (i % 3) * 4, function(px, py, pz) {
                     placeEnvModel(scene, 'obelisk', px, py, pz, 10, i * 0.9);
                 });
             }
@@ -963,9 +1200,9 @@ function buildTrackDecorations(scene) {
                     }
                 });
             }
-            // Castles CLOSER (dist 40, was 65)
+            // Castles (dist 55, safe from track)
             if (i === 30 || i === 40) {
-                placeAtTrack(i, (i === 30) ? -1 : 1, 40, function(px, py, pz) {
+                placeAtTrack(i, (i === 30) ? -1 : 1, 55, function(px, py, pz) {
                     if (useGLB && envModelCache['castle']) {
                         placeEnvModel(scene, 'castle', px, py, pz, 25, i * 0.5);
                     } else {
@@ -973,9 +1210,9 @@ function buildTrackDecorations(scene) {
                     }
                 });
             }
-            // Houses CLOSER (dist 32, was 50)
+            // Houses (dist 45, safe from track)
             if (i === 27 || i === 31 || i === 33 || i === 36 || i === 38 || i === 43) {
-                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 32, function(px, py, pz) {
+                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 45, function(px, py, pz) {
                     if (useGLB && envModelCache['house-a']) {
                         placeEnvModel(scene, 'house-a', px, py, pz, 16, i * 1.05);
                     } else {
@@ -983,17 +1220,17 @@ function buildTrackDecorations(scene) {
                     }
                 });
             }
-            // Fountain CLOSER (dist 25, was 38)
+            // Fountain (dist 38)
             if (i === 35) {
-                placeAtTrack(i, 1, 25, function(px, py, pz) {
+                placeAtTrack(i, 1, 38, function(px, py, pz) {
                     if (useGLB && envModelCache['fountain']) {
                         placeEnvModel(scene, 'fountain', px, py, pz, 12, 0);
                     }
                 });
             }
-            // Arch gate
+            // Arch gate (dist 42)
             if (i === 28 || i === 42) {
-                placeAtTrack(i, (i === 28) ? 1 : -1, 26, function(px, py, pz) {
+                placeAtTrack(i, (i === 28) ? 1 : -1, 42, function(px, py, pz) {
                     if (useGLB && envModelCache['archgate']) {
                         placeEnvModel(scene, 'archgate', px, py, pz, 16, i * 0.06);
                     }
@@ -1019,9 +1256,9 @@ function buildTrackDecorations(scene) {
                     }
                 });
             }
-            // Crystals every 2 nodes, CLOSER (dist 18-30, was 30-62)
+            // Crystals every 2 nodes (dist 28-44)
             if (i % 2 === 0) {
-                placeAtTrack(i, ((i / 2 | 0) % 2 === 0) ? 1 : -1, 18 + (i % 4) * 4, function(px, py, pz) {
+                placeAtTrack(i, ((i / 2 | 0) % 2 === 0) ? 1 : -1, 28 + (i % 4) * 4, function(px, py, pz) {
                     if (useGLB && envModelCache['crystal']) {
                         placeEnvModel(scene, 'crystal', px, py, pz, 10 + (i % 3) * 2, i * 0.7);
                     } else {
@@ -1035,9 +1272,9 @@ function buildTrackDecorations(scene) {
                     createFloatingOrb(scene, px, nd.y + 2 + (i % 5), pz, 0xE8EEFF, 0.22 + (i % 3) * 0.06);
                 });
             }
-            // Crystal obelisks by the lakeside
+            // Crystal obelisks by the lakeside (dist 35+)
             if ((i === 48 || i === 55 || i === 62) && useGLB && envModelCache['obelisk']) {
-                placeAtTrack(i, (i % 2 === 0) ? -1 : 1, 20 + (i % 3) * 5, function(px, py, pz) {
+                placeAtTrack(i, (i % 2 === 0) ? -1 : 1, 35 + (i % 3) * 5, function(px, py, pz) {
                     placeEnvModel(scene, 'obelisk', px, py, pz, 10, i * 0.75);
                 });
             }
@@ -1065,9 +1302,9 @@ function buildTrackDecorations(scene) {
                     }
                 });
             }
-            // Windmills CLOSER
+            // Windmills (dist 55)
             if (i === 70 || i === 78) {
-                placeAtTrack(i, (i === 70) ? 1 : -1, 40, function(px, py, pz) {
+                placeAtTrack(i, (i === 70) ? 1 : -1, 55, function(px, py, pz) {
                     if (useGLB && envModelCache['windmill']) {
                         placeEnvModel(scene, 'windmill', px, py, pz, 20, i * 1.57);
                     }
@@ -1090,17 +1327,17 @@ function buildTrackDecorations(scene) {
             placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 4 + (i % 3) * 1.5, function(px, py, pz) {
                 createFlowerCluster(scene, px, py, pz, 0x9988CC, 0xDDA0BB);
             });
-            // Fountain CLOSER
+            // Fountain (dist 38)
             if (i === 92) {
-                placeAtTrack(i, 1, 24, function(px, py, pz) {
+                placeAtTrack(i, 1, 38, function(px, py, pz) {
                     if (useGLB && envModelCache['fountain']) {
                         placeEnvModel(scene, 'fountain', px, py, pz, 16, 0);
                     }
                 });
             }
-            // Gold arch CLOSER
+            // Gold arch (dist 42)
             if (i === 90 || i === 98) {
-                placeAtTrack(i, (i === 90) ? -1 : 1, 28, function(px, py, pz) {
+                placeAtTrack(i, (i === 90) ? -1 : 1, 42, function(px, py, pz) {
                     if (useGLB && envModelCache['archgate']) {
                         placeEnvModel(scene, 'archgate', px, py, pz, 18, i * 0.06);
                     }
@@ -1351,21 +1588,29 @@ function createPalmTree(scene, x, y, z) {
     }
 }
 
-// Create clean glowing guardrails along ENTIRE track (no rainbow lines cutting corners)
+// Create glowing guardrails along ENTIRE track, closely following curves
 function buildGuardrails(scene) {
-    var railSpacing = 3;
+    var railSpacing = 2; // Every 2 nodes for tight curve following
     var halfWidth = TRACK_WIDTH / 2;
-    var railDist = halfWidth + 1.5;
+    var railDist = halfWidth + 1.3; // Right at curb outer edge
 
     // Crystal Kingdom - sapphire left, amethyst right
     var leftColor = 0x4488DD;
     var rightColor = 0x8866BB;
 
-    // Translucent post material
+    // Shared materials (avoid creating per-segment)
     var postMat = new THREE.MeshLambertMaterial({
         color: 0xBBCCFF,
-        transparent: true, opacity: 0.5,
-        emissive: 0x6688CC, emissiveIntensity: 0.25
+        transparent: true, opacity: 0.6,
+        emissive: 0x6688CC, emissiveIntensity: 0.3
+    });
+    var leftBeamMat = new THREE.MeshLambertMaterial({
+        color: leftColor, emissive: leftColor, emissiveIntensity: 0.6,
+        transparent: true, opacity: 0.75
+    });
+    var rightBeamMat = new THREE.MeshLambertMaterial({
+        color: rightColor, emissive: rightColor, emissiveIntensity: 0.6,
+        transparent: true, opacity: 0.75
     });
 
     for (var i = 0; i < trackNodes.length; i += railSpacing) {
@@ -1384,14 +1629,16 @@ function buildGuardrails(scene) {
             var px = node.x + perpX * side * railDist;
             var pz = node.z + perpZ * side * railDist;
 
-            // Small glowing post
-            var postGeom = new THREE.CylinderGeometry(0.06, 0.1, 1.5, 5);
-            var post = new THREE.Mesh(postGeom, postMat);
-            post.position.set(px, node.y + 0.75, pz);
-            scene.add(post);
-            trackMeshes.push(post);
+            // Post every 4 nodes (visual marker), beam every 2 nodes (curve following)
+            if (i % 4 === 0) {
+                var postGeom = new THREE.CylinderGeometry(0.08, 0.12, 1.5, 5);
+                var post = new THREE.Mesh(postGeom, postMat);
+                post.position.set(px, node.y + 0.75, pz);
+                scene.add(post);
+                trackMeshes.push(post);
+            }
 
-            // Connect beam to next post (every post, short segments = follows curves)
+            // Connect beam to next segment
             var npx = nextNode.x + nextPerpX * side * railDist;
             var npz = nextNode.z + nextPerpZ * side * railDist;
 
@@ -1399,14 +1646,10 @@ function buildGuardrails(scene) {
             var beamLen = Math.sqrt(dx * dx + dz * dz);
             var beamAng = Math.atan2(dz, dx);
 
-            var bColor = (side === -1) ? leftColor : rightColor;
+            // side=+1 is LEFT track edge, side=-1 is RIGHT track edge
+            var beamMat = (side === 1) ? leftBeamMat : rightBeamMat;
 
-            // Single thin glowing rail beam
-            var beamGeom = new THREE.BoxGeometry(beamLen, 0.08, 0.04);
-            var beamMat = new THREE.MeshLambertMaterial({
-                color: bColor, emissive: bColor, emissiveIntensity: 0.6,
-                transparent: true, opacity: 0.7
-            });
+            var beamGeom = new THREE.BoxGeometry(beamLen, 0.12, 0.06);
             var beam = new THREE.Mesh(beamGeom, beamMat);
             beam.position.set((px + npx) / 2, node.y + 1.2, (pz + npz) / 2);
             beam.rotation.y = -beamAng;

@@ -42,7 +42,7 @@ var CHARACTERS = [
    skillDesc:'周囲のリングを引き寄せ、ブースト変換', skillCD:360, skillDur:240}
 ];
 
-// Body type to GLB model file mapping
+// Body type to GLB model file mapping (character only - legacy)
 var MODEL_FILES = {
   dragon:  'models/blaze.glb',
   mermaid: 'models/aqua.glb',
@@ -52,6 +52,18 @@ var MODEL_FILES = {
   robot:   'models/mecha.glb',
   ninja:   'models/sakura.glb',
   king:    'models/gold.glb'
+};
+
+// Combined character+kart GLB model files (preferred over MODEL_FILES)
+var KART_MODEL_FILES = {
+  dragon:  'models/blaze-kart.glb',
+  mermaid: 'models/aqua-kart.glb',
+  golem:   'models/terra-kart.glb',
+  phantom: 'models/shadow-kart.glb',
+  angel:   'models/sora-kart.glb',
+  robot:   'models/mecha-kart.glb',
+  ninja:   'models/sakura-kart.glb',
+  king:    'models/gold-kart.glb'
 };
 
 // Kart types - player can select

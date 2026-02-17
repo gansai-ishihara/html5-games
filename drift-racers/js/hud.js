@@ -407,17 +407,19 @@ function buildCharSelect() {
     type.textContent = c.d;
     card.appendChild(type);
 
-    // Compact stat bar (single line)
+    // Star-based stat display
     var attrs = [c.s, c.a, c.h];
-    var labels = ['S', 'A', 'H'];
+    var icons = ['⚡', '🚀', '🎯'];
     var statRow = document.createElement('div');
     statRow.className = 'char-stat-compact';
     for (var j = 0; j < 3; j++) {
       var seg = document.createElement('span');
       seg.className = 'stat-seg';
-      seg.textContent = labels[j] + attrs[j];
+      var stars = Math.round(attrs[j] / 2);
+      var starStr = '';
+      for (var si = 0; si < 5; si++) starStr += si < stars ? '★' : '☆';
+      seg.textContent = icons[j] + starStr;
       if (attrs[j] >= 9) seg.style.color = '#FFCC66';
-      else if (attrs[j] >= 7) seg.style.color = 'rgba(200,213,232,.7)';
       statRow.appendChild(seg);
     }
     card.appendChild(statRow);

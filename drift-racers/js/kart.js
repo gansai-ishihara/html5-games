@@ -9,6 +9,10 @@ var glbModelCache = {};  // bodyType -> THREE.Group (template)
 var glbModelsLoaded = false;
 var glbLoader = null;
 
+// Combined character+kart model cache
+var kartModelCache = {};  // bodyType -> THREE.Group (template)
+var kartModelsLoaded = false;
+
 // Environment model cache
 var envModelCache = {};  // envType -> THREE.Group (template)
 var envModelsLoaded = false;
@@ -99,6 +103,99 @@ function preloadModels(callback) {
         loaded++;
         if (loaded === total) {
           glbModelsLoaded = true;
+          if (callback) callback();
+        }
+      }
+    );
+  });
+}
+
+// Preload all combined character+kart GLB models
+function preloadKartModels(callback) {
+  initGLBLoader();
+  if (!glbLoader || typeof KART_MODEL_FILES === 'undefined') {
+    kartModelsLoaded = true;
+    if (callback) callback();
+    return;
+  }
+
+  var bodyTypes = Object.keys(KART_MODEL_FILES);
+  var loaded = 0;
+  var total = bodyTypes.length;
+
+  bodyTypes.forEach(function(bodyType) {
+    var url = KART_MODEL_FILES[bodyType];
+    glbLoader.load(url,
+      function(gltf) {
+        var model = gltf.scene;
+        // Compute bounding box to normalize size
+        var box = new THREE.Box3().setFromObject(model);
+        var size = new THREE.Vector3();
+        box.getSize(size);
+        var maxDim = Math.max(size.x, size.y, size.z);
+        // Target: combined kart+character roughly 2.2 units tall
+        var targetSize = 2.2;
+        var scale = targetSize / maxDim;
+        model.scale.set(scale, scale, scale);
+
+        // Center horizontally, sit on ground
+        var center = new THREE.Vector3();
+        box.getCenter(center);
+        model.position.set(
+          -center.x * scale,
+          -box.min.y * scale,
+          -center.z * scale
+        );
+
+        // Auto-detect inverted models from Trellis
+        var scaledBox = new THREE.Box3().setFromObject(model);
+        if (scaledBox.max.y <= 0.001 && scaledBox.min.y < -0.1) {
+          model.rotation.x = Math.PI;
+          console.log('Flipped inverted kart model: ' + bodyType);
+        }
+
+        // PBR adjustments for vibrant fantasy look
+        model.traverse(function(child) {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            var mats = Array.isArray(child.material) ? child.material : [child.material];
+            for (var mi = 0; mi < mats.length; mi++) {
+              var mat = mats[mi];
+              if (!mat) continue;
+              if (mat.isMeshStandardMaterial) { mat.metalness = 0; mat.roughness = 0.5; }
+              if (mat.color) {
+                var hsl = {};
+                mat.color.getHSL(hsl);
+                if (hsl.l > 0.01) {
+                  mat.color.setHSL(hsl.h, Math.min(1.0, hsl.s * 1.2 + 0.05), Math.min(0.8, hsl.l * 1.15 + 0.1));
+                }
+              }
+              if (mat.emissive !== undefined && mat.color) {
+                var hsl2 = {};
+                mat.color.getHSL(hsl2);
+                mat.emissive.setHSL(hsl2.h, Math.min(1.0, hsl2.s * 0.4), 0.1);
+                mat.emissiveIntensity = 0.2;
+              }
+            }
+          }
+        });
+
+        kartModelCache[bodyType] = model;
+        loaded++;
+        console.log('Loaded kart model: ' + bodyType + ' (' + loaded + '/' + total + ')');
+        if (loaded === total) {
+          kartModelsLoaded = true;
+          console.log('All kart GLB models loaded!');
+          if (callback) callback();
+        }
+      },
+      undefined,
+      function(err) {
+        console.warn('Failed to load kart model ' + bodyType + ': ' + err.message);
+        loaded++;
+        if (loaded === total) {
+          kartModelsLoaded = true;
           if (callback) callback();
         }
       }
@@ -333,6 +430,25 @@ Racer.prototype.createMesh = function(scene) {
   var skinColor = char.skin || 0xFFDBAC;
   var bodyType = char.body || 'dragon';
 
+  // === CHECK FOR COMBINED KART MODEL (character+kart in one GLB) ===
+  var hasKartModel = kartModelCache[bodyType] !== undefined;
+  if (hasKartModel) {
+    var kartClone = kartModelCache[bodyType].clone();
+    kartClone.rotation.y = Math.PI; // Face forward (nose at -Z)
+    this.mesh.add(kartClone);
+    this.kartGLB = kartClone;
+    this.bodyMesh = kartClone;
+    this.wheelMeshes = [];
+    this.steeringWheel = null;
+    this.driverGroup = kartClone;
+
+    scene.add(this.mesh);
+    this.updateMesh();
+    return;
+  }
+
+  // === FALLBACK: Procedural kart + separate character model ===
+
   // Materials
   var bodyMat = new THREE.MeshStandardMaterial({
     color: mainColor, metalness: 0.55, roughness: 0.18
@@ -352,14 +468,17 @@ Racer.prototype.createMesh = function(scene) {
   // === MAIN BODY - shape varies by kart style ===
   var kartStyle = KARTS[this.kartIdx] ? KARTS[this.kartIdx].style : 'medium';
 
-  // Style-specific dimensions (go-kart style with visible character)
+  // Style-specific dimensions - dramatically different silhouettes
   var baseW, baseD, shellW, shellH, shellD, noseLen, spoilerW;
   if (kartStyle === 'long') {
-    baseW = 1.3; baseD = 2.8; shellW = 1.1; shellH = 0.32; shellD = 2.3; noseLen = 1.5; spoilerW = 1.2;
+    // Stardust: sleek F1-style, very long nose, narrow body
+    baseW = 1.1; baseD = 3.2; shellW = 0.9; shellH = 0.25; shellD = 2.5; noseLen = 1.8; spoilerW = 1.0;
   } else if (kartStyle === 'wide') {
-    baseW = 1.7; baseD = 2.4; shellW = 1.5; shellH = 0.38; shellD = 2.0; noseLen = 1.1; spoilerW = 1.6;
+    // Titan: chunky tank-like, wide body, short nose, high shell
+    baseW = 1.9; baseD = 2.2; shellW = 1.7; shellH = 0.40; shellD = 1.8; noseLen = 0.8; spoilerW = 1.8;
   } else {
-    baseW = 1.5; baseD = 2.5; shellW = 1.3; shellH = 0.35; shellD = 2.1; noseLen = 1.25; spoilerW = 1.4;
+    // Thunderbolt: balanced sporty, medium proportions
+    baseW = 1.5; baseD = 2.5; shellW = 1.3; shellH = 0.30; shellD = 2.1; noseLen = 1.25; spoilerW = 1.4;
   }
 
   // Lower chassis - tapered (wider at rear)
@@ -568,12 +687,13 @@ Racer.prototype.createMesh = function(scene) {
   }
 
   this.bodyMesh = bodyGroup;
-  bodyGroup.scale.set(0.7, 0.7, 0.7);
+  bodyGroup.scale.set(0.50, 0.18, 0.50); // Ultra-flat go-kart platform
+  bodyGroup.position.y = -0.30; // Push kart body way down
   this.mesh.add(bodyGroup);
 
-  // === DRIVER (Mario Kart style - character sits HIGH above kart body) ===
+  // === DRIVER (full body above kart, Mario Kart style) ===
   var driverGroup = new THREE.Group();
-  driverGroup.position.set(0, 0.32, -0.07);
+  driverGroup.position.set(0, 0.55, 0.0); // High above kart - full body visible
 
   // Check if GLB model is available for this character
   var hasGLBModel = glbModelCache[bodyType] !== undefined;
@@ -581,11 +701,20 @@ Racer.prototype.createMesh = function(scene) {
   if (hasGLBModel) {
     // Use GLB model as driver
     var glbClone = glbModelCache[bodyType].clone();
-    // Position the GLB model to sit in the kart, face forward
-    glbClone.position.set(0, -0.1, 0);
+    // Position the GLB model to sit above the kart, full body visible
+    glbClone.position.set(0, 0.0, 0);
+    glbClone.scale.multiplyScalar(2.2); // Large character - full body clearly visible above kart
     glbClone.rotation.y = Math.PI;
     driverGroup.add(glbClone);
     this.glbDriver = glbClone;
+    // Steering wheel for GLB driver
+    var swGroupGLB = new THREE.Group();
+    swGroupGLB.position.set(0, -0.1, -0.4);
+    swGroupGLB.rotation.x = -0.3;
+    var swMatGLB = new THREE.MeshLambertMaterial({ color: 0x333333 });
+    swGroupGLB.add(new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.025, 6, 12), swMatGLB));
+    driverGroup.add(swGroupGLB);
+    this.steeringWheel = swGroupGLB;
   } else {
     // Fallback: procedural driver mesh
     // Head
@@ -658,8 +787,21 @@ Racer.prototype.createMesh = function(scene) {
     driverGroup.add(new THREE.Mesh(armGeom, armMat).translateX(-0.28).translateY(0.15).translateZ(-0.15).rotateZ(0.5).rotateX(-0.6));
     driverGroup.add(new THREE.Mesh(armGeom, armMat).translateX(0.28).translateY(0.15).translateZ(-0.15).rotateZ(-0.5).rotateX(-0.6));
 
-    // Steering wheel
-    driverGroup.add(new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.02, 6, 12), darkMat).translateY(0.1).translateZ(-0.38).rotateX(-0.3));
+    // Steering wheel (tracked for animation)
+    var swGroup = new THREE.Group();
+    swGroup.position.set(0, 0.1, -0.38);
+    swGroup.rotation.x = -0.3;
+    var swRing = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.025, 6, 12), darkMat);
+    swGroup.add(swRing);
+    // Spokes
+    var spokeMat = new THREE.MeshLambertMaterial({ color: 0x888888 });
+    for (var sp = 0; sp < 3; sp++) {
+      var spoke = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.24, 4), spokeMat);
+      spoke.rotation.z = sp * Math.PI / 3;
+      swGroup.add(spoke);
+    }
+    driverGroup.add(swGroup);
+    this.steeringWheel = swGroup;
   }
 
   this.mesh.add(driverGroup);
@@ -1172,22 +1314,36 @@ Racer.prototype.update = function(input, racers, scene) {
     this.y += (nearNode.y - this.y) * 0.15;
   }
 
-  // Off-track handling (shadow_phase skips wall collision)
+  // Off-track handling - wall slide (Mario Kart style)
+  // trackDist now uses accurate perpendicular-to-segment distance
   var distToTrack = trackDist(this.x, this.z);
-  var trackEdge = TRACK_WIDTH * 0.55;
-  var wallDist = TRACK_WIDTH * 0.6;
+  var halfW = TRACK_WIDTH / 2;       // 14 = actual track edge
+  var grassEdge = halfW + 0.5;       // 14.5 = just past road edge
+  var wallLimit = halfW + 1.5;       // 15.5 = hard wall at guardrail, cannot pass
 
   var phasing = this.skillActive && this.char.skill === 'shadow_phase';
 
-  if (!phasing && distToTrack > wallDist) {
+  if (!phasing && distToTrack > wallLimit) {
+    // Hard wall: push back firmly, slide along edge
     var centerNode = trackNodes[nearIdx];
     var pushAng = Math.atan2(centerNode.z - this.z, centerNode.x - this.x);
-    var pushStr = (distToTrack - wallDist) * 0.3;
+    var overshoot = distToTrack - wallLimit;
+    // Strong push proportional to overshoot - prevents escaping
+    var pushStr = Math.min(overshoot * 0.6, 3.0);
     this.x += Math.cos(pushAng) * pushStr;
     this.z += Math.sin(pushAng) * pushStr;
-    this.spd *= 0.88;
-  } else if (!phasing && distToTrack > trackEdge) {
-    this.spd *= 0.96;
+    // Speed reduction
+    this.spd *= 0.93;
+    // Steer toward track to slide along wall
+    var toTrackAng = Math.atan2(centerNode.z - this.z, centerNode.x - this.x);
+    var angDiffToTrack = toTrackAng - this.ang;
+    while (angDiffToTrack > Math.PI) angDiffToTrack -= Math.PI * 2;
+    while (angDiffToTrack < -Math.PI) angDiffToTrack += Math.PI * 2;
+    this.ang += angDiffToTrack * 0.06;
+  } else if (!phasing && distToTrack > grassEdge) {
+    // Grass slowdown - gradually stronger the further you go
+    var grassDepth = (distToTrack - grassEdge) / (wallLimit - grassEdge);
+    this.spd *= (0.98 - grassDepth * 0.04);
   }
 
   // Progress tracking (cumulative delta to handle start-line wraparound)
@@ -1384,7 +1540,14 @@ Racer.prototype.updateMesh = function() {
     this.bodyMesh.rotation.z = -this.tilt;
   }
   if (this.driverGroup) {
-    this.driverGroup.rotation.z = -this.tilt * 0.5;
+    // Lean into turns (like Mario Kart) - gentle so character stays visible
+    this.driverGroup.rotation.z = -this.tilt * 0.35;
+    // Lean forward when accelerating - minimal to keep character upright
+    this.driverGroup.rotation.x = Math.min(this.spd * 0.05, 0.06);
+  }
+  // Steering wheel rotation
+  if (this.steeringWheel) {
+    this.steeringWheel.rotation.z = this.tilt * 2.5;
   }
 
   // Wheel spin
