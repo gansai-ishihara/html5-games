@@ -69,8 +69,6 @@ function generateItemBoxes(scene) {
                 color: cubeColor,
                 emissive: cubeColor,
                 emissiveIntensity: 0.4,
-                metalness: 0.6,
-                roughness: 0.15,
                 transparent: true,
                 opacity: 0.8
             });
@@ -146,9 +144,7 @@ function addTrap(scene, x, y, z, owner) {
     // Main bomb sphere
     var sphereGeometry = new THREE.SphereGeometry(1.2, 12, 8);
     var sphereMaterial = new THREE.MeshLambertMaterial({
-        color: 0x222222,
-        metalness: 0.6,
-        roughness: 0.4
+        color: 0x222222
     });
     var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
     sphere.castShadow = true;
@@ -157,9 +153,7 @@ function addTrap(scene, x, y, z, owner) {
     // Add spikes around the sphere
     var spikeGeometry = new THREE.ConeGeometry(0.3, 0.8, 6);
     var spikeMaterial = new THREE.MeshLambertMaterial({
-        color: 0x111111,
-        metalness: 0.7,
-        roughness: 0.3
+        color: 0x111111
     });
 
     var spikePositions = [
@@ -221,9 +215,7 @@ function addProjectile(scene, x, y, z, ang, owner) {
     var bodyMaterial = new THREE.MeshLambertMaterial({
         color: 0xff0000,
         emissive: 0x880000,
-        emissiveIntensity: 0.8,
-        metalness: 0.3,
-        roughness: 0.4
+        emissiveIntensity: 0.8
     });
     var body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     body.castShadow = true;
@@ -404,8 +396,6 @@ function generateEnergyRings(scene) {
             color: 0x00ddff,
             emissive: 0x0088cc,
             emissiveIntensity: 0.6,
-            metalness: 0.8,
-            roughness: 0.1,
             transparent: true,
             opacity: 0.85
         });

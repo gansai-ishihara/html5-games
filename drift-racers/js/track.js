@@ -1231,9 +1231,7 @@ function createPineTree(scene, x, y, z) {
 
     var trunkGeometry = new THREE.CylinderGeometry(trunkRadius, trunkRadius * 1.3, trunkHeight, 8);
     var trunkMaterial = new THREE.MeshLambertMaterial({
-        color: 0x7B5B3A,
-        roughness: 0.85,
-        metalness: 0.0
+        color: 0x7B5B3A
     });
 
     var trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
@@ -1251,9 +1249,7 @@ function createPineTree(scene, x, y, z) {
         var hue = 0.28 + Math.random() * 0.08;
         var foliageGeometry = new THREE.ConeGeometry(tierR, tierH, 8);
         var foliageMaterial = new THREE.MeshLambertMaterial({
-            color: new THREE.Color().setHSL(hue, 0.65, 0.32 + t * 0.05),
-            roughness: 0.75,
-            metalness: 0.0
+            color: new THREE.Color().setHSL(hue, 0.65, 0.32 + t * 0.05)
         });
         var foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
         foliage.position.set(x, tierY + tierH / 2, z);
@@ -1270,9 +1266,7 @@ function createOakTree(scene, x, y, z) {
 
     var trunkGeometry = new THREE.CylinderGeometry(trunkRadius, trunkRadius * 1.3, trunkHeight, 8);
     var trunkMaterial = new THREE.MeshLambertMaterial({
-        color: 0x7B5533,
-        roughness: 0.85,
-        metalness: 0.0
+        color: 0x7B5533
     });
 
     var trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
@@ -1288,9 +1282,7 @@ function createOakTree(scene, x, y, z) {
 
     var foliageGeometry = new THREE.SphereGeometry(mainRadius, 10, 8);
     var foliageMaterial = new THREE.MeshLambertMaterial({
-        color: baseColor,
-        roughness: 0.75,
-        metalness: 0.0
+        color: baseColor
     });
 
     var foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
@@ -1305,8 +1297,7 @@ function createOakTree(scene, x, y, z) {
         var pR = mainRadius * 0.6;
         var pGeom = new THREE.SphereGeometry(pR, 8, 6);
         var pMat = new THREE.MeshLambertMaterial({
-            color: new THREE.Color().setHSL(hue + (Math.random() - 0.5) * 0.04, 0.55, 0.35 + Math.random() * 0.08),
-            roughness: 0.8
+            color: new THREE.Color().setHSL(hue + (Math.random() - 0.5) * 0.04, 0.55, 0.35 + Math.random() * 0.08)
         });
         var pMesh = new THREE.Mesh(pGeom, pMat);
         pMesh.position.set(
@@ -1327,9 +1318,7 @@ function createPalmTree(scene, x, y, z) {
 
     var trunkGeometry = new THREE.CylinderGeometry(trunkRadius, trunkRadius * 1.5, trunkHeight, 8);
     var trunkMaterial = new THREE.MeshLambertMaterial({
-        color: 0x8b7355,
-        roughness: 0.85,
-        metalness: 0.0
+        color: 0x8b7355
     });
 
     var trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
@@ -1347,9 +1336,7 @@ function createPalmTree(scene, x, y, z) {
 
         var frondGeometry = new THREE.SphereGeometry(frondRadius, 6, 6);
         var frondMaterial = new THREE.MeshLambertMaterial({
-            color: 0x44cc55,
-            roughness: 0.8,
-            metalness: 0.0
+            color: 0x44cc55
         });
 
         var frond = new THREE.Mesh(frondGeometry, frondMaterial);
@@ -1376,7 +1363,7 @@ function buildGuardrails(scene) {
 
     // Translucent post material
     var postMat = new THREE.MeshLambertMaterial({
-        color: 0xBBCCFF, metalness: 0.7, roughness: 0.1,
+        color: 0xBBCCFF,
         transparent: true, opacity: 0.5,
         emissive: 0x6688CC, emissiveIntensity: 0.25
     });
@@ -1418,7 +1405,7 @@ function buildGuardrails(scene) {
             var beamGeom = new THREE.BoxGeometry(beamLen, 0.08, 0.04);
             var beamMat = new THREE.MeshLambertMaterial({
                 color: bColor, emissive: bColor, emissiveIntensity: 0.6,
-                transparent: true, opacity: 0.7, metalness: 0.4, roughness: 0.1
+                transparent: true, opacity: 0.7
             });
             var beam = new THREE.Mesh(beamGeom, beamMat);
             beam.position.set((px + npx) / 2, node.y + 1.2, (pz + npz) / 2);
@@ -1445,9 +1432,7 @@ function createBuilding(scene, x, y, z) {
 
     var wallGeometry = new THREE.BoxGeometry(buildingWidth, buildingHeight, buildingDepth);
     var wallMaterial = new THREE.MeshLambertMaterial({
-        color: wallColor,
-        roughness: 0.7,
-        metalness: 0.2
+        color: wallColor
     });
 
     var walls = new THREE.Mesh(wallGeometry, wallMaterial);
@@ -1460,9 +1445,7 @@ function createBuilding(scene, x, y, z) {
     // Roof detail
     var roofGeometry = new THREE.BoxGeometry(buildingWidth * 0.8, 2, buildingDepth * 0.8);
     var roofMaterial = new THREE.MeshLambertMaterial({
-        color: 0x333333,
-        roughness: 0.6,
-        metalness: 0.3
+        color: 0x333333
     });
 
     var roof = new THREE.Mesh(roofGeometry, roofMaterial);
@@ -1477,9 +1460,7 @@ function createBillboard(scene, x, y, z, angle) {
     // Pole
     var poleGeometry = new THREE.CylinderGeometry(0.2, 0.2, 5, 8);
     var poleMaterial = new THREE.MeshLambertMaterial({
-        color: 0x444444,
-        roughness: 0.5,
-        metalness: 0.6
+        color: 0x444444
     });
 
     var pole = new THREE.Mesh(poleGeometry, poleMaterial);
@@ -1495,8 +1476,6 @@ function createBillboard(scene, x, y, z, angle) {
     var signGeometry = new THREE.BoxGeometry(6, 3, 0.2);
     var signMaterial = new THREE.MeshLambertMaterial({
         color: signColor,
-        roughness: 0.4,
-        metalness: 0.3,
         emissive: signColor,
         emissiveIntensity: 0.3
     });
@@ -1526,9 +1505,7 @@ function createSpectatorStand(scene, node, angle, side) {
     for (var i = 0; i < stepCount; i++) {
         var stepGeometry = new THREE.BoxGeometry(stepWidth, stepHeight, stepDepth);
         var stepMaterial = new THREE.MeshLambertMaterial({
-            color: (i % 2 === 0) ? 0xdddddd : 0xaaaaaa,
-            roughness: 0.8,
-            metalness: 0.2
+            color: (i % 2 === 0) ? 0xdddddd : 0xaaaaaa
         });
 
         var step = new THREE.Mesh(stepGeometry, stepMaterial);

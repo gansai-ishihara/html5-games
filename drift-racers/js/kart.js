@@ -325,16 +325,16 @@ Racer.prototype.createMesh = function(scene) {
   var bodyType = char.body || 'dragon';
 
   // Materials
-  var bodyMat = new THREE.MeshLambertMaterial({
+  var bodyMat = new THREE.MeshStandardMaterial({
     color: mainColor, metalness: 0.55, roughness: 0.18
   });
-  var darkMat = new THREE.MeshLambertMaterial({
+  var darkMat = new THREE.MeshStandardMaterial({
     color: 0x222228, metalness: 0.5, roughness: 0.25
   });
-  var chromeMat = new THREE.MeshLambertMaterial({
+  var chromeMat = new THREE.MeshStandardMaterial({
     color: 0xeeeeee, metalness: 0.9, roughness: 0.08
   });
-  var accentMat = new THREE.MeshLambertMaterial({
+  var accentMat = new THREE.MeshStandardMaterial({
     color: darkColor, metalness: 0.5, roughness: 0.2
   });
 
@@ -384,7 +384,7 @@ Racer.prototype.createMesh = function(scene) {
   bodyGroup.add(cowl);
 
   // Spoiler
-  var spoilerMat = new THREE.MeshLambertMaterial({ color: mainColor, metalness: 0.6, roughness: 0.15 });
+  var spoilerMat = new THREE.MeshLambertMaterial({ color: mainColor });
   var spoiler = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.08, 0.2), spoilerMat);
   spoiler.position.set(0, 0.85, 1.15);
   spoiler.rotation.x = -0.15;
@@ -397,7 +397,7 @@ Racer.prototype.createMesh = function(scene) {
   bodyGroup.add(new THREE.Mesh(sGeom, chromeMat).translateX(0.45).translateY(0.65).translateZ(1.05));
 
   // Exhaust
-  var exhMat = new THREE.MeshLambertMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.1 });
+  var exhMat = new THREE.MeshLambertMaterial({ color: 0x888888 });
   var exhGeom = new THREE.CylinderGeometry(0.07, 0.09, 0.35, 8);
   var lExh = new THREE.Mesh(exhGeom, exhMat);
   lExh.position.set(-0.32, 0.22, 1.35); lExh.rotation.x = Math.PI / 2.3;
@@ -408,7 +408,7 @@ Racer.prototype.createMesh = function(scene) {
 
   // Headlights
   var hlMat = new THREE.MeshLambertMaterial({
-    color: 0xffffcc, emissive: 0xffffaa, emissiveIntensity: 0.5, metalness: 0.3, roughness: 0.1
+    color: 0xffffcc, emissive: 0xffffaa, emissiveIntensity: 0.5
   });
   bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), hlMat).translateX(-0.4).translateY(0.3).translateZ(-1.45));
   bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), hlMat).translateX(0.4).translateY(0.3).translateZ(-1.45));
@@ -429,7 +429,7 @@ Racer.prototype.createMesh = function(scene) {
     bodyGroup.add(new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.4, 6), flameMat).translateY(0.45).translateZ(-1.5).rotateX(Math.PI / 2));
   } else if (bodyType === 'mermaid') {
     // Fin + side vents
-    var finMat = new THREE.MeshLambertMaterial({ color: mainColor, metalness: 0.6, roughness: 0.15 });
+    var finMat = new THREE.MeshLambertMaterial({ color: mainColor });
     bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.35, 0.6), finMat).translateY(0.65).translateZ(0.3));
     var ventMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
     bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, 0.4), ventMat).translateX(-0.66).translateY(0.38).translateZ(-0.5));
@@ -446,7 +446,7 @@ Racer.prototype.createMesh = function(scene) {
     bodyGroup.add(vine);
   } else if (bodyType === 'phantom') {
     // Bat wings + glowing accents
-    var wingMat = new THREE.MeshLambertMaterial({ color: 0x6633AA, metalness: 0.7, roughness: 0.1 });
+    var wingMat = new THREE.MeshLambertMaterial({ color: 0x6633AA });
     bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.02), wingMat).translateX(-0.85).translateY(0.6).translateZ(0.9).rotateZ(0.4));
     bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.02), wingMat).translateX(0.85).translateY(0.6).translateZ(0.9).rotateZ(-0.4));
     var glowMat = new THREE.MeshLambertMaterial({ color: 0xBB77FF, emissive: 0x8844CC, emissiveIntensity: 0.8 });
@@ -454,7 +454,7 @@ Racer.prototype.createMesh = function(scene) {
     bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), glowMat).translateX(0.5).translateY(0.25).translateZ(-1.3));
   } else if (bodyType === 'angel') {
     // Star emblem + sun ray stripes
-    var starMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00, emissive: 0xFFAA00, emissiveIntensity: 0.6, metalness: 0.7, roughness: 0.1 });
+    var starMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00, emissive: 0xFFAA00, emissiveIntensity: 0.6 });
     var star = new THREE.Mesh(new THREE.OctahedronGeometry(0.2, 0), starMat);
     star.position.set(0, 0.55, -0.7); star.scale.set(1.2, 0.4, 1.2);
     bodyGroup.add(star);
@@ -472,7 +472,7 @@ Racer.prototype.createMesh = function(scene) {
     bodyGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.06), circMat).translateX(0.67).translateY(0.35).translateZ(0).rotateY(Math.PI / 2));
   } else if (bodyType === 'ninja') {
     // Shuriken emblem + stealth trim
-    var shurikenMat = new THREE.MeshLambertMaterial({ color: 0xFFAACC, emissive: 0xFF77AA, emissiveIntensity: 0.4, metalness: 0.7 });
+    var shurikenMat = new THREE.MeshLambertMaterial({ color: 0xFFAACC, emissive: 0xFF77AA, emissiveIntensity: 0.4 });
     var shuriken = new THREE.Mesh(new THREE.OctahedronGeometry(0.15, 0), shurikenMat);
     shuriken.position.set(0, 0.55, -0.8); shuriken.scale.set(1.5, 0.3, 1.5);
     bodyGroup.add(shuriken);
@@ -488,19 +488,19 @@ Racer.prototype.createMesh = function(scene) {
     }
   } else if (bodyType === 'king') {
     // Crown ridge + gold trim
-    var crownMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00, emissive: 0xFFAA00, emissiveIntensity: 0.3, metalness: 0.8 });
+    var crownMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00, emissive: 0xFFAA00, emissiveIntensity: 0.3 });
     // Gold crown emblem on hood
     var crown = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.04, 4, 8), crownMat);
     crown.position.set(0, 0.52, -0.6); crown.rotation.x = Math.PI / 2;
     bodyGroup.add(crown);
     // Gold side stripe
-    var goldMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00, metalness: 0.8, roughness: 0.1 });
+    var goldMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00 });
     bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 1.6), goldMat).translateX(-0.68).translateY(0.42).translateZ(0));
     bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 1.6), goldMat).translateX(0.68).translateY(0.42).translateZ(0));
   }
 
   // Number circle
-  var numMat = new THREE.MeshLambertMaterial({ color: 0xffffff, roughness: 0.5 });
+  var numMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
   var numGeom = new THREE.CylinderGeometry(0.18, 0.18, 0.02, 12);
   bodyGroup.add(new THREE.Mesh(numGeom, numMat).translateX(-0.73).translateY(0.38).translateZ(-0.1).rotateZ(Math.PI / 2));
   bodyGroup.add(new THREE.Mesh(numGeom, numMat).translateX(0.73).translateY(0.38).translateZ(-0.1).rotateZ(Math.PI / 2));
@@ -525,7 +525,7 @@ Racer.prototype.createMesh = function(scene) {
   } else {
     // Fallback: procedural driver mesh
     // Head
-    var headMat = new THREE.MeshLambertMaterial({ color: skinColor, roughness: 0.6 });
+    var headMat = new THREE.MeshLambertMaterial({ color: skinColor });
     var head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 14, 12), headMat);
     head.position.y = 0.58;
     head.castShadow = true;
@@ -533,7 +533,7 @@ Racer.prototype.createMesh = function(scene) {
     this.headMesh = head;
 
     // Helmet
-    var helmetMat = new THREE.MeshLambertMaterial({ color: helmetColor, metalness: 0.65, roughness: 0.12 });
+    var helmetMat = new THREE.MeshLambertMaterial({ color: helmetColor });
     var helmet = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 12), helmetMat);
     helmet.position.y = 0.62;
     helmet.scale.set(1, 0.9, 1);
@@ -542,7 +542,7 @@ Racer.prototype.createMesh = function(scene) {
     // Visor
     var visorTint = bodyType === 'phantom' ? 0x220044 : bodyType === 'dragon' ? 0x331100 : 0x111133;
     var visorMat = new THREE.MeshLambertMaterial({
-      color: visorTint, metalness: 0.95, roughness: 0.05, transparent: true, opacity: 0.85
+      color: visorTint, transparent: true, opacity: 0.85
     });
     var visor = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 6, -Math.PI*0.4, Math.PI*0.8, 0.3, 0.5), visorMat);
     visor.position.set(0, 0.6, -0.12);
@@ -558,15 +558,15 @@ Racer.prototype.createMesh = function(scene) {
       var tipMat = new THREE.MeshLambertMaterial({ color: 0x00AAFF, emissive: 0x0088FF, emissiveIntensity: 0.6 });
       driverGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 6), tipMat).translateX(0.15).translateY(1.0));
     } else if (bodyType === 'golem') {
-      var gogMat = new THREE.MeshLambertMaterial({ color: 0xFFDD44, metalness: 0.6, roughness: 0.2 });
+      var gogMat = new THREE.MeshLambertMaterial({ color: 0xFFDD44 });
       driverGroup.add(new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.025, 6, 12), gogMat).translateX(-0.12).translateY(0.78).translateZ(-0.18).rotateX(0.4));
       driverGroup.add(new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.025, 6, 12), gogMat).translateX(0.12).translateY(0.78).translateZ(-0.18).rotateX(0.4));
     } else if (bodyType === 'phantom') {
-      var hornMat = new THREE.MeshLambertMaterial({ color: 0x6633AA, metalness: 0.7 });
+      var hornMat = new THREE.MeshLambertMaterial({ color: 0x6633AA });
       driverGroup.add(new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.2, 6), hornMat).translateX(-0.2).translateY(0.82).translateZ(-0.05).rotateZ(0.4));
       driverGroup.add(new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.2, 6), hornMat).translateX(0.2).translateY(0.82).translateZ(-0.05).rotateZ(-0.4));
     } else if (bodyType === 'angel') {
-      var haloMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00, emissive: 0xFFAA00, emissiveIntensity: 0.6, metalness: 0.7 });
+      var haloMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00, emissive: 0xFFAA00, emissiveIntensity: 0.6 });
       driverGroup.add(new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.02, 6, 16), haloMat).translateY(0.95).rotateX(Math.PI / 2));
     } else if (bodyType === 'robot') {
       var ledMat = new THREE.MeshLambertMaterial({ color: 0x00FF00, emissive: 0x00FF00, emissiveIntensity: 1.0 });
@@ -576,20 +576,20 @@ Racer.prototype.createMesh = function(scene) {
       var scarfMat = new THREE.MeshLambertMaterial({ color: 0xFF77AA, side: THREE.DoubleSide });
       driverGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.5), scarfMat).translateY(0.5).translateZ(0.2).rotateX(-0.3));
     } else if (bodyType === 'king') {
-      var crMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00, emissive: 0xFFAA00, emissiveIntensity: 0.3, metalness: 0.8 });
+      var crMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00, emissive: 0xFFAA00, emissiveIntensity: 0.3 });
       driverGroup.add(new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.025, 4, 8), crMat).translateY(0.78).rotateX(Math.PI / 2));
       var gemMat = new THREE.MeshLambertMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 0.5 });
       driverGroup.add(new THREE.Mesh(new THREE.OctahedronGeometry(0.04, 0), gemMat).translateY(0.85).translateZ(-0.15));
     }
 
     // Torso
-    var torsoMat = new THREE.MeshLambertMaterial({ color: mainColor, roughness: 0.5 });
+    var torsoMat = new THREE.MeshLambertMaterial({ color: mainColor });
     var torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.45, 8), torsoMat);
     torso.position.y = 0.22;
     driverGroup.add(torso);
 
     // Arms
-    var armMat = new THREE.MeshLambertMaterial({ color: mainColor, roughness: 0.5 });
+    var armMat = new THREE.MeshLambertMaterial({ color: mainColor });
     var armGeom = new THREE.CylinderGeometry(0.06, 0.05, 0.35, 6);
     driverGroup.add(new THREE.Mesh(armGeom, armMat).translateX(-0.28).translateY(0.15).translateZ(-0.15).rotateZ(0.5).rotateX(-0.6));
     driverGroup.add(new THREE.Mesh(armGeom, armMat).translateX(0.28).translateY(0.15).translateZ(-0.15).rotateZ(-0.5).rotateX(-0.6));
@@ -614,18 +614,18 @@ Racer.prototype.createMesh = function(scene) {
     var wW = isFront ? 0.14 : 0.17;
 
     var tire = new THREE.Mesh(new THREE.TorusGeometry(wR, wW, 10, 20),
-      new THREE.MeshLambertMaterial({ color: 0x1a1a1a, roughness: 0.95 }));
+      new THREE.MeshLambertMaterial({ color: 0x1a1a1a }));
     tire.rotation.y = Math.PI / 2;
     tire.castShadow = true;
     wheelGroup.add(tire);
 
     var rim = new THREE.Mesh(new THREE.CylinderGeometry(wR * 0.7, wR * 0.7, wW * 1.3, 14),
-      new THREE.MeshLambertMaterial({ color: 0xcccccc, metalness: 0.85, roughness: 0.1 }));
+      new THREE.MeshLambertMaterial({ color: 0xcccccc }));
     rim.rotation.z = Math.PI / 2;
     wheelGroup.add(rim);
 
     var cap = new THREE.Mesh(new THREE.CylinderGeometry(wR * 0.3, wR * 0.3, wW * 1.5, 8),
-      new THREE.MeshLambertMaterial({ color: mainColor, metalness: 0.7, roughness: 0.2 }));
+      new THREE.MeshLambertMaterial({ color: mainColor }));
     cap.rotation.z = Math.PI / 2;
     wheelGroup.add(cap);
 
