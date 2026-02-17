@@ -37,11 +37,11 @@ canvas{display:block}
 .char-grid-wrapper{display:flex;align-items:center;gap:4px}
 .char-arrow{flex-shrink:0;width:28px;height:60px;border:1.5px solid rgba(100,140,200,.25);border-radius:10px;background:rgba(255,255,255,.05);color:rgba(200,213,232,.7);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .char-arrow:hover{background:rgba(255,255,255,.12);color:#FFCC66;border-color:rgba(255,204,102,.4)}
-.char-grid-viewport{flex:1;overflow:hidden;min-width:0}
-.char-select{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;transition:transform .3s ease}
+.char-grid-viewport{flex:1;overflow:visible;min-width:0}
+.char-select{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;transition:transform .3s ease;padding:4px}
 .char-card{border-radius:10px;border:2px solid rgba(100,140,200,.15);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .2s cubic-bezier(.4,0,.2,1);padding:5px 3px;overflow:hidden}
-.char-card:hover{border-color:rgba(100,140,200,.4);transform:scale(1.06);background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.04))}
-.char-card.sel{border-color:#FFCC66;background:linear-gradient(180deg,rgba(255,204,102,.18),rgba(255,204,102,.06));transform:scale(1.08);box-shadow:0 0 18px rgba(255,204,102,.25),inset 0 0 15px rgba(255,204,102,.05)}
+.char-card:hover{border-color:rgba(100,140,200,.4);background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.04))}
+.char-card.sel{border-color:#FFCC66;background:linear-gradient(180deg,rgba(255,204,102,.18),rgba(255,204,102,.06));box-shadow:0 0 18px rgba(255,204,102,.25),inset 0 0 15px rgba(255,204,102,.05)}
 .char-card .emoji{font-size:22px;margin-bottom:1px}
 .char-card .char-portrait{width:44px;height:44px;border-radius:10px;object-fit:cover;margin-bottom:2px;flex-shrink:0;border:1.5px solid rgba(255,255,255,.1)}
 .char-card.sel .char-portrait{border-color:rgba(255,204,102,.4)}

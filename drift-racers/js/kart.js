@@ -43,8 +43,8 @@ function preloadModels(callback) {
         var size = new THREE.Vector3();
         box.getSize(size);
         var maxDim = Math.max(size.x, size.y, size.z);
-        // Target: character model roughly 1.2 units tall (proportional to kart body)
-        var targetSize = 1.2;
+        // Target: character model roughly 1.1 units tall (compact above kart)
+        var targetSize = 1.1;
         var scale = targetSize / maxDim;
         model.scale.set(scale, scale, scale);
 
@@ -156,9 +156,26 @@ function preloadEnvModels(callback) {
             }
           }
         });
-        // Y軸反転: ENV_MODEL_FLIP_Yで指定されたモデルをX軸回転で上下反転
-        if (typeof ENV_MODEL_FLIP_Y !== 'undefined' && ENV_MODEL_FLIP_Y[envType]) {
+        // Auto-detect inverted models from Trellis
+        var autoBox = new THREE.Box3().setFromObject(model);
+        var belowOrigin = Math.abs(autoBox.min.y);
+        var aboveOrigin = Math.max(autoBox.max.y, 0.001);
+        var needsFlip = false;
+        // If model extends much more below origin than above, it's inverted
+        if (belowOrigin > aboveOrigin * 2) {
+          needsFlip = true;
+        }
+        // All geometry at or below origin = definitely inverted
+        if (autoBox.max.y <= 0.001 && autoBox.min.y < -0.1) {
+          needsFlip = true;
+        }
+        // Manual override from ENV_MODEL_FLIP_Y
+        if (typeof ENV_MODEL_FLIP_Y !== 'undefined' && ENV_MODEL_FLIP_Y[envType] !== undefined) {
+          needsFlip = ENV_MODEL_FLIP_Y[envType];
+        }
+        if (needsFlip) {
           model.rotation.x = Math.PI;
+          console.log('Flipped inverted model: ' + envType);
         }
         envModelCache[envType] = model;
         loaded++;
@@ -182,49 +199,36 @@ function preloadEnvModels(callback) {
   });
 }
 
-// Clone an environment model with given position, scale, and rotation
-// Box3正規化: Y軸反転検出、地面設置、サイズ正規化
+// Clone and place an environment model at given position, scale, rotation
 function placeEnvModel(scene, envType, x, y, z, scale, rotY) {
   var template = envModelCache[envType];
   if (!template) return null;
   var clone = template.clone();
 
-  // Box3で正規化 - モデルのバウンディングボックスを計算
+  // Reset position and apply rotY FIRST so bbox includes rotation
+  clone.position.set(0, 0, 0);
+  if (rotY !== undefined) clone.rotation.y = rotY;
+
+  // Compute bounding box at origin (includes rotation)
   var box = new THREE.Box3().setFromObject(clone);
   var size = new THREE.Vector3();
   box.getSize(size);
-  var center = new THREE.Vector3();
-  box.getCenter(center);
-
-  // Y軸反転検出: 重心が下にある場合はY反転している可能性
-  // (正常なモデルは原点が底面付近にあるはず)
   var maxDim = Math.max(size.x, size.y, size.z);
   if (maxDim === 0) maxDim = 1;
 
-  // スケール適用
+  // Apply normalized scale (target size in world units)
   var s = (typeof scale === 'number') ? scale : 1;
   var normalizedScale = s / maxDim;
   clone.scale.set(normalizedScale, normalizedScale, normalizedScale);
 
-  // 再計算 (スケール後)
+  // Recompute box after scaling (still at origin)
   box.setFromObject(clone);
+  var center = new THREE.Vector3();
   box.getCenter(center);
 
-  // 地面に設置: モデルの底面をy座標に合わせる
-  clone.position.set(
-    x - center.x + x * 0, // centerX分ずらして中央配置
-    y - box.min.y,          // 底面をy座標に合わせる
-    z - center.z + z * 0
-  );
-  // X,Z位置を直接設定 (centerオフセットは不要、positionで直接指定)
-  clone.position.x = x;
-  clone.position.z = z;
-  clone.position.y = y - box.min.y + y * 0;
-  // box.min.yが負なら地面より下にあるので持ち上げる
-  var groundOffset = -box.min.y;
-  clone.position.set(x, y + groundOffset, z);
+  // Place: center horizontally at (x, z), bottom at y
+  clone.position.set(x - center.x, y - box.min.y, z - center.z);
 
-  if (rotY !== undefined) clone.rotation.y = rotY;
   scene.add(clone);
   trackMeshes.push(clone);
   return clone;
@@ -312,7 +316,11 @@ Racer.prototype.placeAt = function(idx) {
   this.z = pt.z;
   this.ang = getTrackAngle(idx);
   this.totalIdx = idx;
-  this.aiTargetIdx = idx + 10;
+  this.aiTargetIdx = (idx + 3) % TRACK_POINTS;
+  // Initialize progress relative to start line (node 0)
+  // Racers behind the line (e.g. node 95-99) get negative progress
+  this.progressAccum = (idx > TRACK_POINTS / 2) ? idx - TRACK_POINTS : idx;
+  this.progress = this.progressAccum;
 };
 
 Racer.prototype.createMesh = function(scene) {
@@ -415,10 +423,10 @@ Racer.prototype.createMesh = function(scene) {
     bodyGroup.add(intake);
   }
 
-  // Engine cowl (rear)
+  // Engine cowl (rear) - kept low so character is visible from behind
   var cowl = new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 8), accentMat);
-  cowl.position.set(0, 0.30, 0.9);
-  cowl.scale.set(1.15, 0.45, 0.85);
+  cowl.position.set(0, 0.24, 0.9);
+  cowl.scale.set(1.15, 0.35, 0.85);
   cowl.castShadow = true;
   bodyGroup.add(cowl);
 
@@ -559,18 +567,13 @@ Racer.prototype.createMesh = function(scene) {
     bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 1.6), goldMat).translateX(0.68).translateY(0.26).translateZ(0));
   }
 
-  // Number circle
-  var numMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
-  var numGeom = new THREE.CylinderGeometry(0.18, 0.18, 0.02, 12);
-  bodyGroup.add(new THREE.Mesh(numGeom, numMat).translateX(-0.73).translateY(0.24).translateZ(-0.1).rotateZ(Math.PI / 2));
-  bodyGroup.add(new THREE.Mesh(numGeom, numMat).translateX(0.73).translateY(0.24).translateZ(-0.1).rotateZ(Math.PI / 2));
-
   this.bodyMesh = bodyGroup;
+  bodyGroup.scale.set(0.7, 0.7, 0.7);
   this.mesh.add(bodyGroup);
 
-  // === DRIVER (Mario Kart style - character sits in the kart) ===
+  // === DRIVER (Mario Kart style - character sits HIGH above kart body) ===
   var driverGroup = new THREE.Group();
-  driverGroup.position.set(0, 0.38, 0.05);
+  driverGroup.position.set(0, 0.32, -0.07);
 
   // Check if GLB model is available for this character
   var hasGLBModel = glbModelCache[bodyType] !== undefined;
@@ -578,8 +581,9 @@ Racer.prototype.createMesh = function(scene) {
   if (hasGLBModel) {
     // Use GLB model as driver
     var glbClone = glbModelCache[bodyType].clone();
-    // Position the GLB model to sit in the kart
+    // Position the GLB model to sit in the kart, face forward
     glbClone.position.set(0, -0.1, 0);
+    glbClone.rotation.y = Math.PI;
     driverGroup.add(glbClone);
     this.glbDriver = glbClone;
   } else {
@@ -658,7 +662,8 @@ Racer.prototype.createMesh = function(scene) {
     driverGroup.add(new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.02, 6, 12), darkMat).translateY(0.1).translateZ(-0.38).rotateX(-0.3));
   }
 
-  bodyGroup.add(driverGroup);
+  this.mesh.add(driverGroup);
+  this.driverGroup = driverGroup;
 
   // === WHEELS - improved with better rims and detail ===
   this.wheelMeshes = [];
@@ -707,7 +712,7 @@ Racer.prototype.createMesh = function(scene) {
     wheelGroup.add(cap);
 
     wheelGroup.position.set(wheelPositions[i].x, 0.28, wheelPositions[i].z);
-    this.mesh.add(wheelGroup);
+    bodyGroup.add(wheelGroup);
     this.wheelMeshes.push(wheelGroup);
   }
 
@@ -1003,7 +1008,8 @@ Racer.prototype.update = function(input, racers, scene) {
 
     var turnRate = curHandling * 0.9;
     if (this.aiDrifting) turnRate *= 1.5;
-    turnRate *= Math.min(1, Math.abs(this.spd) / 0.8);
+    // Minimum turn rate so AI can steer even at low speed (e.g. at race start)
+    turnRate *= Math.max(0.3, Math.min(1, Math.abs(this.spd) / 0.8));
 
     if (absAngDiff > turnRate) {
       this.ang += turnRate * (angDiff > 0 ? 1 : -1);
@@ -1340,9 +1346,9 @@ Racer.prototype.update = function(input, racers, scene) {
     }
   }
 
-  // Collision with other racers (shadow_phase skips)
+  // Collision with other racers - gentle bumping (Mario Kart style)
   if (!phasing) {
-    var minSep = 2.0;
+    var minSep = 1.6;
     for (var r = 0; r < racers.length; r++) {
       var other = racers[r];
       if (other !== this) {
@@ -1351,14 +1357,15 @@ Racer.prototype.update = function(input, racers, scene) {
         var dist = Math.sqrt(dx * dx + dz * dz);
         if (dist < minSep && dist > 0.01) {
           var pushAng = Math.atan2(dz, dx);
-          var pushDist = (minSep - dist) * 0.6;
+          var pushDist = (minSep - dist) * 0.25;
           this.x += Math.cos(pushAng) * pushDist;
           this.z += Math.sin(pushAng) * pushDist;
           other.x -= Math.cos(pushAng) * pushDist;
           other.z -= Math.sin(pushAng) * pushDist;
+          // Gentle speed exchange
           var spdDiff = this.spd - other.spd;
-          this.spd -= spdDiff * 0.3;
-          other.spd += spdDiff * 0.3;
+          this.spd -= spdDiff * 0.08;
+          other.spd += spdDiff * 0.08;
         }
       }
     }
@@ -1375,6 +1382,9 @@ Racer.prototype.updateMesh = function() {
 
   if (this.bodyMesh) {
     this.bodyMesh.rotation.z = -this.tilt;
+  }
+  if (this.driverGroup) {
+    this.driverGroup.rotation.z = -this.tilt * 0.5;
   }
 
   // Wheel spin

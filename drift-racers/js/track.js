@@ -526,9 +526,9 @@ function buildStartFinish(scene) {
     var checkeredTexture = createCheckeredTexture();
     checkeredTexture.wrapS = THREE.RepeatWrapping;
     checkeredTexture.wrapT = THREE.RepeatWrapping;
-    checkeredTexture.repeat.set(7, 2);
-    var lineWidth = TRACK_WIDTH;
-    var lineDepth = 4;
+    checkeredTexture.repeat.set(10, 3);
+    var lineWidth = TRACK_WIDTH + 2;
+    var lineDepth = 8;
     var lineGeom = new THREE.PlaneGeometry(lineWidth, lineDepth);
     var lineMat = new THREE.MeshLambertMaterial({
         map: checkeredTexture
@@ -598,7 +598,7 @@ function buildStartFinish(scene) {
 // 100 track nodes split into 5 themed zones
 function buildTrackDecorations(scene) {
     var useGLB = envModelsLoaded && Object.keys(envModelCache).length > 0;
-    var treeTypes = ['tree-a', 'tree-b', 'tree-c'];
+    var treeTypes = ['tree-a', 'tree-a', 'tree-a']; // Only crystal tree (pink trees removed)
     var HW = TRACK_WIDTH / 2; // half-width shorthand
 
     // Zone determination
@@ -912,7 +912,7 @@ function buildTrackDecorations(scene) {
             placeAtTrack(i, fSide, 38 + (i % 4) * 5, function(px, py, pz) {
                 var tt = treeTypes[i % 3];
                 if (useGLB && envModelCache[tt]) {
-                    placeEnvModel(scene, tt, px, py, pz, 18 + (i % 4) * 3, i * 1.37);
+                    placeEnvModel(scene, tt, px, py, pz, 12 + (i % 4) * 2, i * 1.37);
                 } else {
                     createPineTree(scene, px, py, pz);
                 }
@@ -921,7 +921,7 @@ function buildTrackDecorations(scene) {
                 placeAtTrack(i, -fSide, 42 + (i % 3) * 6, function(px, py, pz) {
                     var tt2 = treeTypes[(i + 1) % 3];
                     if (useGLB && envModelCache[tt2]) {
-                        placeEnvModel(scene, tt2, px, py, pz, 20, i * 2.1);
+                        placeEnvModel(scene, tt2, px, py, pz, 13, i * 2.1);
                     } else {
                         createPineTree(scene, px, py, pz);
                     }
@@ -931,7 +931,7 @@ function buildTrackDecorations(scene) {
             if (i % 2 === 0) {
                 placeAtTrack(i, ((i / 2 | 0) % 2 === 0) ? 1 : -1, 20 + (i % 5) * 3, function(px, py, pz) {
                     if (useGLB && envModelCache['crystal']) {
-                        placeEnvModel(scene, 'crystal', px, py, pz, 12 + (i % 3) * 3, i * 0.83);
+                        placeEnvModel(scene, 'crystal', px, py, pz, 8 + (i % 3) * 2, i * 0.83);
                     } else {
                         createCrystal(scene, px, py, pz, 2 + (i % 3), 0x4488DD, 0x2266AA);
                     }
@@ -946,7 +946,7 @@ function buildTrackDecorations(scene) {
             // Crystal obelisks in forest clearings
             if ((i === 8 || i === 14 || i === 20) && useGLB && envModelCache['obelisk']) {
                 placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 22 + (i % 3) * 4, function(px, py, pz) {
-                    placeEnvModel(scene, 'obelisk', px, py, pz, 14, i * 0.9);
+                    placeEnvModel(scene, 'obelisk', px, py, pz, 10, i * 0.9);
                 });
             }
         }
@@ -957,7 +957,7 @@ function buildTrackDecorations(scene) {
                 placeAtTrack(i, (i % 4 < 2) ? 1 : -1, 40 + (i % 3) * 7, function(px, py, pz) {
                     var tt = treeTypes[i % 3];
                     if (useGLB && envModelCache[tt]) {
-                        placeEnvModel(scene, tt, px, py, pz, 22, i * 1.5);
+                        placeEnvModel(scene, tt, px, py, pz, 14, i * 1.5);
                     } else {
                         createPineTree(scene, px, py, pz);
                     }
@@ -967,7 +967,7 @@ function buildTrackDecorations(scene) {
             if (i === 30 || i === 40) {
                 placeAtTrack(i, (i === 30) ? -1 : 1, 40, function(px, py, pz) {
                     if (useGLB && envModelCache['castle']) {
-                        placeEnvModel(scene, 'castle', px, py, pz, 45, i * 0.5);
+                        placeEnvModel(scene, 'castle', px, py, pz, 25, i * 0.5);
                     } else {
                         createBuilding(scene, px, py, pz);
                     }
@@ -977,7 +977,7 @@ function buildTrackDecorations(scene) {
             if (i === 27 || i === 31 || i === 33 || i === 36 || i === 38 || i === 43) {
                 placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 32, function(px, py, pz) {
                     if (useGLB && envModelCache['house-a']) {
-                        placeEnvModel(scene, 'house-a', px, py, pz, 28, i * 1.05);
+                        placeEnvModel(scene, 'house-a', px, py, pz, 16, i * 1.05);
                     } else {
                         createBuilding(scene, px, py, pz);
                     }
@@ -987,7 +987,7 @@ function buildTrackDecorations(scene) {
             if (i === 35) {
                 placeAtTrack(i, 1, 25, function(px, py, pz) {
                     if (useGLB && envModelCache['fountain']) {
-                        placeEnvModel(scene, 'fountain', px, py, pz, 20, 0);
+                        placeEnvModel(scene, 'fountain', px, py, pz, 12, 0);
                     }
                 });
             }
@@ -995,7 +995,7 @@ function buildTrackDecorations(scene) {
             if (i === 28 || i === 42) {
                 placeAtTrack(i, (i === 28) ? 1 : -1, 26, function(px, py, pz) {
                     if (useGLB && envModelCache['archgate']) {
-                        placeEnvModel(scene, 'archgate', px, py, pz, 28, i * 0.06);
+                        placeEnvModel(scene, 'archgate', px, py, pz, 16, i * 0.06);
                     }
                 });
             }
@@ -1013,7 +1013,7 @@ function buildTrackDecorations(scene) {
                 placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 40 + (i % 3) * 10, function(px, py, pz) {
                     var tt = treeTypes[i % 3];
                     if (useGLB && envModelCache[tt]) {
-                        placeEnvModel(scene, tt, px, py, pz, 24, i * 1.8);
+                        placeEnvModel(scene, tt, px, py, pz, 15, i * 1.8);
                     } else {
                         createPineTree(scene, px, py, pz);
                     }
@@ -1023,7 +1023,7 @@ function buildTrackDecorations(scene) {
             if (i % 2 === 0) {
                 placeAtTrack(i, ((i / 2 | 0) % 2 === 0) ? 1 : -1, 18 + (i % 4) * 4, function(px, py, pz) {
                     if (useGLB && envModelCache['crystal']) {
-                        placeEnvModel(scene, 'crystal', px, py, pz, 16 + (i % 3) * 4, i * 0.7);
+                        placeEnvModel(scene, 'crystal', px, py, pz, 10 + (i % 3) * 2, i * 0.7);
                     } else {
                         createCrystal(scene, px, py, pz, 3 + (i % 3), 0xE8EEFF, 0x6688CC);
                     }
@@ -1038,7 +1038,7 @@ function buildTrackDecorations(scene) {
             // Crystal obelisks by the lakeside
             if ((i === 48 || i === 55 || i === 62) && useGLB && envModelCache['obelisk']) {
                 placeAtTrack(i, (i % 2 === 0) ? -1 : 1, 20 + (i % 3) * 5, function(px, py, pz) {
-                    placeEnvModel(scene, 'obelisk', px, py, pz, 16, i * 0.75);
+                    placeEnvModel(scene, 'obelisk', px, py, pz, 10, i * 0.75);
                 });
             }
         }
@@ -1049,7 +1049,7 @@ function buildTrackDecorations(scene) {
                 placeAtTrack(i, (i % 4 < 2) ? 1 : -1, 38 + (i % 4) * 5, function(px, py, pz) {
                     var tt = treeTypes[i % 3];
                     if (useGLB && envModelCache[tt]) {
-                        placeEnvModel(scene, tt, px, py, pz, 22, i * 1.6);
+                        placeEnvModel(scene, tt, px, py, pz, 14, i * 1.6);
                     } else {
                         createPineTree(scene, px, py, pz);
                     }
@@ -1059,7 +1059,7 @@ function buildTrackDecorations(scene) {
             if (i % 3 === 0) {
                 placeAtTrack(i, ((i / 3 | 0) % 2 === 0) ? 1 : -1, 20 + (i % 5) * 3, function(px, py, pz) {
                     if (useGLB && envModelCache['crystal']) {
-                        placeEnvModel(scene, 'crystal', px, py, pz, 14 + (i % 3) * 3, i * 0.9);
+                        placeEnvModel(scene, 'crystal', px, py, pz, 8 + (i % 3) * 2, i * 0.9);
                     } else {
                         createCrystal(scene, px, py, pz, 2.5 + (i % 3), 0x8866BB, 0x5533AA);
                     }
@@ -1069,7 +1069,7 @@ function buildTrackDecorations(scene) {
             if (i === 70 || i === 78) {
                 placeAtTrack(i, (i === 70) ? 1 : -1, 40, function(px, py, pz) {
                     if (useGLB && envModelCache['windmill']) {
-                        placeEnvModel(scene, 'windmill', px, py, pz, 35, i * 1.57);
+                        placeEnvModel(scene, 'windmill', px, py, pz, 20, i * 1.57);
                     }
                 });
             }
@@ -1081,7 +1081,7 @@ function buildTrackDecorations(scene) {
             placeAtTrack(i, gSide, 38 + (i % 3) * 5, function(px, py, pz) {
                 var tt = treeTypes[i % 3];
                 if (useGLB && envModelCache[tt]) {
-                    placeEnvModel(scene, tt, px, py, pz, 20, i * 1.4);
+                    placeEnvModel(scene, tt, px, py, pz, 13, i * 1.4);
                 } else {
                     createPineTree(scene, px, py, pz);
                 }
@@ -1094,7 +1094,7 @@ function buildTrackDecorations(scene) {
             if (i === 92) {
                 placeAtTrack(i, 1, 24, function(px, py, pz) {
                     if (useGLB && envModelCache['fountain']) {
-                        placeEnvModel(scene, 'fountain', px, py, pz, 26, 0);
+                        placeEnvModel(scene, 'fountain', px, py, pz, 16, 0);
                     }
                 });
             }
@@ -1102,7 +1102,7 @@ function buildTrackDecorations(scene) {
             if (i === 90 || i === 98) {
                 placeAtTrack(i, (i === 90) ? -1 : 1, 28, function(px, py, pz) {
                     if (useGLB && envModelCache['archgate']) {
-                        placeEnvModel(scene, 'archgate', px, py, pz, 30, i * 0.06);
+                        placeEnvModel(scene, 'archgate', px, py, pz, 18, i * 0.06);
                     }
                 });
             }
@@ -1115,24 +1115,24 @@ function buildTrackDecorations(scene) {
         }
     }
 
-    // === Background mountains (faraway, more and closer) ===
+    // === Background mountains (faraway, base at ground level) ===
     var mountainPositions = [
-        { x: 300, z: 300, h: 35 },
-        { x: -300, z: 300, h: 50 },
-        { x: 300, z: -300, h: 25 },
-        { x: -300, z: -300, h: 45 },
-        { x: 0, z: 400, h: 60 },
-        { x: 400, z: 0, h: 38 },
-        { x: -400, z: 0, h: 48 },
-        { x: 0, z: -400, h: 30 },
-        { x: 200, z: 450, h: 42 },
-        { x: -200, z: -450, h: 55 },
-        { x: 450, z: 200, h: 32 },
-        { x: -450, z: -200, h: 40 }
+        { x: 450, z: 450, h: -2 },
+        { x: -450, z: 450, h: -2 },
+        { x: 450, z: -450, h: -2 },
+        { x: -450, z: -450, h: -2 },
+        { x: 0, z: 550, h: -2 },
+        { x: 550, z: 0, h: -2 },
+        { x: -550, z: 0, h: -2 },
+        { x: 0, z: -550, h: -2 },
+        { x: 350, z: 550, h: -2 },
+        { x: -350, z: -550, h: -2 },
+        { x: 550, z: 350, h: -2 },
+        { x: -550, z: -350, h: -2 }
     ];
     for (var i = 0; i < mountainPositions.length; i++) {
         var mp = mountainPositions[i];
-        var mScale = 70 + i * 4;
+        var mScale = 45 + i * 3;
         if (useGLB && envModelCache['mountain']) {
             placeEnvModel(scene, 'mountain', mp.x, mp.h, mp.z, mScale, i * 0.79);
         } else {
