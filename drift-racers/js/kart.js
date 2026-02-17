@@ -342,81 +342,171 @@ Racer.prototype.createMesh = function(scene) {
 
   // === MAIN BODY - shape varies by kart style ===
   var kartStyle = KARTS[this.kartIdx] ? KARTS[this.kartIdx].style : 'medium';
-  var baseW = 1.5, baseH = 0.22, baseD = 2.4;
-  var shellW = 1.3, shellH = 0.38, shellD = 2.0;
 
-  if (kartStyle === 'long') { baseW = 1.35; baseD = 2.7; shellW = 1.15; shellD = 2.3; shellH = 0.32; }
-  else if (kartStyle === 'wide') { baseW = 1.65; shellW = 1.45; shellH = 0.42; }
+  // Style-specific dimensions
+  var baseW, baseD, shellW, shellH, shellD, noseLen, spoilerW;
+  if (kartStyle === 'long') {
+    baseW = 1.3; baseD = 2.8; shellW = 1.1; shellH = 0.35; shellD = 2.3; noseLen = 1.5; spoilerW = 1.2;
+  } else if (kartStyle === 'wide') {
+    baseW = 1.7; baseD = 2.4; shellW = 1.5; shellH = 0.42; shellD = 2.0; noseLen = 1.1; spoilerW = 1.6;
+  } else {
+    baseW = 1.5; baseD = 2.5; shellW = 1.3; shellH = 0.38; shellD = 2.1; noseLen = 1.25; spoilerW = 1.4;
+  }
 
-  // Lower chassis
-  var base = new THREE.Mesh(new THREE.BoxGeometry(baseW, baseH, baseD), darkMat);
-  base.position.y = 0.15;
-  base.castShadow = true;
-  bodyGroup.add(base);
+  // Lower chassis - tapered (wider at rear)
+  var chassisGeo = new THREE.BufferGeometry();
+  var cw = baseW * 0.5, cd = baseD * 0.5, ch = 0.12;
+  var cwf = cw * 0.75; // front is narrower
+  var chassisVerts = [
+    // Top face
+    -cwf, ch, -cd,  cwf, ch, -cd,  cw, ch, cd,  -cw, ch, cd,
+    // Bottom face
+    -cwf, -ch, -cd,  cwf, -ch, -cd,  cw, -ch, cd,  -cw, -ch, cd
+  ];
+  var chassisIdx = [0,1,2, 0,2,3, 4,6,5, 4,7,6, 0,4,5, 0,5,1, 2,6,7, 2,7,3, 1,5,6, 1,6,2, 0,3,7, 0,7,4];
+  chassisGeo.setAttribute('position', new THREE.Float32BufferAttribute(chassisVerts, 3));
+  chassisGeo.setIndex(chassisIdx);
+  chassisGeo.computeVertexNormals();
+  var chassis = new THREE.Mesh(chassisGeo, darkMat);
+  chassis.position.y = 0.14;
+  chassis.castShadow = true;
+  bodyGroup.add(chassis);
 
-  // Upper body shell
-  var shell = new THREE.Mesh(new THREE.BoxGeometry(shellW, shellH, shellD), bodyMat);
-  shell.position.set(0, 0.38, -0.1);
+  // Upper body shell - curved using sphere
+  var shell = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), bodyMat);
+  shell.position.set(0, 0.35, -0.05);
+  shell.scale.set(shellW * 0.52, shellH * 0.7, shellD * 0.48);
   shell.castShadow = true;
   bodyGroup.add(shell);
 
-  // Front nose
-  var nose = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 8), bodyMat);
-  nose.position.set(0, 0.32, -1.2);
-  nose.scale.set(1.2, 0.5, 0.7);
+  // Front nose - elongated aerodynamic shape
+  var nose = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 8), bodyMat);
+  nose.position.set(0, 0.28, -noseLen);
+  nose.scale.set(baseW * 0.55, 0.4, 0.8);
+  nose.castShadow = true;
   bodyGroup.add(nose);
 
+  // Front splitter (chin)
+  var splitter = new THREE.Mesh(new THREE.BoxGeometry(baseW * 0.9, 0.04, 0.35), darkMat);
+  splitter.position.set(0, 0.08, -noseLen - 0.1);
+  bodyGroup.add(splitter);
+
   // Chrome bumper
-  var bumper = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.2, 8), chromeMat);
-  bumper.position.set(0, 0.18, -1.4);
+  var bumper = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, baseW * 0.85, 8), chromeMat);
+  bumper.position.set(0, 0.15, -noseLen - 0.15);
   bumper.rotation.z = Math.PI / 2;
   bodyGroup.add(bumper);
 
-  // Side skirts
-  var skirtGeom = new THREE.BoxGeometry(0.12, 0.2, 1.8);
-  bodyGroup.add(new THREE.Mesh(skirtGeom, accentMat).translateX(-0.72).translateY(0.18));
-  bodyGroup.add(new THREE.Mesh(skirtGeom, accentMat).translateX(0.72).translateY(0.18));
+  // Side pods / skirts - sculpted with spheres
+  for (var s = -1; s <= 1; s += 2) {
+    var pod = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 6), accentMat);
+    pod.position.set(s * (baseW * 0.42), 0.22, 0.15);
+    pod.scale.set(0.5, 0.55, 2.2);
+    pod.castShadow = true;
+    bodyGroup.add(pod);
+  }
 
-  // Engine cowl
-  var cowl = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 8), accentMat);
-  cowl.position.set(0, 0.45, 0.85);
-  cowl.scale.set(1.1, 0.65, 0.8);
+  // Side air intakes
+  var intakeMat = new THREE.MeshLambertMaterial({ color: 0x111115 });
+  for (var s = -1; s <= 1; s += 2) {
+    var intake = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.45), intakeMat);
+    intake.position.set(s * (shellW * 0.52), 0.32, -0.4);
+    bodyGroup.add(intake);
+  }
+
+  // Cockpit windscreen
+  var windscreenMat = new THREE.MeshLambertMaterial({
+    color: 0x88BBEE, transparent: true, opacity: 0.35, side: THREE.DoubleSide
+  });
+  var windscreen = new THREE.Mesh(new THREE.PlaneGeometry(shellW * 0.7, 0.35), windscreenMat);
+  windscreen.position.set(0, 0.62, -0.35);
+  windscreen.rotation.x = -0.5;
+  bodyGroup.add(windscreen);
+
+  // Engine cowl (rear)
+  var cowl = new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 8), accentMat);
+  cowl.position.set(0, 0.42, 0.9);
+  cowl.scale.set(1.15, 0.6, 0.85);
+  cowl.castShadow = true;
   bodyGroup.add(cowl);
 
-  // Spoiler
-  var spoilerMat = new THREE.MeshLambertMaterial({ color: mainColor });
-  var spoiler = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.08, 0.2), spoilerMat);
-  spoiler.position.set(0, 0.85, 1.15);
-  spoiler.rotation.x = -0.15;
-  bodyGroup.add(spoiler);
-  var epGeom = new THREE.BoxGeometry(0.04, 0.16, 0.22);
-  bodyGroup.add(new THREE.Mesh(epGeom, spoilerMat).translateX(-0.68).translateY(0.82).translateZ(1.15));
-  bodyGroup.add(new THREE.Mesh(epGeom, spoilerMat).translateX(0.68).translateY(0.82).translateZ(1.15));
-  var sGeom = new THREE.CylinderGeometry(0.03, 0.03, 0.35, 6);
-  bodyGroup.add(new THREE.Mesh(sGeom, chromeMat).translateX(-0.45).translateY(0.65).translateZ(1.05));
-  bodyGroup.add(new THREE.Mesh(sGeom, chromeMat).translateX(0.45).translateY(0.65).translateZ(1.05));
+  // Engine intake scoop
+  var scoopMat = new THREE.MeshLambertMaterial({ color: 0x111115 });
+  var scoop = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.22, 0.25), scoopMat);
+  scoop.position.set(0, 0.58, 0.5);
+  bodyGroup.add(scoop);
 
-  // Exhaust
-  var exhMat = new THREE.MeshLambertMaterial({ color: 0x888888 });
-  var exhGeom = new THREE.CylinderGeometry(0.07, 0.09, 0.35, 8);
+  // Wheel arches / fenders
+  var fenderMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+  var fenderPositions = [
+    { x: -0.72, z: -0.85, front: true }, { x: 0.72, z: -0.85, front: true },
+    { x: -0.72, z: 0.9, front: false }, { x: 0.72, z: 0.9, front: false }
+  ];
+  for (var fi = 0; fi < fenderPositions.length; fi++) {
+    var fp = fenderPositions[fi];
+    var fr = fp.front ? 0.32 : 0.37;
+    var fender = new THREE.Mesh(
+      new THREE.TorusGeometry(fr, 0.06, 6, 12, Math.PI),
+      fenderMat
+    );
+    fender.position.set(fp.x, 0.28, fp.z);
+    fender.rotation.y = Math.PI / 2;
+    fender.rotation.x = -Math.PI / 2;
+    bodyGroup.add(fender);
+  }
+
+  // Spoiler - style-specific
+  var spoilerMat = new THREE.MeshLambertMaterial({ color: mainColor });
+  var spoilerH = kartStyle === 'wide' ? 0.95 : 0.85;
+  var spoiler = new THREE.Mesh(new THREE.BoxGeometry(spoilerW, 0.06, 0.25), spoilerMat);
+  spoiler.position.set(0, spoilerH, 1.15);
+  spoiler.rotation.x = -0.18;
+  bodyGroup.add(spoiler);
+  // Spoiler end plates
+  var epMat = new THREE.MeshLambertMaterial({ color: mainColor });
+  var epW = spoilerW * 0.48;
+  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.28), epMat).translateX(-epW).translateY(spoilerH - 0.02).translateZ(1.15));
+  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.28), epMat).translateX(epW).translateY(spoilerH - 0.02).translateZ(1.15));
+  // Spoiler supports (chrome)
+  var sGeom = new THREE.CylinderGeometry(0.025, 0.025, 0.32, 6);
+  bodyGroup.add(new THREE.Mesh(sGeom, chromeMat).translateX(-epW * 0.7).translateY(spoilerH - 0.2).translateZ(1.05));
+  bodyGroup.add(new THREE.Mesh(sGeom, chromeMat).translateX(epW * 0.7).translateY(spoilerH - 0.2).translateZ(1.05));
+
+  // Exhaust pipes (chrome)
+  var exhMat = new THREE.MeshStandardMaterial({ color: 0xBBBBBB, metalness: 0.7, roughness: 0.2 });
+  var exhGeom = new THREE.CylinderGeometry(0.06, 0.08, 0.4, 8);
   var lExh = new THREE.Mesh(exhGeom, exhMat);
-  lExh.position.set(-0.32, 0.22, 1.35); lExh.rotation.x = Math.PI / 2.3;
+  lExh.position.set(-0.3, 0.2, 1.4); lExh.rotation.x = Math.PI / 2.3;
   bodyGroup.add(lExh);
   var rExh = new THREE.Mesh(exhGeom, exhMat);
-  rExh.position.set(0.32, 0.22, 1.35); rExh.rotation.x = Math.PI / 2.3;
+  rExh.position.set(0.3, 0.2, 1.4); rExh.rotation.x = Math.PI / 2.3;
   bodyGroup.add(rExh);
+  // Exhaust tips (glowing orange inside)
+  var exhTipMat = new THREE.MeshLambertMaterial({ color: 0xFF6600, emissive: 0xFF4400, emissiveIntensity: 0.4 });
+  var exhTipGeo = new THREE.CylinderGeometry(0.04, 0.05, 0.08, 8);
+  bodyGroup.add(new THREE.Mesh(exhTipGeo, exhTipMat).translateX(-0.3).translateY(0.18).translateZ(1.55).rotateX(Math.PI / 2.3));
+  bodyGroup.add(new THREE.Mesh(exhTipGeo, exhTipMat).translateX(0.3).translateY(0.18).translateZ(1.55).rotateX(Math.PI / 2.3));
 
-  // Headlights
+  // Headlights - larger, LED-style
   var hlMat = new THREE.MeshLambertMaterial({
-    color: 0xffffcc, emissive: 0xffffaa, emissiveIntensity: 0.5
+    color: 0xffffdd, emissive: 0xffffaa, emissiveIntensity: 0.6
   });
-  bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), hlMat).translateX(-0.4).translateY(0.3).translateZ(-1.45));
-  bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), hlMat).translateX(0.4).translateY(0.3).translateZ(-1.45));
+  var hlGeo = new THREE.SphereGeometry(0.09, 8, 8);
+  bodyGroup.add(new THREE.Mesh(hlGeo, hlMat).translateX(-0.38).translateY(0.26).translateZ(-noseLen - 0.05));
+  bodyGroup.add(new THREE.Mesh(hlGeo, hlMat).translateX(0.38).translateY(0.26).translateZ(-noseLen - 0.05));
+  // Headlight housing
+  var hlHouseMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
+  var hlHouseGeo = new THREE.SphereGeometry(0.12, 8, 8);
+  hlHouseGeo.scale(1, 1, 0.5);
+  bodyGroup.add(new THREE.Mesh(hlHouseGeo, hlHouseMat).translateX(-0.38).translateY(0.26).translateZ(-noseLen + 0.01));
+  bodyGroup.add(new THREE.Mesh(hlHouseGeo, hlHouseMat).translateX(0.38).translateY(0.26).translateZ(-noseLen + 0.01));
 
-  // Tail lights
-  var tlMat = new THREE.MeshLambertMaterial({ color: 0xff2222, emissive: 0xff0000, emissiveIntensity: 0.4 });
-  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.08, 0.04), tlMat).translateX(-0.45).translateY(0.35).translateZ(1.2));
-  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.08, 0.04), tlMat).translateX(0.45).translateY(0.35).translateZ(1.2));
+  // Tail lights - LED strip style
+  var tlMat = new THREE.MeshLambertMaterial({ color: 0xff2222, emissive: 0xff0000, emissiveIntensity: 0.5 });
+  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.03), tlMat).translateX(-0.42).translateY(0.32).translateZ(1.25));
+  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.03), tlMat).translateX(0.42).translateY(0.32).translateZ(1.25));
+  // Center brake light
+  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.04, 0.03), tlMat).translateY(spoilerH - 0.12).translateZ(1.22));
 
   // === CHARACTER-SPECIFIC DECORATIONS based on body type ===
   if (bodyType === 'dragon') {
@@ -600,7 +690,7 @@ Racer.prototype.createMesh = function(scene) {
 
   bodyGroup.add(driverGroup);
 
-  // === WHEELS ===
+  // === WHEELS - improved with better rims and detail ===
   this.wheelMeshes = [];
   var wheelPositions = [
     { x: -0.72, z: -0.85 }, { x: 0.72, z: -0.85 },
@@ -613,19 +703,36 @@ Racer.prototype.createMesh = function(scene) {
     var wR = isFront ? 0.28 : 0.33;
     var wW = isFront ? 0.14 : 0.17;
 
-    var tire = new THREE.Mesh(new THREE.TorusGeometry(wR, wW, 10, 20),
-      new THREE.MeshLambertMaterial({ color: 0x1a1a1a }));
+    // Tire (dark rubber)
+    var tireMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+    var tire = new THREE.Mesh(new THREE.TorusGeometry(wR, wW, 10, 20), tireMat);
     tire.rotation.y = Math.PI / 2;
     tire.castShadow = true;
     wheelGroup.add(tire);
 
-    var rim = new THREE.Mesh(new THREE.CylinderGeometry(wR * 0.7, wR * 0.7, wW * 1.3, 14),
-      new THREE.MeshLambertMaterial({ color: 0xcccccc }));
+    // Rim disc (metallic)
+    var rimMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.8, roughness: 0.15 });
+    var rim = new THREE.Mesh(new THREE.CylinderGeometry(wR * 0.7, wR * 0.7, wW * 1.3, 14), rimMat);
     rim.rotation.z = Math.PI / 2;
     wheelGroup.add(rim);
 
-    var cap = new THREE.Mesh(new THREE.CylinderGeometry(wR * 0.3, wR * 0.3, wW * 1.5, 8),
-      new THREE.MeshLambertMaterial({ color: mainColor }));
+    // Rim spokes (5 spoke design)
+    var spokeMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.7, roughness: 0.2 });
+    for (var sp = 0; sp < 5; sp++) {
+      var spokeAng = (sp / 5) * Math.PI * 2;
+      var spoke = new THREE.Mesh(new THREE.BoxGeometry(0.04, wW * 1.1, wR * 0.55), spokeMat);
+      spoke.position.set(
+        Math.cos(spokeAng) * wR * 0.35,
+        0,
+        Math.sin(spokeAng) * wR * 0.35
+      );
+      spoke.rotation.y = spokeAng;
+      wheelGroup.add(spoke);
+    }
+
+    // Center cap (character color)
+    var capMat = new THREE.MeshStandardMaterial({ color: mainColor, metalness: 0.6, roughness: 0.2 });
+    var cap = new THREE.Mesh(new THREE.CylinderGeometry(wR * 0.22, wR * 0.22, wW * 1.6, 10), capMat);
     cap.rotation.z = Math.PI / 2;
     wheelGroup.add(cap);
 
@@ -875,9 +982,12 @@ Racer.prototype.update = function(input, racers, scene) {
   } else if (!this.isPlayer) {
     // === IMPROVED AI ===
 
-    // --- Lookahead target with lateral offset for lane variety ---
-    var lookahead = 8 + Math.floor(this.spd * 3);
-    var targetIdx = (this.aiTargetIdx + lookahead) % TRACK_POINTS;
+    // --- Sync waypoint with actual position using nearest track index ---
+    var nearIdx = nearestTrackIndex(this.x, this.z);
+    // Keep aiTargetIdx ahead of current position
+    var lookahead = 6 + Math.floor(this.spd * 3);
+    this.aiTargetIdx = (nearIdx + lookahead) % TRACK_POINTS;
+
     var targetPt = getTrackPoint(this.aiTargetIdx);
     var tAng = getTrackAngle(this.aiTargetIdx);
     var perpAng = tAng + Math.PI / 2;
@@ -892,6 +1002,21 @@ Racer.prototype.update = function(input, racers, scene) {
     var angDiff = targetAng - this.ang;
     while (angDiff > Math.PI) angDiff -= Math.PI * 2;
     while (angDiff < -Math.PI) angDiff += Math.PI * 2;
+
+    // --- Track correction: pull AI back toward track center when off-road ---
+    var nearNode = trackNodes[nearIdx];
+    if (nearNode) {
+      var offDx = this.x - nearNode.x;
+      var offDz = this.z - nearNode.z;
+      var offDist = Math.sqrt(offDx * offDx + offDz * offDz);
+      var halfTrack = TRACK_WIDTH * 0.45;
+      if (offDist > halfTrack) {
+        // Pull back toward track center proportionally to how far off
+        var pullStr = Math.min(0.15, (offDist - halfTrack) * 0.01);
+        this.x -= offDx * pullStr;
+        this.z -= offDz * pullStr;
+      }
+    }
 
     // --- AI Drift logic: drift on sharp turns ---
     var absAngDiff = Math.abs(angDiff);
@@ -940,13 +1065,6 @@ Racer.prototype.update = function(input, racers, scene) {
     if (!this.aiDrifting) {
       this.aiDriftCharge = 0;
       this.tilt *= 0.9;
-    }
-
-    // Advance waypoint
-    var dist = Math.sqrt(dx * dx + dz * dz);
-    if (dist < 12) {
-      this.aiTargetIdx += 3;
-      if (this.aiTargetIdx >= TRACK_POINTS) this.aiTargetIdx -= TRACK_POINTS;
     }
 
     // --- Rubber banding: AI adapts speed based on position relative to player ---

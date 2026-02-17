@@ -98,6 +98,11 @@ function initScene() {
 
   // Rainbow removed - Crystal Kingdom doesn't need rainbow
 
+  // Terrain structures
+  buildBridgePillars(scene);
+  buildTunnels(scene);
+  buildRamps(scene);
+
   clock = new THREE.Clock();
 
   // Initialize particle systems
@@ -457,9 +462,9 @@ function buildTerrainCliffs(scene) {
 // Build bridge supports/pillars under elevated road sections
 function buildBridgePillars(scene) {
   var pillarMat = new THREE.MeshLambertMaterial({
-    color: 0x998877,
-    emissive: 0x221111,
-    emissiveIntensity: 0.1
+    color: 0x99AABC,
+    emissive: 0x1A2244,
+    emissiveIntensity: 0.15
   });
 
   for (var i = 0; i < trackNodes.length; i += 8) {
@@ -507,15 +512,15 @@ function buildTunnels(scene) {
   ];
 
   var tunnelMat = new THREE.MeshLambertMaterial({
-    color: 0x776688,
-    emissive: 0x221133,
+    color: 0x8899BB,
+    emissive: 0x1A2244,
     emissiveIntensity: 0.15
   });
 
   var innerMat = new THREE.MeshLambertMaterial({
-    color: 0x554466,
-    emissive: 0x332255,
-    emissiveIntensity: 0.2,
+    color: 0x6677AA,
+    emissive: 0x223366,
+    emissiveIntensity: 0.25,
     side: THREE.BackSide
   });
 
@@ -568,7 +573,7 @@ function buildTunnels(scene) {
 
       // Neon lights inside tunnel
       if (i % 2 === 0) {
-        var lightColors = [0xFF44AA, 0x44CCFF, 0xFFDD00];
+        var lightColors = [0x4488DD, 0x8866BB, 0xFFCC66];
         var lColor = lightColors[(i - spot.start) % lightColors.length];
         var lightGeo = new THREE.BoxGeometry(archW * 0.8, 0.15, 0.15);
         var lightMat = new THREE.MeshBasicMaterial({
@@ -589,9 +594,9 @@ function buildTunnels(scene) {
 // Build ramps/jumps at specific track sections
 function buildRamps(scene) {
   var rampMat = new THREE.MeshLambertMaterial({
-    color: 0xFFAA00,
-    emissive: 0xFF6600,
-    emissiveIntensity: 0.3
+    color: 0x4488DD,
+    emissive: 0x2266BB,
+    emissiveIntensity: 0.35
   });
 
   var rampSpots = [48, 92]; // Track indices for ramps
@@ -641,9 +646,9 @@ function buildRamps(scene) {
 
     // Arrow markings on ramp
     var arrowMat = new THREE.MeshBasicMaterial({
-      color: 0xFFFF00,
+      color: 0xFFCC66,
       transparent: true,
-      opacity: 0.8
+      opacity: 0.85
     });
     for (var a = 0; a < 3; a++) {
       var arrowGeo = new THREE.ConeGeometry(0.8, 1.5, 3);
