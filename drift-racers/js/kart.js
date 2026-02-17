@@ -43,8 +43,8 @@ function preloadModels(callback) {
         var size = new THREE.Vector3();
         box.getSize(size);
         var maxDim = Math.max(size.x, size.y, size.z);
-        // Target: character model roughly 2.0 units tall (Mario Kart style - character is the star)
-        var targetSize = 2.0;
+        // Target: character model roughly 1.2 units tall (proportional to kart body)
+        var targetSize = 1.2;
         var scale = targetSize / maxDim;
         model.scale.set(scale, scale, scale);
 
@@ -255,6 +255,7 @@ function Racer(charIdx, isPlayer, kartIdx, equipType) {
   this.lap = 0;
   this.totalIdx = 0;
   this.progress = 0;
+  this.progressAccum = 0; // cumulative forward progress (handles start-line wraparound)
   this.lastCP = 0;
   this.crossedStartOnce = false; // Prevents false lap on first start-line crossing
 
@@ -343,14 +344,14 @@ Racer.prototype.createMesh = function(scene) {
   // === MAIN BODY - shape varies by kart style ===
   var kartStyle = KARTS[this.kartIdx] ? KARTS[this.kartIdx].style : 'medium';
 
-  // Style-specific dimensions (flat go-kart style - character is the star)
+  // Style-specific dimensions (go-kart style with visible character)
   var baseW, baseD, shellW, shellH, shellD, noseLen, spoilerW;
   if (kartStyle === 'long') {
-    baseW = 1.3; baseD = 2.8; shellW = 1.1; shellH = 0.22; shellD = 2.3; noseLen = 1.5; spoilerW = 1.2;
+    baseW = 1.3; baseD = 2.8; shellW = 1.1; shellH = 0.32; shellD = 2.3; noseLen = 1.5; spoilerW = 1.2;
   } else if (kartStyle === 'wide') {
-    baseW = 1.7; baseD = 2.4; shellW = 1.5; shellH = 0.26; shellD = 2.0; noseLen = 1.1; spoilerW = 1.6;
+    baseW = 1.7; baseD = 2.4; shellW = 1.5; shellH = 0.38; shellD = 2.0; noseLen = 1.1; spoilerW = 1.6;
   } else {
-    baseW = 1.5; baseD = 2.5; shellW = 1.3; shellH = 0.24; shellD = 2.1; noseLen = 1.25; spoilerW = 1.4;
+    baseW = 1.5; baseD = 2.5; shellW = 1.3; shellH = 0.35; shellD = 2.1; noseLen = 1.25; spoilerW = 1.4;
   }
 
   // Lower chassis - tapered (wider at rear)
@@ -372,17 +373,17 @@ Racer.prototype.createMesh = function(scene) {
   chassis.castShadow = true;
   bodyGroup.add(chassis);
 
-  // Upper body shell - low flat go-kart style
+  // Upper body shell
   var shell = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), bodyMat);
-  shell.position.set(0, 0.24, -0.05);
-  shell.scale.set(shellW * 0.52, shellH * 0.55, shellD * 0.48);
+  shell.position.set(0, 0.30, -0.05);
+  shell.scale.set(shellW * 0.52, shellH * 0.6, shellD * 0.48);
   shell.castShadow = true;
   bodyGroup.add(shell);
 
   // Front nose - elongated aerodynamic shape
   var nose = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 8), bodyMat);
-  nose.position.set(0, 0.2, -noseLen);
-  nose.scale.set(baseW * 0.55, 0.28, 0.8);
+  nose.position.set(0, 0.25, -noseLen);
+  nose.scale.set(baseW * 0.55, 0.35, 0.8);
   nose.castShadow = true;
   bodyGroup.add(nose);
 
@@ -400,8 +401,8 @@ Racer.prototype.createMesh = function(scene) {
   // Side pods / skirts - sculpted with spheres
   for (var s = -1; s <= 1; s += 2) {
     var pod = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 6), accentMat);
-    pod.position.set(s * (baseW * 0.42), 0.16, 0.15);
-    pod.scale.set(0.5, 0.35, 2.2);
+    pod.position.set(s * (baseW * 0.42), 0.20, 0.15);
+    pod.scale.set(0.5, 0.42, 2.2);
     pod.castShadow = true;
     bodyGroup.add(pod);
   }
@@ -414,10 +415,10 @@ Racer.prototype.createMesh = function(scene) {
     bodyGroup.add(intake);
   }
 
-  // Engine cowl (rear) - low profile
+  // Engine cowl (rear)
   var cowl = new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 8), accentMat);
-  cowl.position.set(0, 0.22, 0.9);
-  cowl.scale.set(1.15, 0.35, 0.85);
+  cowl.position.set(0, 0.30, 0.9);
+  cowl.scale.set(1.15, 0.45, 0.85);
   cowl.castShadow = true;
   bodyGroup.add(cowl);
 
@@ -442,7 +443,7 @@ Racer.prototype.createMesh = function(scene) {
 
   // Spoiler - style-specific
   var spoilerMat = new THREE.MeshLambertMaterial({ color: mainColor });
-  var spoilerH = kartStyle === 'wide' ? 0.55 : 0.48;
+  var spoilerH = kartStyle === 'wide' ? 0.65 : 0.58;
   var spoiler = new THREE.Mesh(new THREE.BoxGeometry(spoilerW, 0.06, 0.25), spoilerMat);
   spoiler.position.set(0, spoilerH, 1.15);
   spoiler.rotation.x = -0.18;
@@ -567,9 +568,9 @@ Racer.prototype.createMesh = function(scene) {
   this.bodyMesh = bodyGroup;
   this.mesh.add(bodyGroup);
 
-  // === DRIVER (Mario Kart style - character is the star) ===
+  // === DRIVER (Mario Kart style - character sits in the kart) ===
   var driverGroup = new THREE.Group();
-  driverGroup.position.set(0, 0.28, 0.05);
+  driverGroup.position.set(0, 0.38, 0.05);
 
   // Check if GLB model is available for this character
   var hasGLBModel = glbModelCache[bodyType] !== undefined;
@@ -953,8 +954,8 @@ Racer.prototype.update = function(input, racers, scene) {
 
     // --- Sync waypoint with actual position using nearest track index ---
     var nearIdx = nearestTrackIndex(this.x, this.z);
-    // Keep aiTargetIdx ahead of current position
-    var lookahead = 6 + Math.floor(this.spd * 3);
+    // Keep aiTargetIdx ahead of current position (small lookahead at low speed)
+    var lookahead = 2 + Math.floor(this.spd * 5);
     this.aiTargetIdx = (nearIdx + lookahead) % TRACK_POINTS;
 
     var targetPt = getTrackPoint(this.aiTargetIdx);
@@ -1183,9 +1184,15 @@ Racer.prototype.update = function(input, racers, scene) {
     this.spd *= 0.96;
   }
 
-  // Progress tracking
+  // Progress tracking (cumulative delta to handle start-line wraparound)
   var prevIdx = this.totalIdx;
   this.totalIdx = nearIdx;
+
+  var idxDelta = nearIdx - prevIdx;
+  if (idxDelta < -TRACK_POINTS / 2) idxDelta += TRACK_POINTS;  // forward wrap (99→0)
+  if (idxDelta > TRACK_POINTS / 2) idxDelta -= TRACK_POINTS;   // backward wrap (rare)
+  this.progressAccum += idxDelta;
+  this.progress = this.progressAccum;
 
   // Lap detection
   if (prevIdx > TRACK_POINTS - 50 && this.totalIdx < 50) {
@@ -1201,8 +1208,6 @@ Racer.prototype.update = function(input, racers, scene) {
       }
     }
   }
-
-  this.progress = this.lap * TRACK_POINTS + this.totalIdx;
 
   // Energy ring collection
   if (typeof energyRings !== 'undefined') {

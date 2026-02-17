@@ -21,8 +21,8 @@ function initPreview3D() {
   previewScene.background = new THREE.Color(0x1A2E4A);
 
   previewCamera = new THREE.PerspectiveCamera(30, w / h, 0.1, 100);
-  previewCamera.position.set(4.5, 3, 4.5);
-  previewCamera.lookAt(0, 1.0, 0);
+  previewCamera.position.set(4, 2.5, 4);
+  previewCamera.lookAt(0, 0.7, 0);
 
   previewRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
   previewRenderer.setSize(w, h);
@@ -323,8 +323,15 @@ function showResults() {
     rank.className = 'rank ' + rc[i];
     rank.textContent = (i + 1);
     li.appendChild(rank);
+    // Character portrait + name
+    if (r.char.img) {
+      var portrait = document.createElement('img');
+      portrait.src = r.char.img;
+      portrait.style.cssText = 'width:32px;height:32px;border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,.2)';
+      li.appendChild(portrait);
+    }
     var info = document.createElement('span');
-    info.textContent = r.char.e + ' ' + r.char.n;
+    info.textContent = r.char.n;
     li.appendChild(info);
     var time = document.createElement('span');
     time.style.cssText = 'margin-left:auto;opacity:.7';
