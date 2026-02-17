@@ -210,3 +210,33 @@ function checkOrientation() {
         }
     }
 }
+
+// === Fullscreen toggle ===
+var fsBtn = document.getElementById('fullscreen-btn');
+if (fsBtn) {
+    fsBtn.onclick = function() {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            var el = document.documentElement;
+            if (el.requestFullscreen) {
+                el.requestFullscreen();
+            } else if (el.webkitRequestFullscreen) {
+                el.webkitRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+        }
+    };
+
+    // Update button icon on fullscreen change
+    function updateFsIcon() {
+        var isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        fsBtn.textContent = isFs ? '\u2716' : '\u26F6';
+        fsBtn.title = isFs ? '\u5168\u753B\u9762\u89E3\u9664' : '\u5168\u753B\u9762\u5207\u66FF';
+    }
+    document.addEventListener('fullscreenchange', updateFsIcon);
+    document.addEventListener('webkitfullscreenchange', updateFsIcon);
+}

@@ -20,34 +20,47 @@ function startRace() {
   buildTrackMesh(scene);
   buildTrackDecorations(scene);
 
-  // Create player racer with kart and equipment (back of grid)
+  // Create all racers in Mario Kart-style 2-column starting grid
+  // Grid layout (3 rows x 2 columns, player at back):
+  //   Row 1 (front): AI1  AI2    (node 5)
+  //   Row 2 (mid):   AI3  AI4    (node 3)
+  //   Row 3 (back):  AI5  Player (node 1)
+  var gridPositions = [
+    { node: 5, lateral: -3.5 },  // Row 1 left
+    { node: 5, lateral:  3.5 },  // Row 1 right
+    { node: 3, lateral: -3.5 },  // Row 2 left
+    { node: 3, lateral:  3.5 },  // Row 2 right
+    { node: 1, lateral: -3.5 },  // Row 3 left  (AI)
+    { node: 1, lateral:  3.5 },  // Row 3 right (Player)
+  ];
+
+  // Player goes in last grid slot (back-right)
   player = new Racer(selectedChar, true, selectedKart, EQUIPMENT[selectedEquip].type);
-  player.placeAt(0);
+  var playerSlot = gridPositions[NUM_RACERS - 1];
+  player.placeAt(playerSlot.node);
+  var playerPerpAng = getTrackAngle(playerSlot.node) + Math.PI / 2;
+  player.x += Math.cos(playerPerpAng) * playerSlot.lateral;
+  player.z += Math.sin(playerPerpAng) * playerSlot.lateral;
   player.createMesh(scene);
   racers.push(player);
 
-  // Create AI racers (staggered ahead of player, like Mario Kart grid)
+  // AI racers fill the remaining grid slots (front to back-left)
   var usedChars = [selectedChar];
   for (var i = 0; i < NUM_RACERS - 1; i++) {
-    // Select a different character index for each AI
     var aiCharIdx;
     do {
       aiCharIdx = Math.floor(Math.random() * CHARACTERS.length);
     } while (usedChars.indexOf(aiCharIdx) !== -1 && usedChars.length < CHARACTERS.length);
     usedChars.push(aiCharIdx);
 
-    // Random kart and equipment for AI
     var aiKart = Math.floor(Math.random() * KARTS.length);
     var aiEquip = EQUIPMENT[Math.floor(Math.random() * EQUIPMENT.length)].type;
     var aiRacer = new Racer(aiCharIdx, false, aiKart, aiEquip);
-    // Place AI racers ahead of player in staggered grid
-    var gridIdx = 2 + i * 2;
-    aiRacer.placeAt(gridIdx);
-    // Lateral stagger (left/right alternating)
-    var lateralOffset = ((i % 2 === 0) ? -1 : 1) * 4;
-    var perpAng = getTrackAngle(gridIdx) + Math.PI / 2;
-    aiRacer.x += Math.cos(perpAng) * lateralOffset;
-    aiRacer.z += Math.sin(perpAng) * lateralOffset;
+    var slot = gridPositions[i];
+    aiRacer.placeAt(slot.node);
+    var perpAng = getTrackAngle(slot.node) + Math.PI / 2;
+    aiRacer.x += Math.cos(perpAng) * slot.lateral;
+    aiRacer.z += Math.sin(perpAng) * slot.lateral;
     aiRacer.createMesh(scene);
     racers.push(aiRacer);
   }

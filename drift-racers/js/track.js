@@ -915,21 +915,21 @@ function buildTrackDecorations(scene) {
         // ---- LAYER 3: FAR (zone-specific landmarks, MUCH CLOSER than before) ----
 
         if (zone === 'forest') {
-            // Trees: both sides, dist 25-45 (was 35-95)
+            // Trees: both sides, dist 38-55
             var fSide = (i % 2 === 0) ? 1 : -1;
-            placeAtTrack(i, fSide, 25 + (i % 4) * 5, function(px, py, pz) {
+            placeAtTrack(i, fSide, 38 + (i % 4) * 5, function(px, py, pz) {
                 var tt = treeTypes[i % 3];
                 if (useGLB && envModelCache[tt]) {
-                    placeEnvModel(scene, tt, px, py, pz, 22 + (i % 4) * 5, i * 1.37);
+                    placeEnvModel(scene, tt, px, py, pz, 18 + (i % 4) * 3, i * 1.37);
                 } else {
                     createPineTree(scene, px, py, pz);
                 }
             });
             if (i % 2 === 0) {
-                placeAtTrack(i, -fSide, 30 + (i % 3) * 6, function(px, py, pz) {
+                placeAtTrack(i, -fSide, 42 + (i % 3) * 6, function(px, py, pz) {
                     var tt2 = treeTypes[(i + 1) % 3];
                     if (useGLB && envModelCache[tt2]) {
-                        placeEnvModel(scene, tt2, px, py, pz, 25, i * 2.1);
+                        placeEnvModel(scene, tt2, px, py, pz, 20, i * 2.1);
                     } else {
                         createPineTree(scene, px, py, pz);
                     }
@@ -960,12 +960,12 @@ function buildTrackDecorations(scene) {
         }
 
         else if (zone === 'castle') {
-            // Trees every 2 nodes (dist 28-42, was 55-70)
+            // Trees every 2 nodes (dist 40-54)
             if (i % 2 === 0) {
-                placeAtTrack(i, (i % 4 < 2) ? 1 : -1, 28 + (i % 3) * 7, function(px, py, pz) {
+                placeAtTrack(i, (i % 4 < 2) ? 1 : -1, 40 + (i % 3) * 7, function(px, py, pz) {
                     var tt = treeTypes[i % 3];
                     if (useGLB && envModelCache[tt]) {
-                        placeEnvModel(scene, tt, px, py, pz, 28, i * 1.5);
+                        placeEnvModel(scene, tt, px, py, pz, 22, i * 1.5);
                     } else {
                         createPineTree(scene, px, py, pz);
                     }
@@ -1016,12 +1016,12 @@ function buildTrackDecorations(scene) {
         }
 
         else if (zone === 'lake') {
-            // Trees sparse but closer (dist 30-50, was 60-100)
+            // Trees sparse (dist 40-60)
             if (i % 3 === 0) {
-                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 30 + (i % 3) * 10, function(px, py, pz) {
+                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 40 + (i % 3) * 10, function(px, py, pz) {
                     var tt = treeTypes[i % 3];
                     if (useGLB && envModelCache[tt]) {
-                        placeEnvModel(scene, tt, px, py, pz, 32, i * 1.8);
+                        placeEnvModel(scene, tt, px, py, pz, 24, i * 1.8);
                     } else {
                         createPineTree(scene, px, py, pz);
                     }
@@ -1052,12 +1052,12 @@ function buildTrackDecorations(scene) {
         }
 
         else if (zone === 'mountain') {
-            // Trees CLOSER (dist 25-42, was 45-93)
+            // Trees (dist 38-53)
             if (i % 2 === 0) {
-                placeAtTrack(i, (i % 4 < 2) ? 1 : -1, 25 + (i % 4) * 5, function(px, py, pz) {
+                placeAtTrack(i, (i % 4 < 2) ? 1 : -1, 38 + (i % 4) * 5, function(px, py, pz) {
                     var tt = treeTypes[i % 3];
                     if (useGLB && envModelCache[tt]) {
-                        placeEnvModel(scene, tt, px, py, pz, 30, i * 1.6);
+                        placeEnvModel(scene, tt, px, py, pz, 22, i * 1.6);
                     } else {
                         createPineTree(scene, px, py, pz);
                     }
@@ -1084,12 +1084,12 @@ function buildTrackDecorations(scene) {
         }
 
         else if (zone === 'garden') {
-            // Decorative trees every node, CLOSER (dist 25-38, was 40-64)
+            // Decorative trees every node (dist 38-48)
             var gSide = (i % 2 === 0) ? 1 : -1;
-            placeAtTrack(i, gSide, 25 + (i % 3) * 5, function(px, py, pz) {
+            placeAtTrack(i, gSide, 38 + (i % 3) * 5, function(px, py, pz) {
                 var tt = treeTypes[i % 3];
                 if (useGLB && envModelCache[tt]) {
-                    placeEnvModel(scene, tt, px, py, pz, 25, i * 1.4);
+                    placeEnvModel(scene, tt, px, py, pz, 20, i * 1.4);
                 } else {
                     createPineTree(scene, px, py, pz);
                 }

@@ -634,6 +634,9 @@ Racer.prototype.createMesh = function(scene) {
   }
 
   scene.add(this.mesh);
+
+  // Position mesh at racer coordinates immediately (needed for countdown visibility)
+  this.updateMesh();
 };
 
 Racer.prototype.activateSkill = function(racers) {
