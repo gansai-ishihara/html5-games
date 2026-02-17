@@ -1,5 +1,106 @@
 // HUD/UI module for drift-racers game
 
+// === 3D Preview System ===
+var previewScene = null;
+var previewCamera = null;
+var previewRenderer = null;
+var previewMesh = null;
+var previewAnimId = null;
+var previewAngle = 0;
+
+function initPreview3D() {
+  var container = document.getElementById('preview-container');
+  if (!container || previewRenderer) return;
+
+  var canvas = document.getElementById('preview-canvas');
+  var w = container.clientWidth;
+  var h = container.clientHeight;
+  if (w === 0 || h === 0) { w = 360; h = 220; }
+
+  previewScene = new THREE.Scene();
+  previewScene.background = new THREE.Color(0x1A2E4A);
+
+  previewCamera = new THREE.PerspectiveCamera(30, w / h, 0.1, 100);
+  previewCamera.position.set(5, 3.5, 5);
+  previewCamera.lookAt(0, 0.5, 0);
+
+  previewRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+  previewRenderer.setSize(w, h);
+  previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  // Lighting (Crystal Kingdom theme)
+  previewScene.add(new THREE.AmbientLight(0xCCDDFF, 0.6));
+  var sun = new THREE.DirectionalLight(0xFFEEDD, 1.2);
+  sun.position.set(5, 8, 3);
+  previewScene.add(sun);
+  var fill = new THREE.DirectionalLight(0x99BBEE, 0.35);
+  fill.position.set(-3, 2, -1);
+  previewScene.add(fill);
+  var rim = new THREE.DirectionalLight(0x8866BB, 0.3);
+  rim.position.set(-2, 1, -5);
+  previewScene.add(rim);
+
+  // Ground disc
+  var groundGeo = new THREE.CircleGeometry(5, 32);
+  var groundMat = new THREE.MeshLambertMaterial({ color: 0x2A4A3A });
+  var ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.05;
+  previewScene.add(ground);
+
+  buildPreviewKart();
+  animatePreview3D();
+}
+
+function buildPreviewKart() {
+  if (!previewScene) return;
+
+  // Remove old mesh
+  if (previewMesh) {
+    previewScene.remove(previewMesh);
+    previewMesh = null;
+  }
+
+  // Build kart+character via temporary Racer
+  var tempRacer = new Racer(selectedChar, true, selectedKart, EQUIPMENT[selectedEquip].type);
+  tempRacer.createMesh(previewScene);
+  previewMesh = tempRacer.mesh;
+
+  // Override position/rotation for turntable display
+  previewMesh.position.set(0, 0, 0);
+  previewMesh.rotation.set(0, previewAngle, 0);
+}
+
+function animatePreview3D() {
+  previewAnimId = requestAnimationFrame(animatePreview3D);
+
+  if (previewMesh) {
+    previewAngle += 0.008;
+    previewMesh.rotation.y = previewAngle;
+  }
+
+  if (previewRenderer && previewScene && previewCamera) {
+    previewRenderer.render(previewScene, previewCamera);
+  }
+}
+
+function cleanupPreview3D() {
+  if (previewAnimId) {
+    cancelAnimationFrame(previewAnimId);
+    previewAnimId = null;
+  }
+  if (previewMesh) {
+    previewScene.remove(previewMesh);
+    previewMesh = null;
+  }
+  if (previewRenderer) {
+    previewRenderer.dispose();
+    previewRenderer = null;
+  }
+  previewScene = null;
+  previewCamera = null;
+}
+
 function updateHUD() {
   if (gameState !== 'racing' && gameState !== 'countdown') return;
 
@@ -327,6 +428,7 @@ function buildCharSelect() {
       card.classList.add('sel');
       document.getElementById('char-desc').textContent = c.desc;
       updateSkillPreview();
+      buildPreviewKart();
     };
     cont.appendChild(card);
   });
@@ -375,6 +477,7 @@ function buildCharSelect() {
         var all = document.querySelectorAll('.kart-card');
         for (var x = 0; x < all.length; x++) all[x].classList.remove('sel');
         card.classList.add('sel');
+        buildPreviewKart();
       };
       kartCont.appendChild(card);
     });

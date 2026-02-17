@@ -3,6 +3,9 @@
 
 // Start a new race
 function startRace() {
+  // Cleanup preview before starting race
+  cleanupPreview3D();
+
   // Initialize audio
   AUDIO.init();
 
@@ -256,6 +259,15 @@ checkOrientation();
 buildCharSelect();
 setupMobile();
 
+// Initialize 3D preview on title screen
+initPreview3D();
+
+// Eagerly preload character models for preview
+preloadModels(function() {
+  // Refresh preview with GLB models now available
+  buildPreviewKart();
+});
+
 // Start button handler
 document.getElementById('start-btn').onclick = function() {
   AUDIO.init();
@@ -362,6 +374,7 @@ document.getElementById('retry-btn').onclick = function() {
   // Show title screen again
   document.getElementById('title-screen').style.display = 'flex';
 
-  // Rebuild character selection
+  // Rebuild character selection and 3D preview
   buildCharSelect();
+  initPreview3D();
 };
