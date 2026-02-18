@@ -101,57 +101,53 @@ function trackDist(wx, wz) {
     return minDist;
 }
 
-// Create road texture - bright base with neon lane markings
+// Create road texture - Asphalt with noise and grain
 function createAsphaltTexture() {
     var canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
+    canvas.width = 1024; // Higher res
+    canvas.height = 1024;
     var ctx = canvas.getContext('2d');
 
-    // Rich blue-gray base (darker, more saturated)
-    ctx.fillStyle = '#7888AA';
-    ctx.fillRect(0, 0, 512, 512);
+    // Base Asphalt (Dark Blue-Grey)
+    ctx.fillStyle = '#2a2a35';
+    ctx.fillRect(0, 0, 1024, 1024);
 
-    // Subtle sparkle dots
-    for (var i = 0; i < 200; i++) {
-        var sx = Math.random() * 512;
-        var sy = Math.random() * 512;
-        ctx.globalAlpha = 0.15 + Math.random() * 0.2;
-        ctx.fillStyle = ['#8899BB', '#99AACC', '#7788AA'][Math.floor(Math.random() * 3)];
-        ctx.beginPath();
-        ctx.arc(sx, sy, 0.5 + Math.random(), 0, Math.PI * 2);
-        ctx.fill();
+    // Noise generation for asphalt grain
+    for (var i = 0; i < 60000; i++) {
+        var x = Math.random() * 1024;
+        var y = Math.random() * 1024;
+        var v = Math.random();
+        ctx.fillStyle = v < 0.5 ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.1)';
+        ctx.fillRect(x, y, 2, 2);
     }
-    ctx.globalAlpha = 1.0;
 
-    // Left edge - sapphire blue line
-    ctx.fillStyle = '#4488DD';
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = '#4488DD';
-    ctx.fillRect(8, 0, 5, 512);
+    // Lane Markings
+    // Left (Sapphire Glow)
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#00aaff';
+    ctx.fillStyle = '#0088cc';
+    ctx.fillRect(10, 0, 8, 1024);
+
+    // Right (Amethyst Glow)
+    ctx.shadowColor = '#aa44ff';
+    ctx.fillStyle = '#8833cc';
+    ctx.fillRect(1006, 0, 8, 1024);
     ctx.shadowBlur = 0;
 
-    // Right edge - amethyst line
-    ctx.fillStyle = '#8866BB';
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = '#8866BB';
-    ctx.fillRect(499, 0, 5, 512);
-    ctx.shadowBlur = 0;
-
-    // Center dashed line
-    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-    ctx.lineWidth = 3;
-    ctx.setLineDash([30, 20]);
+    // Center Dashed Line
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 6;
+    ctx.setLineDash([60, 40]);
     ctx.beginPath();
-    ctx.moveTo(256, 0);
-    ctx.lineTo(256, 512);
+    ctx.moveTo(512, 0);
+    ctx.lineTo(512, 1024);
     ctx.stroke();
-    ctx.setLineDash([]);
 
     var texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1, 20);
+    texture.repeat.set(1, 40); // More tiling
+    texture.anisotropy = 16;
     texture.encoding = THREE.sRGBEncoding;
     return texture;
 }
@@ -212,11 +208,11 @@ function buildTrackMesh(scene) {
     var asphaltTexture = createAsphaltTexture();
     var material = new THREE.MeshStandardMaterial({
         map: asphaltTexture,
-        color: 0x8899BB,
-        emissive: 0x1A2244,
-        emissiveIntensity: 0.2,
-        metalness: 0.02,
-        roughness: 0.75
+        color: 0xffffff, // Let texture define color
+        roughness: 0.4,  // Slightly reflective asphalt
+        metalness: 0.1,
+        emissive: 0x000000,
+        flatShading: false
     });
 
     var trackMesh = new THREE.Mesh(geometry, material);
@@ -236,17 +232,16 @@ function buildRoadWalls(scene) {
     var halfWidth = TRACK_WIDTH / 2 + 1.2; // Include curb width
     var wallDepth = 3.0; // How thick the road slab is
 
-    var wallMat = new THREE.MeshLambertMaterial({
-        color: 0x554466,
-        emissive: 0x221133,
-        emissiveIntensity: 0.15
+    var wallMat = new THREE.MeshStandardMaterial({
+        color: 0x332244,
+        roughness: 0.9,
+        metalness: 0.0
     });
 
-    var undersideMat = new THREE.MeshLambertMaterial({
-        color: 0x443355,
-        emissive: 0x110022,
-        emissiveIntensity: 0.1,
-        side: THREE.BackSide
+    var undersideMat = new THREE.MeshStandardMaterial({
+        color: 0x221133,
+        side: THREE.BackSide,
+        roughness: 1.0
     });
 
     // Left wall, right wall, and underside
@@ -368,12 +363,14 @@ function buildRoadWalls(scene) {
         edgeGeom.computeVertexNormals();
 
         var eColor = side === -1 ? edgeColors[0] : edgeColors[1];
-        var edgeMat = new THREE.MeshLambertMaterial({
+        var edgeMat = new THREE.MeshStandardMaterial({
             color: eColor,
             emissive: eColor,
-            emissiveIntensity: 0.6,
+            emissiveIntensity: 2.0, // High neon glow
             transparent: true,
-            opacity: 0.85
+            opacity: 0.9,
+            roughness: 0.1,
+            metalness: 0.8
         });
 
         var edgeMesh = new THREE.Mesh(edgeGeom, edgeMat);
@@ -411,8 +408,10 @@ function buildCurbs(scene) {
     var halfWidth = TRACK_WIDTH / 2;
 
     var curbTexture = createCurbTexture();
-    var curbMaterial = new THREE.MeshLambertMaterial({
-        map: curbTexture
+    var curbMaterial = new THREE.MeshStandardMaterial({
+        map: curbTexture,
+        roughness: 0.3, // Shiny plastic curb
+        metalness: 0.1
     });
 
     // Left curb
@@ -558,8 +557,10 @@ function buildStartFinish(scene) {
     var lineWidth = TRACK_WIDTH + 2;
     var lineDepth = 8;
     var lineGeom = new THREE.PlaneGeometry(lineWidth, lineDepth);
-    var lineMat = new THREE.MeshLambertMaterial({
-        map: checkeredTexture
+    var lineMat = new THREE.MeshStandardMaterial({
+        map: checkeredTexture,
+        roughness: 0.5,
+        metalness: 0.0
     });
     var startLine = new THREE.Mesh(lineGeom, lineMat);
 
@@ -584,8 +585,9 @@ function buildStartFinish(scene) {
     bannerCheckTex.wrapT = THREE.RepeatWrapping;
     bannerCheckTex.repeat.set(8, 1);
     var bannerGeom = new THREE.BoxGeometry(bannerWidth, 2.5, 0.4);
-    var bannerMat = new THREE.MeshLambertMaterial({
-        map: bannerCheckTex
+    var bannerMat = new THREE.MeshStandardMaterial({
+        map: bannerCheckTex,
+        roughness: 0.5
     });
     var banner = new THREE.Mesh(bannerGeom, bannerMat);
     banner.position.set(startNode.x, bannerY, startNode.z);
@@ -596,9 +598,10 @@ function buildStartFinish(scene) {
 
     // Support poles (thicker, metallic)
     var poleGeom = new THREE.CylinderGeometry(0.35, 0.4, poleHeight, 12);
-    var poleMat = new THREE.MeshLambertMaterial({
+    var poleMat = new THREE.MeshStandardMaterial({
         color: 0xcccccc,
-        emissive: 0x333333
+        metalness: 0.9,
+        roughness: 0.2 // Polished metal
     });
 
     var leftPole = new THREE.Mesh(poleGeom, poleMat);

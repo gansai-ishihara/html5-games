@@ -8,13 +8,13 @@ var particles = { driftLeft: null, driftRight: null, boostFlame: null, dustCloud
 var cloudMeshes = []; // For animating clouds
 
 function initScene() {
-  // Create scene - Crystal Kingdom theme
+  // Create scene - Darker atmosphere for neon contrast
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1A2E4A);
-  scene.fog = new THREE.FogExp2(0x8899CC, 0.00018);
+  scene.background = new THREE.Color(0x0a1a33);
+  scene.fog = new THREE.FogExp2(0x0a1a33, 0.0015);
 
   // Camera setup
-  camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.5, 1500);
+  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 2000);
   camera.position.set(0, 10, 20);
 
   // Renderer setup
@@ -37,49 +37,32 @@ function initScene() {
   // === Generate Environment Map for reflections ===
   generateEnvMap();
 
-  // === Lighting setup - Crystal Kingdom クールブルー＆ゴールド ===
+  // === Lighting setup - PBR Optimized ===
 
-  // Ambient - クールブルーホワイト
-  var ambientLight = new THREE.AmbientLight(0xCCDDFF, 0.55);
+  // Ambient - dim cool blue for shadows
+  var ambientLight = new THREE.AmbientLight(0x112244, 0.4);
   scene.add(ambientLight);
 
-  // 太陽光 - 暖かいゴールド
-  var sunLight = new THREE.DirectionalLight(0xFFEEDD, 1.2);
-  sunLight.position.set(100, 120, -150);
+  // Main Sun - Bright for PBR
+  var sunLight = new THREE.DirectionalLight(0xfffaed, 2.5); // Boosted intensity for PBR
+  sunLight.position.set(100, 150, -100);
   if (!isMobile) {
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 4096;
     sunLight.shadow.mapSize.height = 4096;
-    sunLight.shadow.camera.near = 1;
-    sunLight.shadow.camera.far = 500;
-    sunLight.shadow.camera.left = -200;
-    sunLight.shadow.camera.right = 200;
-    sunLight.shadow.camera.top = 200;
-    sunLight.shadow.camera.bottom = -200;
-    sunLight.shadow.bias = -0.0003;
-    sunLight.shadow.normalBias = 0.015;
+    sunLight.shadow.bias = -0.0001;
   }
   scene.add(sunLight);
   window._sunLight = sunLight;
 
-  // Hemisphere light - 空＝クールブルー、地＝エメラルド
-  var hemiLight = new THREE.HemisphereLight(0xAABBDD, 0x88CCAA, 0.6);
+  // Hemisphere - Environment fill
+  var hemiLight = new THREE.HemisphereLight(0xddeeff, 0x224422, 0.5);
   scene.add(hemiLight);
 
-  // Fill light - ブルー系
-  var fillLight = new THREE.DirectionalLight(0x99BBEE, 0.35);
-  fillLight.position.set(-80, 60, 100);
-  scene.add(fillLight);
-
-  // Back/rim light - アメジスト
-  var rimLight = new THREE.DirectionalLight(0x8866BB, 0.3);
-  rimLight.position.set(0, 40, -150);
+  // Rim/Backlight - Artistic purple glow
+  var rimLight = new THREE.DirectionalLight(0xaa88ff, 1.2);
+  rimLight.position.set(-50, 50, -100);
   scene.add(rimLight);
-
-  // Ground bounce light - エメラルドの反射
-  var bounceLight = new THREE.DirectionalLight(0x44AA77, 0.15);
-  bounceLight.position.set(0, -20, 0);
-  scene.add(bounceLight);
 
   // Ground - lush fantasy meadow
   buildGround();
@@ -296,8 +279,8 @@ function getTerrainHeight(wx, wz) {
 
 // Build 3D terrain mesh with hills and valleys
 function buildGround() {
-  var terrainSize = 1200;
-  var segments = 80; // 80x80 grid = good detail vs performance
+  var terrainSize = 1600;
+  var segments = 120; // Improved terrain resolution
   var segSize = terrainSize / segments;
 
   var grassCanvas = document.createElement('canvas');
@@ -338,7 +321,7 @@ function buildGround() {
     var fx = Math.random() * 512;
     var fy = Math.random() * 512;
     ctx.fillStyle = fColors[Math.floor(Math.random() * fColors.length)];
-    ctx.globalAlpha = 0.85;
+    ctx.globalAlpha = 1.0;
     ctx.beginPath();
     ctx.arc(fx, fy, 1.5 + Math.random() * 1.5, 0, Math.PI * 2);
     ctx.fill();
@@ -395,11 +378,12 @@ function buildGround() {
   terrainGeom.setIndex(indices);
   terrainGeom.computeVertexNormals();
 
-  var groundMaterial = new THREE.MeshLambertMaterial({
+  var groundMaterial = new THREE.MeshStandardMaterial({
     map: grassTexture,
     vertexColors: true,
-    emissive: 0x1A3322,
-    emissiveIntensity: 0.1
+    roughness: 0.8,
+    metalness: 0.1,
+    flatShading: true
   });
 
   var ground = new THREE.Mesh(terrainGeom, groundMaterial);
@@ -413,10 +397,11 @@ function buildGround() {
 // Build cliff faces near the track where terrain drops sharply
 function buildTerrainCliffs(scene) {
   // Create rocky cliff meshes along the sides of the road
-  var cliffMat = new THREE.MeshLambertMaterial({
-    color: 0x887766,
-    emissive: 0x332211,
-    emissiveIntensity: 0.1
+  // Create rocky cliff meshes along the sides of the road
+  var cliffMat = new THREE.MeshStandardMaterial({
+    color: 0x554433,
+    roughness: 0.9,
+    metalness: 0.0
   });
 
   // Place cliff sections at track-adjacent positions
@@ -461,10 +446,10 @@ function buildTerrainCliffs(scene) {
 
 // Build bridge supports/pillars under elevated road sections
 function buildBridgePillars(scene) {
-  var pillarMat = new THREE.MeshLambertMaterial({
-    color: 0x99AABC,
-    emissive: 0x1A2244,
-    emissiveIntensity: 0.15
+  var pillarMat = new THREE.MeshStandardMaterial({
+    color: 0x8899aa,
+    roughness: 0.6,
+    metalness: 0.3
   });
 
   for (var i = 0; i < trackNodes.length; i += 8) {
@@ -511,16 +496,15 @@ function buildTunnels(scene) {
     { start: 70, end: 75 }
   ];
 
-  var tunnelMat = new THREE.MeshLambertMaterial({
-    color: 0x8899BB,
-    emissive: 0x1A2244,
-    emissiveIntensity: 0.15
+  var tunnelMat = new THREE.MeshStandardMaterial({
+    color: 0x556688,
+    roughness: 0.7,
+    metalness: 0.2
   });
 
-  var innerMat = new THREE.MeshLambertMaterial({
-    color: 0x6677AA,
-    emissive: 0x223366,
-    emissiveIntensity: 0.25,
+  var innerMat = new THREE.MeshStandardMaterial({
+    color: 0x334466,
+    roughness: 0.9,
     side: THREE.BackSide
   });
 
