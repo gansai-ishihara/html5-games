@@ -34,6 +34,20 @@ document.addEventListener('keyup', function (e) {
     updateInput();
 });
 
+// Reset all input when window loses focus (prevents stuck keys on Alt+Tab)
+window.addEventListener('blur', function () {
+    keys = {};
+    input.up = false;
+    input.down = false;
+    input.left = false;
+    input.right = false;
+    input.drift = false;
+    input.item = false;
+    input.skill = false;
+    input.stickX = 0;
+    input.stickY = 0;
+});
+
 // Map keys and gamepad to input object
 function updateInput() {
     // Reset basic input (keep stick values if virtual joystick is active)
@@ -142,34 +156,48 @@ function pollGamepads() {
     var gp = navigator.getGamepads()[gamepadIndex];
     if (!gp) return;
 
-    // Map Gamepad to Input (OR logic with existing keyboard/touch)
-    if (gp.buttons[0].pressed || gp.buttons[7].pressed) input.up = true;
-    if (gp.buttons[1].pressed || gp.buttons[6].pressed) input.down = true;
+    // First, refresh keyboard state so we have clean baseline
+    var keyUp = keys.ArrowUp || keys.KeyW || false;
+    var keyDown = keys.ArrowDown || keys.KeyS || false;
+    var keyLeft = keys.ArrowLeft || keys.KeyA || false;
+    var keyRight = keys.ArrowRight || keys.KeyD || false;
+    var keyDrift = keys.ShiftLeft || keys.ShiftRight || false;
 
-    if (gp.buttons[14].pressed) input.left = true;
-    if (gp.buttons[15].pressed) input.right = true;
+    // Gamepad state with proper deadzone for analog triggers
+    var gpUp = gp.buttons[0].pressed || (gp.buttons[7].value > 0.2);
+    var gpDown = gp.buttons[1].pressed || (gp.buttons[6].value > 0.2);
+    var gpLeft = gp.buttons[14] && gp.buttons[14].pressed;
+    var gpRight = gp.buttons[15] && gp.buttons[15].pressed;
+    var gpDrift = (gp.buttons[4] && gp.buttons[4].pressed) || (gp.buttons[5] && gp.buttons[5].pressed);
 
-    if (gp.buttons[4].pressed || gp.buttons[5].pressed) input.drift = true;
+    // Merge keyboard + gamepad (touch is handled separately via events)
+    if (!joyActive) {
+        // Only override if virtual joystick is not active
+        input.up = keyUp || gpUp;
+        input.down = keyDown || gpDown;
+        input.left = keyLeft || gpLeft;
+        input.right = keyRight || gpRight;
+    } else {
+        // Joystick active: OR gamepad on top of touch state
+        if (gpUp) input.up = true;
+        if (gpDown) input.down = true;
+        if (gpLeft) input.left = true;
+        if (gpRight) input.right = true;
+    }
+    input.drift = keyDrift || gpDrift || input.drift;
 
-    // Analog Stick
-    if (Math.abs(gp.axes[0]) > 0.1) {
-        // Override stickX if gamepad is active (priority over touch?)
-        // Or just add?
-        // Let's just set it relative to deadzone
+    // Analog Stick with deadzone
+    if (Math.abs(gp.axes[0]) > 0.15) {
         input.stickX = gp.axes[0];
-
-        // Also update boolean left/right for code that relies on it
         if (input.stickX < -0.3) input.left = true;
         if (input.stickX > 0.3) input.right = true;
+    } else if (!joyActive) {
+        // Reset stick only if virtual joystick isn't controlling it
+        input.stickX = 0;
     }
 
-    // Button presses (One-shot handling needs state tracking, but for now simple pressed check)
-    // Racer.update handles cooldowns, so continuous true is fine for drift/accel.
-    // For item/skill, racer often checks `if (input.item)` and effectively consumes it or has cooldown.
-    // Let's check `kart.js`: `if (input.item && !this.itemCooldown)` -> Safe.
-
-    if (gp.buttons[2].pressed) input.item = true;
-    if (gp.buttons[3].pressed) input.skill = true;
+    if (gp.buttons[2] && gp.buttons[2].pressed) input.item = true;
+    if (gp.buttons[3] && gp.buttons[3].pressed) input.skill = true;
 }
 
 // Virtual joystick state
@@ -320,9 +348,12 @@ function setupMobile() {
     });
 }
 
-// Detect mobile device
+// Detect mobile device (avoid false positives on Windows desktops with touchscreen/pen)
 function checkMobile() {
-    isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    var hasTouchEvents = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    var isDesktopOS = /Windows|Macintosh|Linux(?!.*Android)/.test(navigator.userAgent);
+    var isMobileUA = /Android|iPhone|iPad|iPod|Mobile/.test(navigator.userAgent);
+    isMobile = isMobileUA || (hasTouchEvents && !isDesktopOS);
     if (isMobile) document.body.classList.add('mobile-active');
 }
 
