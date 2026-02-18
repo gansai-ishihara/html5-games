@@ -43,7 +43,7 @@ canvas{display:block}
 .char-card:hover{border-color:rgba(100,140,200,.4);background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.04))}
 .char-card.sel{border-color:#FFCC66;background:linear-gradient(180deg,rgba(255,204,102,.18),rgba(255,204,102,.06));box-shadow:0 0 18px rgba(255,204,102,.25),inset 0 0 15px rgba(255,204,102,.05)}
 .char-card .emoji{font-size:22px;margin-bottom:1px}
-.char-card .char-portrait{width:44px;height:44px;border-radius:10px;object-fit:cover;margin-bottom:2px;flex-shrink:0;border:1.5px solid rgba(255,255,255,.1)}
+.char-card .char-portrait{width:44px;height:44px;border-radius:10px;object-fit:cover;object-position:center 20%;margin-bottom:2px;flex-shrink:0;border:1.5px solid rgba(255,255,255,.1)}
 .char-card.sel .char-portrait{border-color:rgba(255,204,102,.4)}
 .char-card .name{color:#fff;font-size:10px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.4)}
 .char-card .type{color:rgba(200,213,232,.5);font-size:8px}
