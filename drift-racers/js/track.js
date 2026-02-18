@@ -3,6 +3,7 @@
 
 var trackNodes = [];
 var trackMeshes = [];
+var waterTime = 0;
 
 // Generate track centerline points with smooth curves and elevation
 function generateTrack() {
@@ -116,7 +117,7 @@ function createAsphaltTexture() {
         var sx = Math.random() * 512;
         var sy = Math.random() * 512;
         ctx.globalAlpha = 0.15 + Math.random() * 0.2;
-        ctx.fillStyle = ['#8899BB','#99AACC','#7788AA'][Math.floor(Math.random() * 3)];
+        ctx.fillStyle = ['#8899BB', '#99AACC', '#7788AA'][Math.floor(Math.random() * 3)];
         ctx.beginPath();
         ctx.arc(sx, sy, 0.5 + Math.random(), 0, Math.PI * 2);
         ctx.fill();
@@ -640,13 +641,13 @@ function buildTrackDecorations(scene) {
 
     // Zone color palette
     function getZoneColors(zone) {
-        switch(zone) {
-            case 'forest':   return { pri: 0x4488DD, sec: 0x66AAEE, em: 0x2266AA, bush: 0x2A6644, lamp: 0x4488DD };
-            case 'castle':   return { pri: 0xFFCC66, sec: 0xFFDDAA, em: 0xCC9933, bush: 0x3A7744, lamp: 0xFFCC66 };
-            case 'lake':     return { pri: 0xE8EEFF, sec: 0xAABBDD, em: 0x6688CC, bush: 0x2A5544, lamp: 0x88AADD };
+        switch (zone) {
+            case 'forest': return { pri: 0x4488DD, sec: 0x66AAEE, em: 0x2266AA, bush: 0x2A6644, lamp: 0x4488DD };
+            case 'castle': return { pri: 0xFFCC66, sec: 0xFFDDAA, em: 0xCC9933, bush: 0x3A7744, lamp: 0xFFCC66 };
+            case 'lake': return { pri: 0xE8EEFF, sec: 0xAABBDD, em: 0x6688CC, bush: 0x2A5544, lamp: 0x88AADD };
             case 'mountain': return { pri: 0x8866BB, sec: 0xAA88DD, em: 0x5533AA, bush: 0x335533, lamp: 0x8866BB };
-            case 'garden':   return { pri: 0xDDA0BB, sec: 0x9988CC, em: 0xAA6688, bush: 0x3A8855, lamp: 0xFFCC66 };
-            default:         return { pri: 0x4488DD, sec: 0x6699CC, em: 0x224488, bush: 0x3A7744, lamp: 0x4488DD };
+            case 'garden': return { pri: 0xDDA0BB, sec: 0x9988CC, em: 0xAA6688, bush: 0x3A8855, lamp: 0xFFCC66 };
+            default: return { pri: 0x4488DD, sec: 0x6699CC, em: 0x224488, bush: 0x3A7744, lamp: 0x4488DD };
         }
     }
 
@@ -957,13 +958,13 @@ function buildTrackDecorations(scene) {
             var tz = gNode.z + gPerpZ * gSide * tileDist;
 
             var tileColor;
-            switch(gZone) {
-                case 'forest':  tileColor = 0x1A5533; break; // dark mossy
-                case 'castle':  tileColor = 0x887766; break; // cobblestone
-                case 'lake':    tileColor = 0x334466; break; // dark blue stone
-                case 'mountain':tileColor = 0x554455; break; // purple rock
-                case 'garden':  tileColor = 0x557744; break; // rich garden soil
-                default:        tileColor = 0x336644; break;
+            switch (gZone) {
+                case 'forest': tileColor = 0x1A5533; break; // dark mossy
+                case 'castle': tileColor = 0x887766; break; // cobblestone
+                case 'lake': tileColor = 0x334466; break; // dark blue stone
+                case 'mountain': tileColor = 0x554455; break; // purple rock
+                case 'garden': tileColor = 0x557744; break; // rich garden soil
+                default: tileColor = 0x336644; break;
             }
 
             var tGeo = new THREE.PlaneGeometry(tileW, 8);
@@ -982,7 +983,7 @@ function buildTrackDecorations(scene) {
         var sZC = getZoneColors(sZone);
         var sSide = ((si / 4 | 0) % 2 === 0) ? 1 : -1;
 
-        placeAtTrack(si, sSide, HW + 8 + (si % 5) * 2, function(px, py, pz) {
+        placeAtTrack(si, sSide, HW + 8 + (si % 5) * 2, function (px, py, pz) {
             // Cluster of 5-8 crystal stalagmites
             var count = 5 + (si % 4);
             for (var ci = 0; ci < count; ci++) {
@@ -1007,9 +1008,9 @@ function buildTrackDecorations(scene) {
 
     // === FLOATING CRYSTAL ISLANDS (mid/far skyline) ===
     var islandPositions = [
-        {x: 150, z: 200, y: 35, s: 20}, {x: -200, z: 100, y: 45, s: 25},
-        {x: 100, z: -250, y: 40, s: 18}, {x: -150, z: -200, y: 50, s: 22},
-        {x: 250, z: -100, y: 38, s: 15}
+        { x: 150, z: 200, y: 35, s: 20 }, { x: -200, z: 100, y: 45, s: 25 },
+        { x: 100, z: -250, y: 40, s: 18 }, { x: -150, z: -200, y: 50, s: 22 },
+        { x: 250, z: -100, y: 38, s: 15 }
     ];
     for (var ii = 0; ii < islandPositions.length; ii++) {
         var ip = islandPositions[ii];
@@ -1044,7 +1045,7 @@ function buildTrackDecorations(scene) {
     // === ROCKY SPIRES in mid-field (terrain shaping) ===
     for (var ri = 0; ri < TRACK_POINTS; ri += 8) {
         var rSide = ((ri / 8 | 0) % 2 === 0) ? 1 : -1;
-        placeAtTrack(ri, rSide, 25 + (ri % 6) * 4, function(px, py, pz) {
+        placeAtTrack(ri, rSide, 25 + (ri % 6) * 4, function (px, py, pz) {
             var spireH = 8 + Math.random() * 12;
             var spireR = 1.5 + Math.random() * 2;
             var spGeo = new THREE.ConeGeometry(spireR, spireH, 6);
@@ -1071,25 +1072,25 @@ function buildTrackDecorations(scene) {
         // ---- LAYER 1: NEAR (road shoulder) ---- every node gets 2-4 small objects
 
         // Crystal shards: both sides every node (staggered offset for variety)
-        placeAtTrack(i, 1, HW + 1.5 + (i % 3) * 0.4, function(px, py, pz) {
+        placeAtTrack(i, 1, HW + 1.5 + (i % 3) * 0.4, function (px, py, pz) {
             createCrystalShard(scene, px, py, pz, zc.pri);
         });
         if (i % 2 === 0) {
-            placeAtTrack(i, -1, HW + 1.5 + ((i + 1) % 3) * 0.4, function(px, py, pz) {
+            placeAtTrack(i, -1, HW + 1.5 + ((i + 1) % 3) * 0.4, function (px, py, pz) {
                 createCrystalShard(scene, px, py, pz, zc.pri);
             });
         }
 
         // Bushes: every 2 nodes, alternating sides
         if (i % 2 === 0) {
-            placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 3 + (i % 3), function(px, py, pz) {
+            placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 3 + (i % 3), function (px, py, pz) {
                 createBush(scene, px, py, pz, zc.bush);
             });
         }
 
         // Flowers: every 3 nodes
         if (i % 3 === 0) {
-            placeAtTrack(i, (i % 6 < 3) ? 1 : -1, HW + 2.5, function(px, py, pz) {
+            placeAtTrack(i, (i % 6 < 3) ? 1 : -1, HW + 2.5, function (px, py, pz) {
                 createFlowerCluster(scene, px, py, pz, zc.pri, zc.sec);
             });
         }
@@ -1098,14 +1099,14 @@ function buildTrackDecorations(scene) {
 
         // Rocks: every 5 nodes
         if (i % 5 === 0) {
-            placeAtTrack(i, (i % 2 === 0) ? 1 : -1, HW + 4 + (i % 3), function(px, py, pz) {
+            placeAtTrack(i, (i % 2 === 0) ? 1 : -1, HW + 4 + (i % 3), function (px, py, pz) {
                 createRock(scene, px, py, pz);
             });
         }
 
         // Lamp posts: every 5 nodes, at road level (GLB if available)
         if (i % 5 === 0) {
-            placeAtTrack(i, (i % 10 < 5) ? 1 : -1, HW + 2.5, function(px, py, pz, a, nd) {
+            placeAtTrack(i, (i % 10 < 5) ? 1 : -1, HW + 2.5, function (px, py, pz, a, nd) {
                 if (useGLB && envModelCache['lamp']) {
                     placeEnvModel(scene, 'lamp', px, nd.y, pz, 8, a + Math.PI / 2);
                 } else {
@@ -1118,25 +1119,25 @@ function buildTrackDecorations(scene) {
 
         // Bushes in mid-range every 2 nodes
         if (i % 2 === 0) {
-            placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 10 + (i % 5) * 2, function(px, py, pz) {
+            placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 10 + (i % 5) * 2, function (px, py, pz) {
                 createBush(scene, px, py, pz, zc.bush);
             });
         }
         // Rocks in mid-range every 3 nodes
         if (i % 3 === 0) {
-            placeAtTrack(i, (i % 2 === 0) ? -1 : 1, HW + 12 + (i % 4) * 3, function(px, py, pz) {
+            placeAtTrack(i, (i % 2 === 0) ? -1 : 1, HW + 12 + (i % 4) * 3, function (px, py, pz) {
                 createRock(scene, px, py, pz);
             });
         }
         // Flower patches in mid-range every 4 nodes
         if (i % 4 === 0) {
-            placeAtTrack(i, (i % 8 < 4) ? 1 : -1, HW + 9 + (i % 3) * 3, function(px, py, pz) {
+            placeAtTrack(i, (i % 8 < 4) ? 1 : -1, HW + 9 + (i % 3) * 3, function (px, py, pz) {
                 createFlowerCluster(scene, px, py, pz, zc.sec, 0xFFFFFF);
             });
         }
         // Floating orbs over track every 4 nodes
         if (i % 4 === 0) {
-            placeAtTrack(i, (i % 2 ? 1 : -1), HW + 2, function(px, py, pz, a, nd) {
+            placeAtTrack(i, (i % 2 ? 1 : -1), HW + 2, function (px, py, pz, a, nd) {
                 createFloatingOrb(scene, px, nd.y + 4 + (i % 4), pz, zc.pri, 0.2);
             });
         }
@@ -1146,7 +1147,7 @@ function buildTrackDecorations(scene) {
         if (zone === 'forest') {
             // Trees: both sides, dist 38-55
             var fSide = (i % 2 === 0) ? 1 : -1;
-            placeAtTrack(i, fSide, 38 + (i % 4) * 5, function(px, py, pz) {
+            placeAtTrack(i, fSide, 38 + (i % 4) * 5, function (px, py, pz) {
                 var tt = treeTypes[i % 3];
                 if (useGLB && envModelCache[tt]) {
                     placeEnvModel(scene, tt, px, py, pz, 12 + (i % 4) * 2, i * 1.37);
@@ -1155,7 +1156,7 @@ function buildTrackDecorations(scene) {
                 }
             });
             if (i % 2 === 0) {
-                placeAtTrack(i, -fSide, 42 + (i % 3) * 6, function(px, py, pz) {
+                placeAtTrack(i, -fSide, 42 + (i % 3) * 6, function (px, py, pz) {
                     var tt2 = treeTypes[(i + 1) % 3];
                     if (useGLB && envModelCache[tt2]) {
                         placeEnvModel(scene, tt2, px, py, pz, 13, i * 2.1);
@@ -1166,7 +1167,7 @@ function buildTrackDecorations(scene) {
             }
             // Crystals every 2 nodes (dist 20-35, was 28-58)
             if (i % 2 === 0) {
-                placeAtTrack(i, ((i / 2 | 0) % 2 === 0) ? 1 : -1, 20 + (i % 5) * 3, function(px, py, pz) {
+                placeAtTrack(i, ((i / 2 | 0) % 2 === 0) ? 1 : -1, 20 + (i % 5) * 3, function (px, py, pz) {
                     if (useGLB && envModelCache['crystal']) {
                         placeEnvModel(scene, 'crystal', px, py, pz, 8 + (i % 3) * 2, i * 0.83);
                     } else {
@@ -1176,13 +1177,13 @@ function buildTrackDecorations(scene) {
             }
             // Floating orbs denser
             if (i % 2 === 0) {
-                placeAtTrack(i, (i % 2 ? 1 : -1), HW + 5 + (i % 4) * 3, function(px, py, pz, a, nd) {
+                placeAtTrack(i, (i % 2 ? 1 : -1), HW + 5 + (i % 4) * 3, function (px, py, pz, a, nd) {
                     createFloatingOrb(scene, px, nd.y + 3 + (i % 4), pz, 0x4488DD, 0.25);
                 });
             }
             // Crystal obelisks in forest clearings (dist 35+)
             if ((i === 8 || i === 14 || i === 20) && useGLB && envModelCache['obelisk']) {
-                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 35 + (i % 3) * 4, function(px, py, pz) {
+                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 35 + (i % 3) * 4, function (px, py, pz) {
                     placeEnvModel(scene, 'obelisk', px, py, pz, 10, i * 0.9);
                 });
             }
@@ -1191,7 +1192,7 @@ function buildTrackDecorations(scene) {
         else if (zone === 'castle') {
             // Trees every 2 nodes (dist 40-54)
             if (i % 2 === 0) {
-                placeAtTrack(i, (i % 4 < 2) ? 1 : -1, 40 + (i % 3) * 7, function(px, py, pz) {
+                placeAtTrack(i, (i % 4 < 2) ? 1 : -1, 40 + (i % 3) * 7, function (px, py, pz) {
                     var tt = treeTypes[i % 3];
                     if (useGLB && envModelCache[tt]) {
                         placeEnvModel(scene, tt, px, py, pz, 14, i * 1.5);
@@ -1202,7 +1203,7 @@ function buildTrackDecorations(scene) {
             }
             // Castles (dist 55, safe from track)
             if (i === 30 || i === 40) {
-                placeAtTrack(i, (i === 30) ? -1 : 1, 55, function(px, py, pz) {
+                placeAtTrack(i, (i === 30) ? -1 : 1, 55, function (px, py, pz) {
                     if (useGLB && envModelCache['castle']) {
                         placeEnvModel(scene, 'castle', px, py, pz, 25, i * 0.5);
                     } else {
@@ -1212,7 +1213,7 @@ function buildTrackDecorations(scene) {
             }
             // Houses (dist 45, safe from track)
             if (i === 27 || i === 31 || i === 33 || i === 36 || i === 38 || i === 43) {
-                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 45, function(px, py, pz) {
+                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 45, function (px, py, pz) {
                     if (useGLB && envModelCache['house-a']) {
                         placeEnvModel(scene, 'house-a', px, py, pz, 16, i * 1.05);
                     } else {
@@ -1222,7 +1223,7 @@ function buildTrackDecorations(scene) {
             }
             // Fountain (dist 38)
             if (i === 35) {
-                placeAtTrack(i, 1, 38, function(px, py, pz) {
+                placeAtTrack(i, 1, 38, function (px, py, pz) {
                     if (useGLB && envModelCache['fountain']) {
                         placeEnvModel(scene, 'fountain', px, py, pz, 12, 0);
                     }
@@ -1230,7 +1231,7 @@ function buildTrackDecorations(scene) {
             }
             // Arch gate (dist 42)
             if (i === 28 || i === 42) {
-                placeAtTrack(i, (i === 28) ? 1 : -1, 42, function(px, py, pz) {
+                placeAtTrack(i, (i === 28) ? 1 : -1, 42, function (px, py, pz) {
                     if (useGLB && envModelCache['archgate']) {
                         placeEnvModel(scene, 'archgate', px, py, pz, 16, i * 0.06);
                     }
@@ -1238,7 +1239,7 @@ function buildTrackDecorations(scene) {
             }
             // Flowerbeds along castle streets
             if ((i === 26 || i === 29 || i === 32 || i === 37 || i === 41 || i === 44) && useGLB && envModelCache['flowerbed']) {
-                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, HW + 6, function(px, py, pz) {
+                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, HW + 6, function (px, py, pz) {
                     placeEnvModel(scene, 'flowerbed', px, py, pz, 10, i * 1.2);
                 });
             }
@@ -1247,7 +1248,7 @@ function buildTrackDecorations(scene) {
         else if (zone === 'lake') {
             // Trees sparse (dist 40-60)
             if (i % 3 === 0) {
-                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 40 + (i % 3) * 10, function(px, py, pz) {
+                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 40 + (i % 3) * 10, function (px, py, pz) {
                     var tt = treeTypes[i % 3];
                     if (useGLB && envModelCache[tt]) {
                         placeEnvModel(scene, tt, px, py, pz, 15, i * 1.8);
@@ -1258,7 +1259,7 @@ function buildTrackDecorations(scene) {
             }
             // Crystals every 2 nodes (dist 28-44)
             if (i % 2 === 0) {
-                placeAtTrack(i, ((i / 2 | 0) % 2 === 0) ? 1 : -1, 28 + (i % 4) * 4, function(px, py, pz) {
+                placeAtTrack(i, ((i / 2 | 0) % 2 === 0) ? 1 : -1, 28 + (i % 4) * 4, function (px, py, pz) {
                     if (useGLB && envModelCache['crystal']) {
                         placeEnvModel(scene, 'crystal', px, py, pz, 10 + (i % 3) * 2, i * 0.7);
                     } else {
@@ -1268,13 +1269,13 @@ function buildTrackDecorations(scene) {
             }
             // Dense floating orbs
             if (i % 2 === 0) {
-                placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 4 + (i % 5) * 2, function(px, py, pz, a, nd) {
+                placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 4 + (i % 5) * 2, function (px, py, pz, a, nd) {
                     createFloatingOrb(scene, px, nd.y + 2 + (i % 5), pz, 0xE8EEFF, 0.22 + (i % 3) * 0.06);
                 });
             }
             // Crystal obelisks by the lakeside (dist 35+)
             if ((i === 48 || i === 55 || i === 62) && useGLB && envModelCache['obelisk']) {
-                placeAtTrack(i, (i % 2 === 0) ? -1 : 1, 35 + (i % 3) * 5, function(px, py, pz) {
+                placeAtTrack(i, (i % 2 === 0) ? -1 : 1, 35 + (i % 3) * 5, function (px, py, pz) {
                     placeEnvModel(scene, 'obelisk', px, py, pz, 10, i * 0.75);
                 });
             }
@@ -1283,7 +1284,7 @@ function buildTrackDecorations(scene) {
         else if (zone === 'mountain') {
             // Trees (dist 38-53)
             if (i % 2 === 0) {
-                placeAtTrack(i, (i % 4 < 2) ? 1 : -1, 38 + (i % 4) * 5, function(px, py, pz) {
+                placeAtTrack(i, (i % 4 < 2) ? 1 : -1, 38 + (i % 4) * 5, function (px, py, pz) {
                     var tt = treeTypes[i % 3];
                     if (useGLB && envModelCache[tt]) {
                         placeEnvModel(scene, tt, px, py, pz, 14, i * 1.6);
@@ -1294,7 +1295,7 @@ function buildTrackDecorations(scene) {
             }
             // Amethyst crystals every 3 nodes, CLOSER (dist 20-34, was 32-62)
             if (i % 3 === 0) {
-                placeAtTrack(i, ((i / 3 | 0) % 2 === 0) ? 1 : -1, 20 + (i % 5) * 3, function(px, py, pz) {
+                placeAtTrack(i, ((i / 3 | 0) % 2 === 0) ? 1 : -1, 20 + (i % 5) * 3, function (px, py, pz) {
                     if (useGLB && envModelCache['crystal']) {
                         placeEnvModel(scene, 'crystal', px, py, pz, 8 + (i % 3) * 2, i * 0.9);
                     } else {
@@ -1304,7 +1305,7 @@ function buildTrackDecorations(scene) {
             }
             // Windmills (dist 55)
             if (i === 70 || i === 78) {
-                placeAtTrack(i, (i === 70) ? 1 : -1, 55, function(px, py, pz) {
+                placeAtTrack(i, (i === 70) ? 1 : -1, 55, function (px, py, pz) {
                     if (useGLB && envModelCache['windmill']) {
                         placeEnvModel(scene, 'windmill', px, py, pz, 20, i * 1.57);
                     }
@@ -1315,7 +1316,7 @@ function buildTrackDecorations(scene) {
         else if (zone === 'garden') {
             // Decorative trees every node (dist 38-48)
             var gSide = (i % 2 === 0) ? 1 : -1;
-            placeAtTrack(i, gSide, 38 + (i % 3) * 5, function(px, py, pz) {
+            placeAtTrack(i, gSide, 38 + (i % 3) * 5, function (px, py, pz) {
                 var tt = treeTypes[i % 3];
                 if (useGLB && envModelCache[tt]) {
                     placeEnvModel(scene, tt, px, py, pz, 13, i * 1.4);
@@ -1324,12 +1325,12 @@ function buildTrackDecorations(scene) {
                 }
             });
             // Extra dense flower clusters (every node, both sides)
-            placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 4 + (i % 3) * 1.5, function(px, py, pz) {
+            placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 4 + (i % 3) * 1.5, function (px, py, pz) {
                 createFlowerCluster(scene, px, py, pz, 0x9988CC, 0xDDA0BB);
             });
             // Fountain (dist 38)
             if (i === 92) {
-                placeAtTrack(i, 1, 38, function(px, py, pz) {
+                placeAtTrack(i, 1, 38, function (px, py, pz) {
                     if (useGLB && envModelCache['fountain']) {
                         placeEnvModel(scene, 'fountain', px, py, pz, 16, 0);
                     }
@@ -1337,7 +1338,7 @@ function buildTrackDecorations(scene) {
             }
             // Gold arch (dist 42)
             if (i === 90 || i === 98) {
-                placeAtTrack(i, (i === 90) ? -1 : 1, 42, function(px, py, pz) {
+                placeAtTrack(i, (i === 90) ? -1 : 1, 42, function (px, py, pz) {
                     if (useGLB && envModelCache['archgate']) {
                         placeEnvModel(scene, 'archgate', px, py, pz, 18, i * 0.06);
                     }
@@ -1345,7 +1346,7 @@ function buildTrackDecorations(scene) {
             }
             // Flowerbeds lining the royal garden paths
             if ((i === 86 || i === 89 || i === 93 || i === 96 || i === 0 || i === 3) && useGLB && envModelCache['flowerbed']) {
-                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, HW + 5, function(px, py, pz) {
+                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, HW + 5, function (px, py, pz) {
                     placeEnvModel(scene, 'flowerbed', px, py, pz, 10, i * 1.1);
                 });
             }
@@ -1428,9 +1429,9 @@ function buildTrackDecorations(scene) {
 
     // Place water near Crystal Lake zone
     var waterPositions = [
-        {x: 200, z: 200, w: 150, h: 100},
-        {x: -300, z: 150, w: 80, h: 120},
-        {x: 100, z: -350, w: 100, h: 80}
+        { x: 200, z: 200, w: 150, h: 100 },
+        { x: -300, z: 150, w: 80, h: 120 },
+        { x: 100, z: -350, w: 100, h: 80 }
     ];
     for (var wi = 0; wi < waterPositions.length; wi++) {
         var wp = waterPositions[wi];
@@ -1765,14 +1766,17 @@ function createSpectatorStand(scene, node, angle, side) {
     }
 }
 
-// 水面アニメーション更新（毎フレーム呼ぶ）
-function updateWaterSurfaces() {
+// Water surface animation update (called each frame)
+function updateWaterSurfaces(dt) {
     if (!trackMeshes) return;
-    var time = (typeof clock !== 'undefined' && clock) ? clock.getElapsedTime() : fr * 0.016;
+
+    // Accumulate time based on delta time for smooth, frame-rate independent animation
+    waterTime += (dt || 0.016);
+
     for (var i = 0; i < trackMeshes.length; i++) {
         var mesh = trackMeshes[i];
         if (mesh.userData && mesh.userData.isWater && mesh.material && mesh.material.uniforms) {
-            mesh.material.uniforms.uTime.value = time;
+            mesh.material.uniforms.uTime.value = waterTime;
         }
     }
 }

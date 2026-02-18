@@ -37,10 +37,10 @@ function preloadModels(callback) {
   var loaded = 0;
   var total = bodyTypes.length;
 
-  bodyTypes.forEach(function(bodyType) {
+  bodyTypes.forEach(function (bodyType) {
     var url = MODEL_FILES[bodyType];
     glbLoader.load(url,
-      function(gltf) {
+      function (gltf) {
         var model = gltf.scene;
         // Compute bounding box to normalize size
         var box = new THREE.Box3().setFromObject(model);
@@ -62,7 +62,7 @@ function preloadModels(callback) {
         );
 
         // シャドウ有効化 + PBR調整でファンタジー風に
-        model.traverse(function(child) {
+        model.traverse(function (child) {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
@@ -98,7 +98,7 @@ function preloadModels(callback) {
         }
       },
       undefined,
-      function(err) {
+      function (err) {
         console.warn('Failed to load model ' + bodyType + ': ' + err.message);
         loaded++;
         if (loaded === total) {
@@ -123,10 +123,10 @@ function preloadKartModels(callback) {
   var loaded = 0;
   var total = bodyTypes.length;
 
-  bodyTypes.forEach(function(bodyType) {
+  bodyTypes.forEach(function (bodyType) {
     var url = KART_MODEL_FILES[bodyType];
     glbLoader.load(url,
-      function(gltf) {
+      function (gltf) {
         var model = gltf.scene;
         // Compute bounding box to normalize size
         var box = new THREE.Box3().setFromObject(model);
@@ -155,7 +155,7 @@ function preloadKartModels(callback) {
         }
 
         // PBR adjustments for vibrant fantasy look
-        model.traverse(function(child) {
+        model.traverse(function (child) {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
@@ -191,7 +191,7 @@ function preloadKartModels(callback) {
         }
       },
       undefined,
-      function(err) {
+      function (err) {
         console.warn('Failed to load kart model ' + bodyType + ': ' + err.message);
         loaded++;
         if (loaded === total) {
@@ -217,13 +217,13 @@ function preloadEnvModels(callback) {
   var loaded = 0;
   var total = envTypes.length;
 
-  envTypes.forEach(function(envType) {
+  envTypes.forEach(function (envType) {
     var url = ENV_MODEL_FILES[envType];
     glbLoader.load(url,
-      function(gltf) {
+      function (gltf) {
         var model = gltf.scene;
         // マテリアルのPBRプロパティを調整 → ファンタジー風の明るく鮮やかな見た目に
-        model.traverse(function(child) {
+        model.traverse(function (child) {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
@@ -284,7 +284,7 @@ function preloadEnvModels(callback) {
         }
       },
       undefined,
-      function(err) {
+      function (err) {
         console.warn('Failed to load env model ' + envType + ': ' + err.message);
         loaded++;
         if (loaded === total) {
@@ -406,7 +406,7 @@ function Racer(charIdx, isPlayer, kartIdx, equipType) {
   }
 }
 
-Racer.prototype.placeAt = function(idx) {
+Racer.prototype.placeAt = function (idx) {
   var pt = getTrackPoint(idx);
   this.x = pt.x;
   this.y = pt.y;
@@ -420,7 +420,7 @@ Racer.prototype.placeAt = function(idx) {
   this.progress = this.progressAccum;
 };
 
-Racer.prototype.createMesh = function(scene) {
+Racer.prototype.createMesh = function (scene) {
   this.mesh = new THREE.Group();
 
   var char = this.char;
@@ -487,11 +487,11 @@ Racer.prototype.createMesh = function(scene) {
   var cwf = cw * 0.75; // front is narrower
   var chassisVerts = [
     // Top face
-    -cwf, ch, -cd,  cwf, ch, -cd,  cw, ch, cd,  -cw, ch, cd,
+    -cwf, ch, -cd, cwf, ch, -cd, cw, ch, cd, -cw, ch, cd,
     // Bottom face
-    -cwf, -ch, -cd,  cwf, -ch, -cd,  cw, -ch, cd,  -cw, -ch, cd
+    -cwf, -ch, -cd, cwf, -ch, -cd, cw, -ch, cd, -cw, -ch, cd
   ];
-  var chassisIdx = [0,1,2, 0,2,3, 4,6,5, 4,7,6, 0,4,5, 0,5,1, 2,6,7, 2,7,3, 1,5,6, 1,6,2, 0,3,7, 0,7,4];
+  var chassisIdx = [0, 1, 2, 0, 2, 3, 4, 6, 5, 4, 7, 6, 0, 4, 5, 0, 5, 1, 2, 6, 7, 2, 7, 3, 1, 5, 6, 1, 6, 2, 0, 3, 7, 0, 7, 4];
   chassisGeo.setAttribute('position', new THREE.Float32BufferAttribute(chassisVerts, 3));
   chassisGeo.setIndex(chassisIdx);
   chassisGeo.computeVertexNormals();
@@ -737,7 +737,7 @@ Racer.prototype.createMesh = function(scene) {
     var visorMat = new THREE.MeshLambertMaterial({
       color: visorTint, transparent: true, opacity: 0.85
     });
-    var visor = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 6, -Math.PI*0.4, Math.PI*0.8, 0.3, 0.5), visorMat);
+    var visor = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 6, -Math.PI * 0.4, Math.PI * 0.8, 0.3, 0.5), visorMat);
     visor.position.set(0, 0.6, -0.12);
     driverGroup.add(visor);
 
@@ -864,7 +864,7 @@ Racer.prototype.createMesh = function(scene) {
   this.updateMesh();
 };
 
-Racer.prototype.activateSkill = function(racers) {
+Racer.prototype.activateSkill = function (racers) {
   if (!this.skillReady || this.skillActive) return;
   this.skillActive = true;
   this.skillReady = false;
@@ -906,14 +906,17 @@ Racer.prototype.activateSkill = function(racers) {
   if (SND && SND.boost) SND.boost();
 };
 
-Racer.prototype.update = function(input, racers, scene) {
+Racer.prototype.update = function (input, racers, scene, dt) {
+  // Delta time scaling (base 60FPS)
+  var timeScale = (dt || 0.016) * 60;
+
   // Handle finished state - auto-drive along track (like Mario Kart)
   if (this.finished) {
     var autoSpd = this.maxSpd * 0.5;
     if (this.spd < autoSpd) {
-      this.spd += this.accel * 0.5;
+      this.spd += this.accel * 0.5 * timeScale;
     } else {
-      this.spd *= 0.98;
+      this.spd *= Math.pow(0.98, timeScale);
     }
 
     // Use nearest track index to keep waypoint in sync with actual position
@@ -930,7 +933,7 @@ Racer.prototype.update = function(input, racers, scene) {
     var angDiff = targetAng - this.ang;
     while (angDiff > Math.PI) angDiff -= Math.PI * 2;
     while (angDiff < -Math.PI) angDiff += Math.PI * 2;
-    var turnRate = this.handling * 1.5; // Faster turning for track following
+    var turnRate = this.handling * 1.5 * timeScale; // Faster turning for track following
     if (Math.abs(angDiff) > turnRate) {
       this.ang += turnRate * (angDiff > 0 ? 1 : -1);
     } else {
@@ -941,17 +944,17 @@ Racer.prototype.update = function(input, racers, scene) {
     // Pull toward track center to prevent drifting off-road
     var nearNode = trackNodes[nearIdx];
     if (nearNode) {
-      this.x += (nearNode.x - this.x) * 0.03;
-      this.z += (nearNode.z - this.z) * 0.03;
+      this.x += (nearNode.x - this.x) * 0.03 * timeScale;
+      this.z += (nearNode.z - this.z) * 0.03 * timeScale;
     }
 
     // Apply movement
-    this.x += Math.cos(this.ang) * this.spd;
-    this.z += Math.sin(this.ang) * this.spd;
+    this.x += Math.cos(this.ang) * this.spd * timeScale;
+    this.z += Math.sin(this.ang) * this.spd * timeScale;
 
     // Track Y position
     if (nearNode) {
-      this.y += (nearNode.y - this.y) * 0.15;
+      this.y += (nearNode.y - this.y) * 0.15 * timeScale;
     }
     this.totalIdx = nearIdx;
 
@@ -961,20 +964,20 @@ Racer.prototype.update = function(input, racers, scene) {
 
   // Handle stun
   if (this.stunTimer > 0) {
-    this.stunTimer--;
-    this.spd *= 0.92;
+    this.stunTimer -= timeScale;
+    this.spd *= Math.pow(0.92, timeScale);
     this.updateMesh();
     return;
   }
 
   // Decrement timers
-  if (this.boostTimer > 0) this.boostTimer--;
-  if (this.shieldTimer > 0) this.shieldTimer--;
-  if (this.driftSpark > 0) this.driftSpark--;
+  if (this.boostTimer > 0) this.boostTimer -= timeScale;
+  if (this.shieldTimer > 0) this.shieldTimer -= timeScale;
+  if (this.driftSpark > 0) this.driftSpark -= timeScale;
 
   // Skill cooldown
   if (this.skillCooldown > 0) {
-    this.skillCooldown--;
+    this.skillCooldown -= timeScale;
     if (this.skillCooldown <= 0) {
       this.skillReady = true;
     }
@@ -982,7 +985,7 @@ Racer.prototype.update = function(input, racers, scene) {
 
   // Skill active timer
   if (this.skillActive) {
-    this.skillTimer--;
+    this.skillTimer -= timeScale;
     if (this.skillTimer <= 0) {
       this.skillActive = false;
       // Start cooldown
@@ -994,7 +997,7 @@ Racer.prototype.update = function(input, racers, scene) {
 
   // Auto-shield recharge
   if (this.equip === 'auto_shield' && !this.autoShieldReady) {
-    this.autoShieldTimer++;
+    this.autoShieldTimer += timeScale;
     if (this.autoShieldTimer >= 3600) { // 60 seconds
       this.autoShieldReady = true;
       this.autoShieldTimer = 0;
@@ -1028,15 +1031,15 @@ Racer.prototype.update = function(input, racers, scene) {
     // Acceleration
     if (input.up) {
       if (this.spd < curMax) {
-        this.spd += curAccel;
+        this.spd += curAccel * timeScale;
         if (this.spd > curMax) this.spd = curMax;
       }
     } else if (input.down) {
-      this.spd -= curAccel * 1.5;
+      this.spd -= curAccel * 1.5 * timeScale;
       var minSpd = -0.3 * curMax;
       if (this.spd < minSpd) this.spd = minSpd;
     } else {
-      this.spd *= 0.985;
+      this.spd *= Math.pow(0.985, timeScale);
     }
 
     // Drifting
@@ -1049,7 +1052,7 @@ Racer.prototype.update = function(input, racers, scene) {
     if (this.skillActive && this.char.skill === 'sakura_drift') driftChargeRate = 4;
 
     if (this.drifting && (input.left || input.right)) {
-      this.driftCharge = Math.min(this.driftCharge + driftChargeRate, 120);
+      this.driftCharge = Math.min(this.driftCharge + driftChargeRate * timeScale, 120);
     }
     if (wasDrifting && !this.drifting && this.driftCharge > 0) {
       var boostAmount = 0;
@@ -1069,7 +1072,7 @@ Racer.prototype.update = function(input, racers, scene) {
     if (!this.drifting) this.driftCharge = 0;
 
     // Turning
-    var turnRate = curHandling;
+    var turnRate = curHandling * timeScale; // Scale turn rate by time
     if (this.drifting) turnRate *= 1.6;
     if (this.skillActive && this.char.skill === 'sakura_drift') turnRate *= 1.4;
     turnRate *= Math.min(1, Math.abs(this.spd) / 0.8);
@@ -1088,10 +1091,10 @@ Racer.prototype.update = function(input, racers, scene) {
       this.ang += turnRate * steerAmt;
       this.tilt = Math.max(-0.3, Math.min(0.3, this.tilt + 0.02 * steerAmt));
     } else {
-      this.tilt *= 0.9;
+      this.tilt *= Math.pow(0.9, timeScale);
     }
 
-    if (this.drifting && fr % 20 === 0) {
+    if (this.drifting && Math.floor(fr % 20) === 0) {
       this.driftSpark = 15;
       if (SND && SND.drift) SND.drift();
     }
@@ -1129,7 +1132,7 @@ Racer.prototype.update = function(input, racers, scene) {
       var halfTrack = TRACK_WIDTH * 0.45;
       if (offDist > halfTrack) {
         // Pull back toward track center proportionally to how far off
-        var pullStr = Math.min(0.15, (offDist - halfTrack) * 0.01);
+        var pullStr = Math.min(0.15, (offDist - halfTrack) * 0.01) * timeScale;
         this.x -= offDx * pullStr;
         this.z -= offDz * pullStr;
       }
@@ -1148,7 +1151,7 @@ Racer.prototype.update = function(input, racers, scene) {
       this.aiDrifting = false;
     }
 
-    var turnRate = curHandling * 0.9;
+    var turnRate = curHandling * 0.9 * timeScale;
     if (this.aiDrifting) turnRate *= 1.5;
     // Minimum turn rate so AI can steer even at low speed (e.g. at race start)
     turnRate *= Math.max(0.3, Math.min(1, Math.abs(this.spd) / 0.8));
@@ -1165,7 +1168,7 @@ Racer.prototype.update = function(input, racers, scene) {
     if (this.skillActive && this.char.skill === 'sakura_drift') driftChargeRate = 4;
 
     if (this.aiDrifting) {
-      this.aiDriftCharge = Math.min(this.aiDriftCharge + driftChargeRate, 120);
+      this.aiDriftCharge = Math.min(this.aiDriftCharge + driftChargeRate * timeScale, 120);
       this.tilt = angDiff > 0 ? 0.2 : -0.2;
     }
 
@@ -1182,7 +1185,7 @@ Racer.prototype.update = function(input, racers, scene) {
     }
     if (!this.aiDrifting) {
       this.aiDriftCharge = 0;
-      this.tilt *= 0.9;
+      this.tilt *= Math.pow(0.9, timeScale);
     }
 
     // --- Rubber banding: AI adapts speed based on position relative to player ---
@@ -1214,10 +1217,10 @@ Racer.prototype.update = function(input, racers, scene) {
     }
 
     if (this.spd < aiMaxSpd) {
-      this.spd += curAccel;
+      this.spd += curAccel * timeScale;
       if (this.spd > aiMaxSpd) this.spd = aiMaxSpd;
     } else {
-      this.spd *= 0.995;
+      this.spd *= Math.pow(0.995, timeScale);
     }
 
     // --- Smart skill use: use when it makes sense ---
@@ -1234,7 +1237,7 @@ Racer.prototype.update = function(input, racers, scene) {
           if (racers[sr] !== this) {
             var sdx = racers[sr].x - this.x;
             var sdz = racers[sr].z - this.z;
-            if (sdx*sdx + sdz*sdz < 100) { useSkill = Math.random() < 0.006; break; }
+            if (sdx * sdx + sdz * sdz < 100) { useSkill = Math.random() < 0.006; break; }
           }
         }
       } else if (skill === 'quake') {
@@ -1244,7 +1247,7 @@ Racer.prototype.update = function(input, racers, scene) {
           if (racers[sr] !== this) {
             var sdx = racers[sr].x - this.x;
             var sdz = racers[sr].z - this.z;
-            if (sdx*sdx + sdz*sdz < 900) nearCount++;
+            if (sdx * sdx + sdz * sdz < 900) nearCount++;
           }
         }
         if (nearCount >= 2) useSkill = Math.random() < 0.008;
@@ -1259,7 +1262,7 @@ Racer.prototype.update = function(input, racers, scene) {
     }
 
     // --- Smart item use ---
-    if (this.aiItemDelay > 0) this.aiItemDelay--;
+    if (this.aiItemDelay > 0) this.aiItemDelay -= timeScale;
     if (this.item && this.aiItemDelay <= 0) {
       var useItem = false;
       if (this.item === 'boost') {
@@ -1271,7 +1274,7 @@ Racer.prototype.update = function(input, racers, scene) {
         // Drop trap when enemy is close behind
         for (var ir = 0; ir < racers.length; ir++) {
           if (racers[ir] !== this && racers[ir].progress < this.progress &&
-              (this.progress - racers[ir].progress) < 15) {
+            (this.progress - racers[ir].progress) < 15) {
             useItem = Math.random() < 0.03;
             break;
           }
@@ -1280,7 +1283,7 @@ Racer.prototype.update = function(input, racers, scene) {
         // Fire homing when enemy ahead
         for (var ir = 0; ir < racers.length; ir++) {
           if (racers[ir] !== this && racers[ir].progress > this.progress &&
-              (racers[ir].progress - this.progress) < 40) {
+            (racers[ir].progress - this.progress) < 40) {
             useItem = Math.random() < 0.02;
             break;
           }
@@ -1304,14 +1307,14 @@ Racer.prototype.update = function(input, racers, scene) {
   }
 
   // Movement
-  this.x += Math.cos(this.ang) * this.spd;
-  this.z += Math.sin(this.ang) * this.spd;
+  this.x += Math.cos(this.ang) * this.spd * timeScale;
+  this.z += Math.sin(this.ang) * this.spd * timeScale;
 
   // Track Y position
   var nearIdx = nearestTrackIndex(this.x, this.z);
   var nearNode = trackNodes[nearIdx];
   if (nearNode) {
-    this.y += (nearNode.y - this.y) * 0.15;
+    this.y += (nearNode.y - this.y) * 0.15 * timeScale;
   }
 
   // Off-track handling - wall slide (Mario Kart style)
@@ -1329,21 +1332,21 @@ Racer.prototype.update = function(input, racers, scene) {
     var pushAng = Math.atan2(centerNode.z - this.z, centerNode.x - this.x);
     var overshoot = distToTrack - wallLimit;
     // Strong push proportional to overshoot - prevents escaping
-    var pushStr = Math.min(overshoot * 0.6, 3.0);
+    var pushStr = Math.min(overshoot * 0.6, 3.0) * timeScale;
     this.x += Math.cos(pushAng) * pushStr;
     this.z += Math.sin(pushAng) * pushStr;
     // Speed reduction
-    this.spd *= 0.93;
+    this.spd *= Math.pow(0.93, timeScale);
     // Steer toward track to slide along wall
     var toTrackAng = Math.atan2(centerNode.z - this.z, centerNode.x - this.x);
     var angDiffToTrack = toTrackAng - this.ang;
     while (angDiffToTrack > Math.PI) angDiffToTrack -= Math.PI * 2;
     while (angDiffToTrack < -Math.PI) angDiffToTrack += Math.PI * 2;
-    this.ang += angDiffToTrack * 0.06;
+    this.ang += angDiffToTrack * 0.06 * timeScale;
   } else if (!phasing && distToTrack > grassEdge) {
     // Grass slowdown - gradually stronger the further you go
     var grassDepth = (distToTrack - grassEdge) / (wallLimit - grassEdge);
-    this.spd *= (0.98 - grassDepth * 0.04);
+    this.spd *= Math.pow((0.98 - grassDepth * 0.04), timeScale);
   }
 
   // Progress tracking (cumulative delta to handle start-line wraparound)
@@ -1386,7 +1389,7 @@ Racer.prototype.update = function(input, racers, scene) {
 
       // Magnet pull
       if (rdist < magnetRange && rdist > 3) {
-        var pullStr = 0.3;
+        var pullStr = 0.3 * timeScale;
         ring.x += rdx / rdist * pullStr;
         ring.z += rdz / rdist * pullStr;
       }
@@ -1418,7 +1421,7 @@ Racer.prototype.update = function(input, racers, scene) {
       var dist = dx * dx + dz * dz;
       if (dist < 9) {
         box.active = false;
-        box.respawn = 180;
+        box.respawn = 180; // Respawn frames (approx 3s) - keeping as frames for simplicity since it's an integer counter in updateItemBoxes
         if (itemBoxMeshes[i]) itemBoxMeshes[i].visible = false;
         this.item = ITEMS[Math.floor(Math.random() * ITEMS.length)].type;
         if (this.isPlayer) SND.pickup();
@@ -1513,15 +1516,15 @@ Racer.prototype.update = function(input, racers, scene) {
         var dist = Math.sqrt(dx * dx + dz * dz);
         if (dist < minSep && dist > 0.01) {
           var pushAng = Math.atan2(dz, dx);
-          var pushDist = (minSep - dist) * 0.25;
+          var pushDist = (minSep - dist) * 0.25 * timeScale;
           this.x += Math.cos(pushAng) * pushDist;
           this.z += Math.sin(pushAng) * pushDist;
           other.x -= Math.cos(pushAng) * pushDist;
           other.z -= Math.sin(pushAng) * pushDist;
           // Gentle speed exchange
           var spdDiff = this.spd - other.spd;
-          this.spd -= spdDiff * 0.08;
-          other.spd += spdDiff * 0.08;
+          this.spd -= spdDiff * 0.08 * timeScale;
+          other.spd += spdDiff * 0.08 * timeScale;
         }
       }
     }
@@ -1530,7 +1533,7 @@ Racer.prototype.update = function(input, racers, scene) {
   this.updateMesh();
 };
 
-Racer.prototype.updateMesh = function() {
+Racer.prototype.updateMesh = function () {
   if (!this.mesh) return;
 
   this.mesh.position.set(this.x, this.y, this.z);
@@ -1560,7 +1563,7 @@ Racer.prototype.updateMesh = function() {
 
   // Skill active visual - transparency for shadow phase
   if (this.skillActive && this.char.skill === 'shadow_phase') {
-    this.mesh.traverse(function(child) {
+    this.mesh.traverse(function (child) {
       if (child.material) {
         child.material.transparent = true;
         child.material.opacity = 0.4 + Math.sin(fr * 0.2) * 0.2;
@@ -1631,7 +1634,7 @@ Racer.prototype.updateMesh = function() {
   }
 };
 
-Racer.prototype.useItem = function(racers, scene) {
+Racer.prototype.useItem = function (racers, scene) {
   if (!this.item) return;
 
   var itemType = this.item;

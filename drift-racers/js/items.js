@@ -157,14 +157,14 @@ function addTrap(scene, x, y, z, owner) {
     });
 
     var spikePositions = [
-        {x: 1.2, y: 0, z: 0, rx: 0, rz: Math.PI/2},
-        {x: -1.2, y: 0, z: 0, rx: 0, rz: -Math.PI/2},
-        {x: 0, y: 0, z: 1.2, rx: 0, rz: 0},
-        {x: 0, y: 0, z: -1.2, rx: 0, rz: Math.PI},
-        {x: 0, y: 1.2, z: 0, rx: 0, rz: 0},
-        {x: 0, y: -1.2, z: 0, rx: Math.PI, rz: 0},
-        {x: 0.85, y: 0.85, z: 0, rx: Math.PI/4, rz: Math.PI/2},
-        {x: -0.85, y: 0.85, z: 0, rx: Math.PI/4, rz: -Math.PI/2}
+        { x: 1.2, y: 0, z: 0, rx: 0, rz: Math.PI / 2 },
+        { x: -1.2, y: 0, z: 0, rx: 0, rz: -Math.PI / 2 },
+        { x: 0, y: 0, z: 1.2, rx: 0, rz: 0 },
+        { x: 0, y: 0, z: -1.2, rx: 0, rz: Math.PI },
+        { x: 0, y: 1.2, z: 0, rx: 0, rz: 0 },
+        { x: 0, y: -1.2, z: 0, rx: Math.PI, rz: 0 },
+        { x: 0.85, y: 0.85, z: 0, rx: Math.PI / 4, rz: Math.PI / 2 },
+        { x: -0.85, y: 0.85, z: 0, rx: Math.PI / 4, rz: -Math.PI / 2 }
     ];
 
     for (var i = 0; i < spikePositions.length; i++) {
@@ -241,21 +241,22 @@ function addProjectile(scene, x, y, z, ang, owner) {
 }
 
 // Update item boxes each frame
-function updateItemBoxes() {
+function updateItemBoxes(dt) {
+    var timeScale = (dt || 0.016) * 60;
     for (var i = 0; i < itemBoxes.length; i++) {
         var box = itemBoxes[i];
         var mesh = itemBoxMeshes[i];
 
         if (!box.active) {
             // Respawn countdown
-            box.respawn--;
+            box.respawn -= timeScale;
             if (box.respawn <= 0) {
                 box.active = true;
                 mesh.visible = true;
             }
         } else {
             // Spin the box - faster, more noticeable
-            mesh.rotation.y += 0.04;
+            mesh.rotation.y += 0.04 * timeScale;
             mesh.rotation.x = Math.sin(Date.now() * 0.002) * 0.15;
 
             // Bouncy floating animation
@@ -264,15 +265,16 @@ function updateItemBoxes() {
 
             // Cycle emissive color for rainbow shimmer
             if (mesh.children[0] && mesh.children[0].material) {
-              var hue = ((Date.now() * 0.001) + i * 0.1) % 1.0;
-              mesh.children[0].material.emissive.setHSL(hue, 0.8, 0.35);
+                var hue = ((Date.now() * 0.001) + i * 0.1) % 1.0;
+                mesh.children[0].material.emissive.setHSL(hue, 0.8, 0.35);
             }
         }
     }
 }
 
 // Update projectiles each frame
-function updateProjectiles(scene, racers) {
+function updateProjectiles(scene, racers, dt) {
+    var timeScale = (dt || 0.016) * 60;
     for (var i = projectiles.length - 1; i >= 0; i--) {
         var proj = projectiles[i];
         var mesh = projMeshes[i];
@@ -304,21 +306,22 @@ function updateProjectiles(scene, racers) {
             while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
 
             // Steer with max turn rate
-            if (angleDiff > 0.06) {
-                proj.ang += 0.06;
-            } else if (angleDiff < -0.06) {
-                proj.ang -= 0.06;
+            var maxTurn = 0.06 * timeScale;
+            if (angleDiff > maxTurn) {
+                proj.ang += maxTurn;
+            } else if (angleDiff < -maxTurn) {
+                proj.ang -= maxTurn;
             } else {
                 proj.ang += angleDiff;
             }
         }
 
         // Move projectile
-        proj.x += Math.cos(proj.ang) * proj.spd;
-        proj.z += Math.sin(proj.ang) * proj.spd;
+        proj.x += Math.cos(proj.ang) * proj.spd * timeScale;
+        proj.z += Math.sin(proj.ang) * proj.spd * timeScale;
 
         // Decrement life
-        proj.life--;
+        proj.life -= timeScale;
 
         // Update mesh
         mesh.position.set(proj.x, proj.y, proj.z);
@@ -334,7 +337,8 @@ function updateProjectiles(scene, racers) {
 }
 
 // Update traps each frame
-function updateTraps(scene) {
+function updateTraps(scene, dt) {
+    var timeScale = (dt || 0.016) * 60;
     var frameCount = Date.now() / 16;
 
     for (var i = traps.length - 1; i >= 0; i--) {
@@ -342,10 +346,10 @@ function updateTraps(scene) {
         var mesh = trapMeshes[i];
 
         // Decrement life
-        trap.life--;
+        trap.life -= timeScale;
 
         // Rotate for visual effect
-        mesh.rotation.y += 0.02;
+        mesh.rotation.y += 0.02 * timeScale;
 
         // Blink the red light
         if (mesh.userData.light) {
@@ -426,20 +430,21 @@ function generateEnergyRings(scene) {
 }
 
 // Update energy rings each frame
-function updateEnergyRings() {
+function updateEnergyRings(dt) {
+    var timeScale = (dt || 0.016) * 60;
     for (var i = 0; i < energyRings.length; i++) {
         var ring = energyRings[i];
         var mesh = energyRingMeshes[i];
 
         if (!ring.active) {
-            ring.respawn--;
+            ring.respawn -= timeScale;
             if (ring.respawn <= 0) {
                 ring.active = true;
                 mesh.visible = true;
             }
         } else {
             // Spin and float
-            mesh.rotation.y += 0.05;
+            mesh.rotation.y += 0.05 * timeScale;
             var floatOffset = Math.sin(Date.now() * 0.003 + i * 0.7) * 0.3;
             mesh.position.y = ring.y + floatOffset;
 
@@ -532,7 +537,7 @@ function generateBoostPads(scene) {
     }
 }
 
-function updateBoostPads() {
+function updateBoostPads(dt) {
     var time = Date.now() * 0.003;
     for (var i = 0; i < boostPadMeshes.length; i++) {
         var mesh = boostPadMeshes[i];

@@ -4,7 +4,7 @@
 var scene, camera, renderer, clock;
 var composer = null; // EffectComposer for post-processing
 var envMap = null;   // Environment map for reflections
-var particles = {driftLeft: null, driftRight: null, boostFlame: null, dustClouds: []};
+var particles = { driftLeft: null, driftRight: null, boostFlame: null, dustClouds: [] };
 var cloudMeshes = []; // For animating clouds
 
 function initScene() {
@@ -333,7 +333,7 @@ function buildGround() {
   }
 
   // Flowers - lavender and rose only
-  var fColors = ['#9988CC','#DDA0BB'];
+  var fColors = ['#9988CC', '#DDA0BB'];
   for (var i = 0; i < 120; i++) {
     var fx = Math.random() * 512;
     var fy = Math.random() * 512;
@@ -615,23 +615,23 @@ function buildRamps(scene) {
     // Wedge vertices
     var rv = [
       // Bottom face
-      -w/2, 0, -d/2,   w/2, 0, -d/2,   w/2, 0, d/2,   -w/2, 0, d/2,
+      -w / 2, 0, -d / 2, w / 2, 0, -d / 2, w / 2, 0, d / 2, -w / 2, 0, d / 2,
       // Top face (angled)
-      -w/2, 0, -d/2,   w/2, 0, -d/2,   w/2, h, d/2,   -w/2, h, d/2
+      -w / 2, 0, -d / 2, w / 2, 0, -d / 2, w / 2, h, d / 2, -w / 2, h, d / 2
     ];
     var ri = [
       // Top surface (ramp)
-      4,5,6, 4,6,7,
+      4, 5, 6, 4, 6, 7,
       // Bottom
-      0,2,1, 0,3,2,
+      0, 2, 1, 0, 3, 2,
       // Back wall
-      2,6,5, 2,5,1,
+      2, 6, 5, 2, 5, 1,
       // Front (short side)
-      0,4,7, 0,7,3,
+      0, 4, 7, 0, 7, 3,
       // Left
-      0,1,5, 0,5,4,
+      0, 1, 5, 0, 5, 4,
       // Right
-      3,7,6, 3,6,2
+      3, 7, 6, 3, 6, 2
     ];
 
     rampGeo.setAttribute('position', new THREE.Float32BufferAttribute(rv, 3));
@@ -716,13 +716,13 @@ function buildSky() {
   ].join('\n');
   var skyMaterial = new THREE.ShaderMaterial({
     uniforms: {
-      zenithColor:   {value: new THREE.Color(0x0D1B33)},
-      upperColor:    {value: new THREE.Color(0x1A2E4A)},
-      midColor:      {value: new THREE.Color(0x6B5B95)},
-      horizonColor:  {value: new THREE.Color(0xC8D5E8)},
-      belowColor:    {value: new THREE.Color(0x8899CC)},
-      auroraColor1:  {value: new THREE.Color(0x6688CC)},
-      auroraColor2:  {value: new THREE.Color(0xAABBEE)}
+      zenithColor: { value: new THREE.Color(0x0D1B33) },
+      upperColor: { value: new THREE.Color(0x1A2E4A) },
+      midColor: { value: new THREE.Color(0x6B5B95) },
+      horizonColor: { value: new THREE.Color(0xC8D5E8) },
+      belowColor: { value: new THREE.Color(0x8899CC) },
+      auroraColor1: { value: new THREE.Color(0x6688CC) },
+      auroraColor2: { value: new THREE.Color(0xAABBEE) }
     },
     vertexShader: skyVertexShader,
     fragmentShader: skyFragmentShader,
@@ -744,14 +744,14 @@ function buildClouds() {
   // Soft fluffy cloud using radial gradients
   cCtx.clearRect(0, 0, 256, 128);
   var cloudPuffs = [
-    {x: 128, y: 70, r: 55},
-    {x: 90, y: 75, r: 42},
-    {x: 170, y: 72, r: 45},
-    {x: 60, y: 82, r: 30},
-    {x: 200, y: 80, r: 32},
-    {x: 128, y: 55, r: 35},
-    {x: 105, y: 60, r: 30},
-    {x: 155, y: 58, r: 32}
+    { x: 128, y: 70, r: 55 },
+    { x: 90, y: 75, r: 42 },
+    { x: 170, y: 72, r: 45 },
+    { x: 60, y: 82, r: 30 },
+    { x: 200, y: 80, r: 32 },
+    { x: 128, y: 55, r: 35 },
+    { x: 105, y: 60, r: 30 },
+    { x: 155, y: 58, r: 32 }
   ];
   for (var i = 0; i < cloudPuffs.length; i++) {
     var cp = cloudPuffs[i];
@@ -770,8 +770,8 @@ function buildClouds() {
   for (var i = 0; i < 35; i++) {
     var sizeRoll = Math.random();
     var cloudScale = sizeRoll < 0.5 ? (30 + Math.random() * 25) :
-                     sizeRoll < 0.85 ? (50 + Math.random() * 40) :
-                     (80 + Math.random() * 40);
+      sizeRoll < 0.85 ? (50 + Math.random() * 40) :
+        (80 + Math.random() * 40);
     var cloudH = cloudScale * 0.4;
 
     var geo = new THREE.PlaneGeometry(cloudScale, cloudH);
@@ -828,19 +828,19 @@ function buildStars() {
 
 function buildSunDecor() {
   var sunGeo = new THREE.SphereGeometry(40, 16, 16);
-  var sunMat = new THREE.MeshBasicMaterial({color: 0xFFEECC});
+  var sunMat = new THREE.MeshBasicMaterial({ color: 0xFFEECC });
   var sun = new THREE.Mesh(sunGeo, sunMat);
   sun.position.set(300, 80, -400);
   scene.add(sun);
 
   var flareGeo = new THREE.SphereGeometry(60, 16, 16);
-  var flareMat = new THREE.MeshBasicMaterial({color: 0xFFEECC, transparent: true, opacity: 0.12});
+  var flareMat = new THREE.MeshBasicMaterial({ color: 0xFFEECC, transparent: true, opacity: 0.12 });
   var flare = new THREE.Mesh(flareGeo, flareMat);
   flare.position.copy(sun.position);
   scene.add(flare);
 
   var flare2Geo = new THREE.SphereGeometry(90, 16, 16);
-  var flare2Mat = new THREE.MeshBasicMaterial({color: 0xFFDDAA, transparent: true, opacity: 0.06});
+  var flare2Mat = new THREE.MeshBasicMaterial({ color: 0xFFDDAA, transparent: true, opacity: 0.06 });
   var flare2 = new THREE.Mesh(flare2Geo, flare2Mat);
   flare2.position.copy(sun.position);
   scene.add(flare2);
@@ -849,8 +849,8 @@ function buildSunDecor() {
 // Rainbow removed for Crystal Kingdom theme
 
 // Camera
-var cameraOffset = {x: 0, y: 6, z: 12};
-var cameraShake = {x: 0, y: 0};
+var cameraOffset = { x: 0, y: 6, z: 12 };
+var cameraShake = { x: 0, y: 0 };
 var currentFOV = 70;
 
 function updateCamera(pl) {
@@ -892,10 +892,11 @@ function updateCamera(pl) {
 }
 
 // Animate clouds (call each frame)
-function updateClouds() {
+function updateClouds(dt) {
+  var timeScale = (dt || 0.016) * 60;
   for (var i = 0; i < cloudMeshes.length; i++) {
     var c = cloudMeshes[i];
-    c.position.x += c.userData.driftSpeed;
+    c.position.x += c.userData.driftSpeed * timeScale;
     // Wrap around
     if (c.position.x > 700) c.position.x = -700;
     // Billboard: face camera
@@ -933,7 +934,7 @@ function createDriftParticles(scene) {
     });
     var sprite = new THREE.Sprite(spriteMat);
     sprite.scale.set(0.6, 0.6, 1);
-    sprite.userData = { active: false, life: 0, velocity: {x: 0, y: 0, z: 0} };
+    sprite.userData = { active: false, life: 0, velocity: { x: 0, y: 0, z: 0 } };
     leftGroup.add(sprite);
   }
   scene.add(leftGroup);
@@ -952,17 +953,18 @@ function createDriftParticles(scene) {
     });
     var sprite2 = new THREE.Sprite(spriteMat2);
     sprite2.scale.set(0.6, 0.6, 1);
-    sprite2.userData = { active: false, life: 0, velocity: {x: 0, y: 0, z: 0} };
+    sprite2.userData = { active: false, life: 0, velocity: { x: 0, y: 0, z: 0 } };
     rightGroup.add(sprite2);
   }
   scene.add(rightGroup);
   particles.driftRight = rightGroup;
 }
 
-function updateDriftParticles(player) {
+function updateDriftParticles(player, dt) {
   if (!player || !particles.driftLeft || !particles.driftRight) return;
 
-  var dt = 0.016; // fixed timestep approx
+  // Use actual delta time
+  dt = dt || 0.016;
 
   function updateGroup(group) {
     for (var i = 0; i < group.children.length; i++) {
@@ -1001,10 +1003,10 @@ function updateDriftParticles(player) {
     var wheelOffset = 1.2;
     var rearOffset = 1.5;
 
-    var leftX = player.x + Math.cos(player.ang + Math.PI/2) * wheelOffset + Math.cos(player.ang) * rearOffset;
-    var leftZ = player.z + Math.sin(player.ang + Math.PI/2) * wheelOffset + Math.sin(player.ang) * rearOffset;
-    var rightX = player.x - Math.cos(player.ang + Math.PI/2) * wheelOffset + Math.cos(player.ang) * rearOffset;
-    var rightZ = player.z - Math.sin(player.ang + Math.PI/2) * wheelOffset + Math.sin(player.ang) * rearOffset;
+    var leftX = player.x + Math.cos(player.ang + Math.PI / 2) * wheelOffset + Math.cos(player.ang) * rearOffset;
+    var leftZ = player.z + Math.sin(player.ang + Math.PI / 2) * wheelOffset + Math.sin(player.ang) * rearOffset;
+    var rightX = player.x - Math.cos(player.ang + Math.PI / 2) * wheelOffset + Math.cos(player.ang) * rearOffset;
+    var rightZ = player.z - Math.sin(player.ang + Math.PI / 2) * wheelOffset + Math.sin(player.ang) * rearOffset;
 
     if (Math.random() < emitChance) {
       for (var i = 0; i < particles.driftLeft.children.length; i++) {
@@ -1013,7 +1015,7 @@ function updateDriftParticles(player) {
           p.userData.active = true;
           p.userData.life = 1.0;
           p.position.set(leftX, player.y + 0.2, leftZ);
-          var outAng = player.ang + Math.PI/2;
+          var outAng = player.ang + Math.PI / 2;
           p.userData.velocity.x = Math.cos(outAng) * 2 + (Math.random() - 0.5);
           p.userData.velocity.y = 1 + Math.random() * 0.5;
           p.userData.velocity.z = Math.sin(outAng) * 2 + (Math.random() - 0.5);
@@ -1030,7 +1032,7 @@ function updateDriftParticles(player) {
           p.userData.active = true;
           p.userData.life = 1.0;
           p.position.set(rightX, player.y + 0.2, rightZ);
-          var outAng2 = player.ang - Math.PI/2;
+          var outAng2 = player.ang - Math.PI / 2;
           p.userData.velocity.x = Math.cos(outAng2) * 2 + (Math.random() - 0.5);
           p.userData.velocity.y = 1 + Math.random() * 0.5;
           p.userData.velocity.z = Math.sin(outAng2) * 2 + (Math.random() - 0.5);
@@ -1072,7 +1074,7 @@ function createBoostEffect(scene) {
     });
     var sprite = new THREE.Sprite(mat);
     sprite.scale.set(0.8, 1.0, 1);
-    sprite.userData = { active: false, life: 0, velocity: {x: 0, y: 0, z: 0} };
+    sprite.userData = { active: false, life: 0, velocity: { x: 0, y: 0, z: 0 } };
     boostGroup.add(sprite);
   }
 
@@ -1080,10 +1082,11 @@ function createBoostEffect(scene) {
   particles.boostFlame = boostGroup;
 }
 
-function updateBoostEffect(player) {
+function updateBoostEffect(player, dt) {
   if (!player || !particles.boostFlame) return;
 
-  var dt = 0.016;
+  // Use actual delta time
+  dt = dt || 0.016;
 
   for (var i = 0; i < particles.boostFlame.children.length; i++) {
     var p = particles.boostFlame.children[i];
@@ -1221,7 +1224,7 @@ function handleResize() {
   }
 }
 
-window.addEventListener('resize', function() {
+window.addEventListener('resize', function () {
   checkOrientation();
   handleResize();
 });

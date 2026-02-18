@@ -1,10 +1,24 @@
 // Input handling module for drift racing game
 
-var input = {up: false, down: false, left: false, right: false, drift: false, item: false, skill: false, stickX: 0, stickY: 0};
+var input = { up: false, down: false, left: false, right: false, drift: false, item: false, skill: false, stickX: 0, stickY: 0 };
 var keys = {};
+var gamepadIndex = null;
+
+// Gamepad connection events
+window.addEventListener("gamepadconnected", function (e) {
+    gamepadIndex = e.gamepad.index;
+    console.log("Gamepad connected: " + e.gamepad.id);
+});
+
+window.addEventListener("gamepaddisconnected", function (e) {
+    if (gamepadIndex === e.gamepad.index) {
+        gamepadIndex = null;
+        console.log("Gamepad disconnected");
+    }
+});
 
 // Keyboard event listeners
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     keys[e.code] = true;
 
     // Prevent default for specific keys
@@ -15,30 +29,147 @@ document.addEventListener('keydown', function(e) {
     updateInput();
 });
 
-document.addEventListener('keyup', function(e) {
+document.addEventListener('keyup', function (e) {
     keys[e.code] = false;
     updateInput();
 });
 
-// Map keys to input object
+// Map keys and gamepad to input object
 function updateInput() {
-    input.up = keys.ArrowUp || keys.KeyW;
-    input.down = keys.ArrowDown || keys.KeyS;
-    input.left = keys.ArrowLeft || keys.KeyA;
-    input.right = keys.ArrowRight || keys.KeyD;
-    input.drift = keys.ShiftLeft || keys.ShiftRight;
+    // Reset basic input (keep stick values if virtual joystick is active)
+    var keyUp = keys.ArrowUp || keys.KeyW;
+    var keyDown = keys.ArrowDown || keys.KeyS;
+    var keyLeft = keys.ArrowLeft || keys.KeyA;
+    var keyRight = keys.ArrowRight || keys.KeyD;
+    var keyDrift = keys.ShiftLeft || keys.ShiftRight;
+    var keyItem = false;
+    var keySkill = false;
 
-    // One-shot item use
+    // Gamepad Input
+    var gpUp = false, gpDown = false, gpLeft = false, gpRight = false;
+    var gpDrift = false, gpItem = false, gpSkill = false;
+    var gpStickX = 0;
+
+    if (gamepadIndex !== null) {
+        var gp = navigator.getGamepads()[gamepadIndex];
+        if (gp) {
+            // Axes (Left Stick)
+            if (Math.abs(gp.axes[0]) > 0.1) {
+                gpStickX = gp.axes[0];
+            }
+
+            // Buttons (Standard mapping)
+            // 0: A (Cross), 1: B (Circle), 2: X (Square), 3: Y (Triangle)
+            // 4: LB, 5: RB, 6: LT, 7: RT
+            // 12: D-Pad Up, 13: Down, 14: Left, 15: Right
+
+            // Accel: A (0) or RT (7)
+            if (gp.buttons[0].pressed || gp.buttons[7].pressed) gpUp = true;
+            // Brake: B (1) or LT (6)
+            if (gp.buttons[1].pressed || gp.buttons[6].pressed) gpDown = true;
+
+            // Steering: D-Pad
+            if (gp.buttons[14].pressed) gpLeft = true;
+            if (gp.buttons[15].pressed) gpRight = true;
+
+            // Drift: LB (4) or RB (5)
+            if (gp.buttons[4].pressed || gp.buttons[5].pressed) gpDrift = true;
+
+            // Item: X (2) or LT (6 - alt)
+            // Let's stick to X for item to avoid conflict with brake on LT
+            if (gp.buttons[2].pressed) gpItem = true;
+
+            // Skill: Y (3)
+            if (gp.buttons[3].pressed) gpSkill = true;
+        }
+    }
+
+    // Merge inputs (Keyboard | Gamepad | Touch)
+    // Note: Touch inputs modify `input` directly in event handlers, but we must be careful not to overwrite them if they are active
+    // Actually, updateJoystick sets input.stickX/Y.
+    // The touch buttons set input.up/down/drift directly.
+
+    // We'll combine standard inputs here. 
+    // For touch, we need to ensure we don't clear it if touch is active.
+    // However, the current structure of touch handling in this file sets `input.up = true` on touchstart. 
+    // If we overwrite `input.up` here based only on keys/gamepad, we kill touch input.
+    // Strategy: touch events set flags, updateInput should probably OR them? 
+    // But touch events are instantaneous? No, touchstart sets it, touchend clears it.
+    // So `input.up` might be true from touch.
+
+    // Let's modify the variable names to be clear they are frame inputs, then OR them with current state if needed?
+    // No, `updateInput` is called on keydown/keyup. It re-evaluates keyboard state.
+    // It does NOT run every frame loop in main.js? 
+    // Wait, main.js passes `input` to `racer.update`. 
+    // `input.js` has `updateInput` called on key events, but gamepad connected needs polling!
+
+    // CRITICAL FIX: Gamepad needs polling every frame. Key events are event-driven.
+    // We should export a `pollGamepad` function or make `updateInput` callable every frame.
+    // But `input` object is global.
+
+    // Currently `updateInput` is only called on key events. 
+    // I should create a `pollInput()` function called from `main.js` animate loop.
+
+    // For now, I will modify `updateInput` to strictly handle keyboard state mapping, 
+    // AND I will add `pollGamepads()` to be called from main.js.
+
+    input.up = keyUp || gpUp || (input.up && isMobile); // Hacky preservation of touch? 
+    // Better: Separate source tracking.
+    // But to minimize refactoring risk:
+    // Let's make `updateInput` ONLY handle keyboard. 
+    // Gamepad updates will be applied in a new function called from main loop.
+
+    input.up = keyUp;
+    input.down = keyDown;
+    input.left = keyLeft;
+    input.right = keyRight;
+    input.drift = keyDrift;
+
+    // One-shot
     if (keys.Space) {
         input.item = true;
         keys.Space = false;
     }
-
-    // One-shot skill activation
     if (keys.KeyQ) {
         input.skill = true;
         keys.KeyQ = false;
     }
+}
+
+function pollGamepads() {
+    if (gamepadIndex === null) return;
+
+    var gp = navigator.getGamepads()[gamepadIndex];
+    if (!gp) return;
+
+    // Map Gamepad to Input (OR logic with existing keyboard/touch)
+    if (gp.buttons[0].pressed || gp.buttons[7].pressed) input.up = true;
+    if (gp.buttons[1].pressed || gp.buttons[6].pressed) input.down = true;
+
+    if (gp.buttons[14].pressed) input.left = true;
+    if (gp.buttons[15].pressed) input.right = true;
+
+    if (gp.buttons[4].pressed || gp.buttons[5].pressed) input.drift = true;
+
+    // Analog Stick
+    if (Math.abs(gp.axes[0]) > 0.1) {
+        // Override stickX if gamepad is active (priority over touch?)
+        // Or just add?
+        // Let's just set it relative to deadzone
+        input.stickX = gp.axes[0];
+
+        // Also update boolean left/right for code that relies on it
+        if (input.stickX < -0.3) input.left = true;
+        if (input.stickX > 0.3) input.right = true;
+    }
+
+    // Button presses (One-shot handling needs state tracking, but for now simple pressed check)
+    // Racer.update handles cooldowns, so continuous true is fine for drift/accel.
+    // For item/skill, racer often checks `if (input.item)` and effectively consumes it or has cooldown.
+    // Let's check `kart.js`: `if (input.item && !this.itemCooldown)` -> Safe.
+
+    if (gp.buttons[2].pressed) input.item = true;
+    if (gp.buttons[3].pressed) input.skill = true;
 }
 
 // Virtual joystick state
@@ -53,7 +184,7 @@ function setupJoystick() {
     var thumb = document.getElementById('joy-thumb');
     if (!base || !thumb) return;
 
-    base.addEventListener('touchstart', function(e) {
+    base.addEventListener('touchstart', function (e) {
         e.preventDefault();
         AUDIO.init();
         var touch = e.changedTouches[0];
@@ -63,9 +194,9 @@ function setupJoystick() {
         joyCenterX = rect.left + rect.width / 2;
         joyCenterY = rect.top + rect.height / 2;
         updateJoystick(touch.clientX, touch.clientY, thumb);
-    }, {passive: false});
+    }, { passive: false });
 
-    document.addEventListener('touchmove', function(e) {
+    document.addEventListener('touchmove', function (e) {
         if (!joyActive) return;
         for (var i = 0; i < e.changedTouches.length; i++) {
             if (e.changedTouches[i].identifier === joyTouchId) {
@@ -74,7 +205,7 @@ function setupJoystick() {
                 break;
             }
         }
-    }, {passive: false});
+    }, { passive: false });
 
     function onJoyEnd(e) {
         for (var i = 0; i < e.changedTouches.length; i++) {
@@ -92,8 +223,8 @@ function setupJoystick() {
             }
         }
     }
-    document.addEventListener('touchend', onJoyEnd, {passive: false});
-    document.addEventListener('touchcancel', onJoyEnd, {passive: false});
+    document.addEventListener('touchend', onJoyEnd, { passive: false });
+    document.addEventListener('touchcancel', onJoyEnd, { passive: false });
 }
 
 function updateJoystick(tx, ty, thumb) {
@@ -134,10 +265,10 @@ function setupMobile() {
     // Setup action buttons (non-joystick buttons)
     var buttons = document.querySelectorAll('.action-btns .ctrl-btn');
 
-    buttons.forEach(function(btn) {
+    buttons.forEach(function (btn) {
         var key = btn.getAttribute('data-key');
 
-        btn.addEventListener('touchstart', function(e) {
+        btn.addEventListener('touchstart', function (e) {
             e.preventDefault();
             AUDIO.init();
             btn.classList.add('pressed');
@@ -150,18 +281,18 @@ function setupMobile() {
                 input.drift = true;
             } else if (key === 'item') {
                 input.item = true;
-                setTimeout(function() {
+                setTimeout(function () {
                     input.item = false;
                 }, 100);
             } else if (key === 'skill') {
                 input.skill = true;
-                setTimeout(function() {
+                setTimeout(function () {
                     input.skill = false;
                 }, 100);
             }
-        }, {passive: false});
+        }, { passive: false });
 
-        btn.addEventListener('touchend', function(e) {
+        btn.addEventListener('touchend', function (e) {
             e.preventDefault();
             btn.classList.remove('pressed');
 
@@ -172,9 +303,9 @@ function setupMobile() {
             } else if (key === 'drift') {
                 input.drift = false;
             }
-        }, {passive: false});
+        }, { passive: false });
 
-        btn.addEventListener('touchcancel', function(e) {
+        btn.addEventListener('touchcancel', function (e) {
             e.preventDefault();
             btn.classList.remove('pressed');
 
@@ -185,7 +316,7 @@ function setupMobile() {
             } else if (key === 'drift') {
                 input.drift = false;
             }
-        }, {passive: false});
+        }, { passive: false });
     });
 }
 
@@ -214,7 +345,7 @@ function checkOrientation() {
 // === Fullscreen toggle ===
 var fsBtn = document.getElementById('fullscreen-btn');
 if (fsBtn) {
-    fsBtn.onclick = function() {
+    fsBtn.onclick = function () {
         if (!document.fullscreenElement && !document.webkitFullscreenElement) {
             var el = document.documentElement;
             if (el.requestFullscreen) {

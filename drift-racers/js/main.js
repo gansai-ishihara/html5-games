@@ -31,11 +31,11 @@ function startRace() {
   //   Row 3 (back):  AI5  Player (node 97)
   var gridPositions = [
     { node: 99, lateral: -2.5 },  // Row 1 left
-    { node: 99, lateral:  2.5 },  // Row 1 right
+    { node: 99, lateral: 2.5 },  // Row 1 right
     { node: 98, lateral: -2.5 },  // Row 2 left
-    { node: 98, lateral:  2.5 },  // Row 2 right
+    { node: 98, lateral: 2.5 },  // Row 2 right
     { node: 97, lateral: -2.5 },  // Row 3 left  (AI)
-    { node: 97, lateral:  2.5 },  // Row 3 right (Player)
+    { node: 97, lateral: 2.5 },  // Row 3 right (Player)
   ];
 
   // Player goes in last grid slot (back-right)
@@ -88,19 +88,19 @@ function startRace() {
   countdownNum.textContent = count;
   countdownNum.style.color = '#ff4444';
   countdownNum.style.animation = 'none';
-  setTimeout(function() {
+  setTimeout(function () {
     countdownNum.style.animation = 'cdPop 1s ease-out';
   }, 10);
   SND.countdown();
 
-  var countdownInterval = setInterval(function() {
+  var countdownInterval = setInterval(function () {
     count--;
 
     if (count > 0) {
       countdownNum.textContent = count;
       countdownNum.style.color = '#ff4444';
       countdownNum.style.animation = 'none';
-      setTimeout(function() {
+      setTimeout(function () {
         countdownNum.style.animation = 'cdPop 1s ease-out';
       }, 10);
       SND.countdown();
@@ -108,7 +108,7 @@ function startRace() {
       countdownNum.textContent = 'GO!';
       countdownNum.style.color = '#44ff44';
       countdownNum.style.animation = 'none';
-      setTimeout(function() {
+      setTimeout(function () {
         countdownNum.style.animation = 'cdPop 1s ease-out';
       }, 10);
       SND.go();
@@ -141,8 +141,13 @@ function startRace() {
 var animFrameId = null;
 
 // Main game loop
+var clock = new THREE.Clock(); // Initialize clock
 function animate() {
   animFrameId = requestAnimationFrame(animate);
+
+  var dt = clock.getDelta(); // Get seconds passed since last frame
+  // Cap dt to prevent physics explosions on lag spikes (e.g. max 0.1s aka 10FPS drop)
+  if (dt > 0.1) dt = 0.1;
 
   fr++;
 
@@ -151,18 +156,21 @@ function animate() {
     raceTime++;
   }
 
+  // Update input from gamepad
+  if (typeof pollGamepads === 'function') pollGamepads();
+
   // Update item boxes
-  updateItemBoxes();
+  updateItemBoxes(dt);
 
   // Update energy rings
-  updateEnergyRings();
+  updateEnergyRings(dt);
 
   // Update projectiles and traps
-  updateProjectiles(scene, racers);
-  updateTraps(scene);
+  updateProjectiles(scene, racers, dt);
+  updateTraps(scene, dt);
 
   // Update boost pads
-  updateBoostPads();
+  updateBoostPads(dt);
 
   // Update game logic when racing
   if (gameState === 'racing') {
@@ -170,10 +178,10 @@ function animate() {
     for (var i = 0; i < racers.length; i++) {
       if (i === 0) {
         // Player racer - use input
-        racers[i].update(input, racers, scene);
+        racers[i].update(input, racers, scene, dt);
       } else {
         // AI racer - use empty input
-        racers[i].update({}, racers, scene);
+        racers[i].update({}, racers, scene, dt);
       }
     }
 
@@ -233,20 +241,20 @@ function animate() {
   }
 
   // Update cloud animation
-  updateClouds();
+  updateClouds(dt);
 
   // Update water surface animation
-  updateWaterSurfaces();
+  updateWaterSurfaces(dt);
 
   // Update visual effects
-  updateDriftParticles(player);
-  updateBoostEffect(player);
+  updateDriftParticles(player, dt);
+  updateBoostEffect(player, dt);
 
   // Render the scene (with post-processing if available)
   renderScene();
 
   // Speed lines overlay
-  updateSpeedLines(player);
+  updateSpeedLines(player, dt);
 
   // Update HUD and minimap
   updateHUD();
@@ -263,17 +271,17 @@ setupMobile();
 initPreview3D();
 
 // Eagerly preload character models and kart models for preview
-preloadModels(function() {
+preloadModels(function () {
   // Refresh preview with GLB models now available
   buildPreviewKart();
 });
-preloadKartModels(function() {
+preloadKartModels(function () {
   // Refresh preview with kart GLB models now available
   buildPreviewKart();
 });
 
 // Start button handler
-document.getElementById('start-btn').onclick = function() {
+document.getElementById('start-btn').onclick = function () {
   AUDIO.init();
   var btn = document.getElementById('start-btn');
   var needCharModels = !glbModelsLoaded;
@@ -291,26 +299,30 @@ document.getElementById('start-btn').onclick = function() {
       if (charDone && envDone && kartDone) {
         btn.textContent = 'START RACE';
         btn.disabled = false;
+        // Reset clock before starting to avoid huge initial dt
+        clock = new THREE.Clock();
         startRace();
       }
     }
 
     if (needCharModels) {
-      preloadModels(function() { charDone = true; checkAllDone(); });
+      preloadModels(function () { charDone = true; checkAllDone(); });
     }
     if (needEnvModels) {
-      preloadEnvModels(function() { envDone = true; checkAllDone(); });
+      preloadEnvModels(function () { envDone = true; checkAllDone(); });
     }
     if (needKartModels) {
-      preloadKartModels(function() { kartDone = true; checkAllDone(); });
+      preloadKartModels(function () { kartDone = true; checkAllDone(); });
     }
   } else {
+    // Reset clock before starting to avoid huge initial dt
+    clock = new THREE.Clock();
     startRace();
   }
 };
 
 // Retry button handler
-document.getElementById('retry-btn').onclick = function() {
+document.getElementById('retry-btn').onclick = function () {
   // Stop animation loop
   if (animFrameId) {
     cancelAnimationFrame(animFrameId);
@@ -356,7 +368,7 @@ document.getElementById('retry-btn').onclick = function() {
   player = null;
 
   // Reset particles
-  particles = {driftLeft: null, driftRight: null, boostFlame: null, dustClouds: []};
+  particles = { driftLeft: null, driftRight: null, boostFlame: null, dustClouds: [] };
 
   // Reset scene
   scene = null;
