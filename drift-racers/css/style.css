@@ -48,8 +48,16 @@ canvas{display:block}
 .char-card .name{color:#fff;font-size:10px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.4)}
 .char-card .type{color:rgba(200,213,232,.5);font-size:8px}
 .char-stats{display:none}
-.char-stat-compact{display:flex;gap:4px;font-size:9px;color:rgba(200,213,232,.45);margin-top:1px}
-.stat-seg{font-weight:700;letter-spacing:0.5px}
+.char-stat-compact{display:none}
+.stat-seg{display:none}
+
+/* Stats panel below preview */
+.char-stats-panel{display:flex;flex-direction:column;gap:4px;margin-top:4px;padding:8px 12px;border-radius:10px;background:linear-gradient(135deg,rgba(68,136,221,.06),rgba(136,102,187,.04));border:1px solid rgba(100,140,200,.12)}
+.stat-bar-row{display:flex;align-items:center;gap:8px}
+.stat-bar-label{color:rgba(200,213,232,.7);font-size:11px;font-weight:700;width:80px;flex-shrink:0;white-space:nowrap}
+.stat-bar-track{flex:1;height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;position:relative}
+.stat-bar-fill{height:100%;border-radius:4px;transition:width .3s ease}
+.stat-bar-val{color:rgba(200,213,232,.5);font-size:10px;font-weight:700;width:18px;text-align:right;flex-shrink:0}
 
 /* Kart select - compact */
 .kart-select{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}

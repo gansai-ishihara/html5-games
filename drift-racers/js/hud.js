@@ -374,6 +374,64 @@ function updateSkillPreview() {
   el.appendChild(cd);
 }
 
+function updateCharStats() {
+  var panel = document.getElementById('char-stats-panel');
+  if (!panel) return;
+  var c = CHARACTERS[selectedChar];
+  var k = KARTS[selectedKart];
+  panel.textContent = '';
+
+  var stats = [
+    {label: '⚡ スピード', val: c.s, color: '#4488DD', bonus: k.sBonus * 100},
+    {label: '🚀 加速', val: c.a, color: '#44CC88', bonus: k.aBonus * 1000},
+    {label: '🎯 ハンドリング', val: c.h, color: '#BB66DD', bonus: k.hBonus * 1000}
+  ];
+
+  for (var i = 0; i < stats.length; i++) {
+    var row = document.createElement('div');
+    row.className = 'stat-bar-row';
+
+    var label = document.createElement('div');
+    label.className = 'stat-bar-label';
+    label.textContent = stats[i].label;
+    row.appendChild(label);
+
+    var track = document.createElement('div');
+    track.className = 'stat-bar-track';
+
+    var fill = document.createElement('div');
+    fill.className = 'stat-bar-fill';
+    var pct = Math.min(stats[i].val * 10, 100);
+    fill.style.width = pct + '%';
+    fill.style.background = 'linear-gradient(90deg, ' + stats[i].color + ', ' + stats[i].color + 'cc)';
+    if (stats[i].val >= 9) fill.style.boxShadow = '0 0 8px ' + stats[i].color + '88';
+    track.appendChild(fill);
+
+    // Kart bonus indicator
+    if (stats[i].bonus > 0) {
+      var bonus = document.createElement('div');
+      bonus.className = 'stat-bar-fill';
+      bonus.style.width = Math.abs(stats[i].bonus) + '%';
+      bonus.style.background = '#FFCC66';
+      bonus.style.opacity = '0.6';
+      bonus.style.position = 'absolute';
+      bonus.style.left = pct + '%';
+      bonus.style.top = '0';
+      bonus.style.height = '100%';
+      track.appendChild(bonus);
+    }
+    row.appendChild(track);
+
+    var val = document.createElement('div');
+    val.className = 'stat-bar-val';
+    val.textContent = stats[i].val;
+    if (stats[i].val >= 9) val.style.color = '#FFCC66';
+    row.appendChild(val);
+
+    panel.appendChild(row);
+  }
+}
+
 function buildCharSelect() {
   // === キャラクター選択 ===
   var cont = document.getElementById('char-select');
@@ -407,23 +465,6 @@ function buildCharSelect() {
     type.textContent = c.d;
     card.appendChild(type);
 
-    // Star-based stat display
-    var attrs = [c.s, c.a, c.h];
-    var icons = ['⚡', '🚀', '🎯'];
-    var statRow = document.createElement('div');
-    statRow.className = 'char-stat-compact';
-    for (var j = 0; j < 3; j++) {
-      var seg = document.createElement('span');
-      seg.className = 'stat-seg';
-      var stars = Math.round(attrs[j] / 2);
-      var starStr = '';
-      for (var si = 0; si < 5; si++) starStr += si < stars ? '★' : '☆';
-      seg.textContent = icons[j] + starStr;
-      if (attrs[j] >= 9) seg.style.color = '#FFCC66';
-      statRow.appendChild(seg);
-    }
-    card.appendChild(statRow);
-
     card.onclick = function() {
       AUDIO.init();
       SND.countdown();
@@ -432,6 +473,7 @@ function buildCharSelect() {
       for (var x = 0; x < all.length; x++) all[x].classList.remove('sel');
       card.classList.add('sel');
       document.getElementById('char-desc').textContent = c.desc;
+      updateCharStats();
       updateSkillPreview();
       buildPreviewKart();
     };
@@ -439,6 +481,7 @@ function buildCharSelect() {
   });
   var descEl = document.getElementById('char-desc');
   if (descEl) descEl.textContent = CHARACTERS[selectedChar].desc;
+  updateCharStats();
   updateSkillPreview();
 
   // === カート選択 ===
@@ -482,6 +525,7 @@ function buildCharSelect() {
         var all = document.querySelectorAll('.kart-card');
         for (var x = 0; x < all.length; x++) all[x].classList.remove('sel');
         card.classList.add('sel');
+        updateCharStats();
         buildPreviewKart();
       };
       kartCont.appendChild(card);
