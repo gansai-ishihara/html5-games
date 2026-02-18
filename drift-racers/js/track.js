@@ -567,7 +567,7 @@ function buildStartFinish(scene) {
     // YXZ order: first Rx (lay flat), then Ry (rotate to match track)
     startLine.rotation.order = 'YXZ';
     startLine.rotation.x = -Math.PI / 2;
-    startLine.rotation.y = -angle;
+    startLine.rotation.y = -angle + Math.PI / 2;
     startLine.position.set(startNode.x, startNode.y + 0.08, startNode.z);
     startLine.receiveShadow = false;
     scene.add(startLine);
@@ -589,7 +589,7 @@ function buildStartFinish(scene) {
     });
     var banner = new THREE.Mesh(bannerGeom, bannerMat);
     banner.position.set(startNode.x, bannerY, startNode.z);
-    banner.rotation.y = -(angle);
+    banner.rotation.y = -(angle) + Math.PI / 2;
     banner.castShadow = true;
     scene.add(banner);
     trackMeshes.push(banner);
@@ -890,7 +890,7 @@ function buildTrackDecorations(scene) {
         });
         var beam = new THREE.Mesh(beamGeo, beamMat);
         beam.position.set(aNode.x, aNode.y + archH, aNode.z);
-        beam.rotation.y = -aAngle;
+        beam.rotation.y = -aAngle + Math.PI / 2;
         scene.add(beam); trackMeshes.push(beam);
         // Gem on top center
         var gemGeo = new THREE.OctahedronGeometry(0.8, 0);
@@ -1630,14 +1630,7 @@ function buildGuardrails(scene) {
             var px = node.x + perpX * side * railDist;
             var pz = node.z + perpZ * side * railDist;
 
-            // Post every 4 nodes (visual marker), beam every 2 nodes (curve following)
-            if (i % 4 === 0) {
-                var postGeom = new THREE.CylinderGeometry(0.08, 0.12, 1.5, 5);
-                var post = new THREE.Mesh(postGeom, postMat);
-                post.position.set(px, node.y + 0.75, pz);
-                scene.add(post);
-                trackMeshes.push(post);
-            }
+            // Beam every 2 nodes (curve following) - posts removed for cleaner look
 
             // Connect beam to next segment
             var npx = nextNode.x + nextPerpX * side * railDist;

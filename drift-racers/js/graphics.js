@@ -871,8 +871,9 @@ function updateCamera(pl) {
     cameraShake.y *= 0.85;
   }
 
-  // Tighter follow at high speed so camera doesn't lag behind
-  var lerpFactor = 0.12 + Math.min(pl.spd * 0.08, 0.18);
+  // Tighter follow - no lag/pull-back during boosts
+  var lerpFactor = 0.18 + Math.min(pl.spd * 0.1, 0.22);
+  if (pl.boostTimer > 0) lerpFactor = Math.max(lerpFactor, 0.6);
   camera.position.x += (idealX - camera.position.x) * lerpFactor + cameraShake.x;
   camera.position.y += (idealY - camera.position.y) * lerpFactor + cameraShake.y;
   camera.position.z += (idealZ - camera.position.z) * lerpFactor;

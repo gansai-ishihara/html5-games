@@ -39,7 +39,7 @@ function initPreview3D() {
   var bgTex = new THREE.CanvasTexture(bgCanvas);
   previewScene.background = bgTex;
 
-  previewScene.fog = new THREE.FogExp2(0x1A2E4A, 0.06);
+  previewScene.fog = new THREE.FogExp2(0x1A2E4A, 0.02);
 
   previewCamera = new THREE.PerspectiveCamera(30, w / h, 0.1, 100);
   previewCamera.position.set(4, 2.5, 4);
@@ -51,15 +51,15 @@ function initPreview3D() {
   previewRenderer.toneMapping = THREE.ACESFilmicToneMapping;
   previewRenderer.toneMappingExposure = 1.1;
 
-  // Lighting (Crystal Kingdom theme)
-  previewScene.add(new THREE.AmbientLight(0xCCDDFF, 0.5));
-  var sun = new THREE.DirectionalLight(0xFFEEDD, 1.4);
+  // Lighting (brighter for preview)
+  previewScene.add(new THREE.AmbientLight(0xFFFFFF, 0.8));
+  var sun = new THREE.DirectionalLight(0xFFEEDD, 1.6);
   sun.position.set(5, 8, 3);
   previewScene.add(sun);
-  var fill = new THREE.DirectionalLight(0x99BBEE, 0.4);
+  var fill = new THREE.DirectionalLight(0xCCDDFF, 0.6);
   fill.position.set(-3, 2, -1);
   previewScene.add(fill);
-  var rim = new THREE.DirectionalLight(0x8866BB, 0.5);
+  var rim = new THREE.DirectionalLight(0xAABBFF, 0.5);
   rim.position.set(-2, 1, -5);
   previewScene.add(rim);
 
@@ -501,12 +501,15 @@ function buildCharSelect() {
 
     // Character portrait image (fallback to emoji if no image)
     if (c.img) {
+      var wrap = document.createElement('div');
+      wrap.className = 'portrait-wrap';
       var portrait = document.createElement('img');
       portrait.src = c.img;
       portrait.className = 'char-portrait';
       portrait.alt = c.n;
       portrait.draggable = false;
-      card.appendChild(portrait);
+      wrap.appendChild(portrait);
+      card.appendChild(wrap);
     } else {
       var emoji = document.createElement('div');
       emoji.className = 'emoji';

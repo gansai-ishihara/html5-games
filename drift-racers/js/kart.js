@@ -399,10 +399,11 @@ function Racer(charIdx, isPlayer, kartIdx, equipType) {
     this.aiTargetIdx = 0;
     this.aiInner = Math.random() > 0.5;
     this.aiSkill = 0.75 + Math.random() * 0.23; // 0.75~0.98 (higher baseline)
-    this.aiLateral = (Math.random() - 0.5) * 8; // lane offset for variety
+    this.aiLateral = (Math.random() - 0.5) * 5; // lane offset for variety (reduced to avoid walls)
     this.aiDrifting = false;
     this.aiDriftCharge = 0;
     this.aiItemDelay = 0; // cooldown between item uses
+    this.aiStuckTimer = 0; // frames stuck at low speed near wall
   }
 }
 
@@ -1129,13 +1130,35 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       var offDx = this.x - nearNode.x;
       var offDz = this.z - nearNode.z;
       var offDist = Math.sqrt(offDx * offDx + offDz * offDz);
-      var halfTrack = TRACK_WIDTH * 0.45;
+      var halfTrack = TRACK_WIDTH * 0.4;
       if (offDist > halfTrack) {
-        // Pull back toward track center proportionally to how far off
-        var pullStr = Math.min(0.15, (offDist - halfTrack) * 0.01) * timeScale;
-        this.x -= offDx * pullStr;
-        this.z -= offDz * pullStr;
+        // Pull back toward track center - stronger the further off
+        var pullStr = Math.min(0.4, (offDist - halfTrack) * 0.03) * timeScale;
+        this.x -= offDx / offDist * pullStr * offDist * 0.1;
+        this.z -= offDz / offDist * pullStr * offDist * 0.1;
       }
+    }
+
+    // --- General progress-based stuck detection ---
+    if (typeof this._lastProgressCheck === 'undefined') {
+      this._lastProgressCheck = this.progress;
+      this._progressCheckTimer = 0;
+    }
+    this._progressCheckTimer += timeScale;
+    if (this._progressCheckTimer > 180) { // check every ~3 seconds
+      if (Math.abs(this.progress - this._lastProgressCheck) < 3) {
+        // Barely moved in 3 seconds - teleport to track
+        var recIdx = nearestTrackIndex(this.x, this.z);
+        var recNode = trackNodes[(recIdx + 5) % TRACK_POINTS];
+        this.x = recNode.x;
+        this.z = recNode.z;
+        this.y = recNode.y;
+        this.ang = getTrackAngle((recIdx + 5) % TRACK_POINTS);
+        this.spd = 0.5;
+        this.aiStuckTimer = 0;
+      }
+      this._lastProgressCheck = this.progress;
+      this._progressCheckTimer = 0;
     }
 
     // --- AI Drift logic: drift on sharp turns ---
@@ -1335,18 +1358,39 @@ Racer.prototype.update = function (input, racers, scene, dt) {
     var pushStr = Math.min(overshoot * 0.6, 3.0) * timeScale;
     this.x += Math.cos(pushAng) * pushStr;
     this.z += Math.sin(pushAng) * pushStr;
-    // Speed reduction
-    this.spd *= Math.pow(0.93, timeScale);
-    // Steer toward track to slide along wall
+    // Speed reduction (less harsh so AI doesn't get stuck)
+    this.spd *= Math.pow(0.95, timeScale);
+    // Steer toward track to slide along wall (stronger for AI)
     var toTrackAng = Math.atan2(centerNode.z - this.z, centerNode.x - this.x);
     var angDiffToTrack = toTrackAng - this.ang;
     while (angDiffToTrack > Math.PI) angDiffToTrack -= Math.PI * 2;
     while (angDiffToTrack < -Math.PI) angDiffToTrack += Math.PI * 2;
-    this.ang += angDiffToTrack * 0.06 * timeScale;
+    var steerStr = this.isPlayer ? 0.06 : 0.15;
+    this.ang += angDiffToTrack * steerStr * timeScale;
+    // AI stuck detection: if speed is very low near wall, teleport back
+    if (!this.isPlayer) {
+      if (this.spd < 0.15) {
+        this.aiStuckTimer = (this.aiStuckTimer || 0) + timeScale;
+      } else {
+        this.aiStuckTimer = 0;
+      }
+      if (this.aiStuckTimer > 60) { // ~1 second stuck
+        var recoverNode = trackNodes[nearIdx];
+        this.x = recoverNode.x;
+        this.z = recoverNode.z;
+        this.y = recoverNode.y;
+        this.ang = getTrackAngle(nearIdx);
+        this.spd = 0.3;
+        this.aiStuckTimer = 0;
+      }
+    }
   } else if (!phasing && distToTrack > grassEdge) {
     // Grass slowdown - gradually stronger the further you go
     var grassDepth = (distToTrack - grassEdge) / (wallLimit - grassEdge);
     this.spd *= Math.pow((0.98 - grassDepth * 0.04), timeScale);
+    if (!this.isPlayer) this.aiStuckTimer = 0;
+  } else {
+    if (!this.isPlayer) this.aiStuckTimer = 0;
   }
 
   // Progress tracking (cumulative delta to handle start-line wraparound)
