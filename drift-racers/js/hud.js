@@ -7,6 +7,7 @@ var previewRenderer = null;
 var previewMesh = null;
 var previewAnimId = null;
 var previewAngle = 0;
+var previewParticles = null;
 
 function initPreview3D() {
   var container = document.getElementById('preview-container');
@@ -18,7 +19,27 @@ function initPreview3D() {
   if (w === 0 || h === 0) { w = 360; h = 220; }
 
   previewScene = new THREE.Scene();
-  previewScene.background = new THREE.Color(0x1A2E4A);
+  // Gradient background via shader
+  var bgCanvas = document.createElement('canvas');
+  bgCanvas.width = 256; bgCanvas.height = 256;
+  var bgCtx = bgCanvas.getContext('2d');
+  var grad = bgCtx.createRadialGradient(128, 80, 20, 128, 128, 180);
+  grad.addColorStop(0, '#2A4A6A');
+  grad.addColorStop(0.5, '#1A2E4A');
+  grad.addColorStop(1, '#0D1A2D');
+  bgCtx.fillStyle = grad;
+  bgCtx.fillRect(0, 0, 256, 256);
+  // Add subtle stars
+  for (var si = 0; si < 40; si++) {
+    var sx = Math.random() * 256, sy = Math.random() * 140;
+    var brightness = Math.floor(80 + Math.random() * 100);
+    bgCtx.fillStyle = 'rgba(' + brightness + ',' + brightness + ',' + (brightness + 40) + ',0.6)';
+    bgCtx.fillRect(sx, sy, 1, 1);
+  }
+  var bgTex = new THREE.CanvasTexture(bgCanvas);
+  previewScene.background = bgTex;
+
+  previewScene.fog = new THREE.FogExp2(0x1A2E4A, 0.06);
 
   previewCamera = new THREE.PerspectiveCamera(30, w / h, 0.1, 100);
   previewCamera.position.set(4, 2.5, 4);
@@ -27,26 +48,52 @@ function initPreview3D() {
   previewRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
   previewRenderer.setSize(w, h);
   previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  previewRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+  previewRenderer.toneMappingExposure = 1.1;
 
   // Lighting (Crystal Kingdom theme)
-  previewScene.add(new THREE.AmbientLight(0xCCDDFF, 0.6));
-  var sun = new THREE.DirectionalLight(0xFFEEDD, 1.2);
+  previewScene.add(new THREE.AmbientLight(0xCCDDFF, 0.5));
+  var sun = new THREE.DirectionalLight(0xFFEEDD, 1.4);
   sun.position.set(5, 8, 3);
   previewScene.add(sun);
-  var fill = new THREE.DirectionalLight(0x99BBEE, 0.35);
+  var fill = new THREE.DirectionalLight(0x99BBEE, 0.4);
   fill.position.set(-3, 2, -1);
   previewScene.add(fill);
-  var rim = new THREE.DirectionalLight(0x8866BB, 0.3);
+  var rim = new THREE.DirectionalLight(0x8866BB, 0.5);
   rim.position.set(-2, 1, -5);
   previewScene.add(rim);
 
-  // Ground disc
-  var groundGeo = new THREE.CircleGeometry(5, 32);
-  var groundMat = new THREE.MeshLambertMaterial({ color: 0x2A4A3A });
+  // Ground - glossy circular platform
+  var groundGeo = new THREE.CylinderGeometry(3.5, 3.8, 0.15, 48);
+  var groundMat = new THREE.MeshPhongMaterial({
+    color: 0x2A4A5A, specular: 0x446688, shininess: 60,
+    emissive: 0x0A1520, emissiveIntensity: 0.3
+  });
   var ground = new THREE.Mesh(groundGeo, groundMat);
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -0.05;
+  ground.position.y = -0.1;
   previewScene.add(ground);
+
+  // Glowing ring around platform
+  var ringGeo = new THREE.TorusGeometry(3.65, 0.04, 8, 64);
+  var ringMat = new THREE.MeshBasicMaterial({ color: 0x4488DD, transparent: true, opacity: 0.6 });
+  var ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = -0.02;
+  previewScene.add(ring);
+
+  // Floating particles
+  var particleGeo = new THREE.BufferGeometry();
+  var pCount = 60;
+  var pPositions = new Float32Array(pCount * 3);
+  for (var pi = 0; pi < pCount; pi++) {
+    pPositions[pi * 3] = (Math.random() - 0.5) * 12;
+    pPositions[pi * 3 + 1] = Math.random() * 5;
+    pPositions[pi * 3 + 2] = (Math.random() - 0.5) * 12;
+  }
+  particleGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
+  var particleMat = new THREE.PointsMaterial({ color: 0x88BBFF, size: 0.06, transparent: true, opacity: 0.5 });
+  previewParticles = new THREE.Points(particleGeo, particleMat);
+  previewScene.add(previewParticles);
 
   buildPreviewKart();
   animatePreview3D();
@@ -79,6 +126,17 @@ function animatePreview3D() {
     previewMesh.rotation.y = previewAngle;
   }
 
+  // Animate floating particles
+  if (previewParticles) {
+    var pos = previewParticles.geometry.attributes.position.array;
+    for (var i = 0; i < pos.length; i += 3) {
+      pos[i + 1] += 0.003;
+      if (pos[i + 1] > 5) pos[i + 1] = 0;
+    }
+    previewParticles.geometry.attributes.position.needsUpdate = true;
+    previewParticles.rotation.y += 0.002;
+  }
+
   if (previewRenderer && previewScene && previewCamera) {
     previewRenderer.render(previewScene, previewCamera);
   }
@@ -99,6 +157,7 @@ function cleanupPreview3D() {
   }
   previewScene = null;
   previewCamera = null;
+  previewParticles = null;
 }
 
 function updateHUD() {

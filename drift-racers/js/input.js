@@ -323,6 +323,7 @@ function setupMobile() {
 // Detect mobile device
 function checkMobile() {
     isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    if (isMobile) document.body.classList.add('mobile-active');
 }
 
 // Check screen orientation on mobile
