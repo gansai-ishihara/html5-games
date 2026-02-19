@@ -377,7 +377,8 @@ canvas {
 @keyframes rot{0%,100%{transform:rotate(0deg)}50%{transform:rotate(90deg)}}
 
 /* Title */
-#title-screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;z-index:100;background:linear-gradient(160deg,#05101E 0%,#0A1A35 30%,#122448 60%,#0D1F3C 100%);overflow:hidden;padding:10px 10px}
+#title-screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;z-index:100;background:linear-gradient(160deg,#05101E 0%,#0A1A35 30%,#122448 60%,#0D1F3C 100%);overflow-y:auto;overflow-x:hidden;padding:10px 10px;scrollbar-width:none;-ms-overflow-style:none}
+#title-screen::-webkit-scrollbar{display:none}
 #title-screen::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 25% 15%,rgba(68,136,221,.12),transparent 55%),radial-gradient(ellipse at 75% 85%,rgba(136,102,187,.1),transparent 55%),radial-gradient(ellipse at 50% 50%,rgba(255,204,102,.04),transparent 40%);pointer-events:none;animation:bgShift 12s ease-in-out infinite alternate}
 @keyframes bgShift{0%{opacity:.8}100%{opacity:1.2}}
 
@@ -415,7 +416,7 @@ canvas {
 .char-card .portrait-wrap{width:56px;height:56px;border-radius:10px;overflow:hidden;margin:0;flex-shrink:0;border:1.5px solid rgba(255,255,255,.1)}
 .char-card .char-portrait{width:100%;height:100%;object-fit:cover;object-position:center 0%;transform:scale(2);transform-origin:center 15%;display:block}
 .char-card.sel .portrait-wrap{border-color:rgba(255,204,102,.4)}
-.char-card .name{display:none}
+.char-card .name{color:#fff;font-size:9px;font-weight:700;margin-top:2px;text-align:center;white-space:nowrap}
 .char-card .type{display:none}
 .char-stats{display:none}
 .char-stat-compact{display:none}

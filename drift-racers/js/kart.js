@@ -917,48 +917,44 @@ Racer.prototype.update = function (input, racers, scene, dt) {
   // Delta time scaling (base 60FPS)
   var timeScale = (dt || 0.016) * 60;
 
-  // Handle finished state - auto-drive along track (like Mario Kart)
+  // Handle finished state - gradually slow down and stop
   if (this.finished) {
-    var autoSpd = this.maxSpd * 0.5;
-    if (this.spd < autoSpd) {
-      this.spd += this.accel * 0.3 * timeScale;
-    } else {
-      this.spd *= Math.pow(0.99, timeScale);
-    }
+    // Decelerate to a stop over ~2 seconds
+    this.spd *= Math.pow(0.96, timeScale);
+    if (this.spd < 0.05) this.spd = 0;
 
-    // Use nearest track index with dynamic speed-based lookahead (same as AI)
     var nearIdx = nearestTrackIndex(this.x, this.z);
     var lookahead = 4 + Math.floor(this.spd * 6);
     this.aiTargetIdx = (nearIdx + lookahead) % TRACK_POINTS;
 
-    // Steer toward track waypoint (smooth interpolation)
-    var targetPt = getTrackPoint(this.aiTargetIdx);
-    var dx = targetPt.x - this.x;
-    var dz = targetPt.z - this.z;
-    var targetAng = Math.atan2(dz, dx);
-    var angDiff = targetAng - this.ang;
-    while (angDiff > Math.PI) angDiff -= Math.PI * 2;
-    while (angDiff < -Math.PI) angDiff += Math.PI * 2;
-    // Smooth steering - blend toward target angle
-    this.ang += angDiff * Math.min(0.08 * timeScale, 1.0);
-    this.tilt += (angDiff * 0.2 - this.tilt) * 0.1 * timeScale;
+    // Only steer if still moving
+    if (this.spd > 0.05) {
+      var targetPt = getTrackPoint(this.aiTargetIdx);
+      var dx = targetPt.x - this.x;
+      var dz = targetPt.z - this.z;
+      var targetAng = Math.atan2(dz, dx);
+      var angDiff = targetAng - this.ang;
+      while (angDiff > Math.PI) angDiff -= Math.PI * 2;
+      while (angDiff < -Math.PI) angDiff += Math.PI * 2;
+      this.ang += angDiff * Math.min(0.15 * timeScale, 1.0);
 
-    // Apply movement
-    this.x += Math.cos(this.ang) * this.spd * timeScale;
-    this.z += Math.sin(this.ang) * this.spd * timeScale;
+      // Apply movement
+      this.x += Math.cos(this.ang) * this.spd * timeScale;
+      this.z += Math.sin(this.ang) * this.spd * timeScale;
+    }
+    this.tilt *= Math.pow(0.9, timeScale);
 
-    // Gently pull toward track center only when drifting far off
+    // Keep on track
     var nearNode = trackNodes[nearIdx];
     if (nearNode) {
       var offDx = this.x - nearNode.x;
       var offDz = this.z - nearNode.z;
       var offDist = Math.sqrt(offDx * offDx + offDz * offDz);
-      if (offDist > TRACK_WIDTH * 0.3) {
-        var pullStr = 0.02 * timeScale;
+      if (offDist > TRACK_WIDTH * 0.25) {
+        var pullStr = 0.05 * timeScale;
         this.x -= offDx * pullStr;
         this.z -= offDz * pullStr;
       }
-      // Smooth Y position
       this.y += (nearNode.y - this.y) * 0.08 * timeScale;
     }
     this.totalIdx = nearIdx;
@@ -1109,8 +1105,8 @@ Racer.prototype.update = function (input, racers, scene, dt) {
 
     // --- Sync waypoint with actual position using nearest track index ---
     var nearIdx = nearestTrackIndex(this.x, this.z);
-    // Keep aiTargetIdx ahead of current position (small lookahead at low speed)
-    var lookahead = 2 + Math.floor(this.spd * 5);
+    // Keep aiTargetIdx ahead of current position (longer lookahead for better cornering)
+    var lookahead = 4 + Math.floor(this.spd * 7);
     this.aiTargetIdx = (nearIdx + lookahead) % TRACK_POINTS;
 
     var targetPt = getTrackPoint(this.aiTargetIdx);
@@ -1184,11 +1180,11 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       this.aiDrifting = false;
     }
 
-    var turnRate = curHandling * 1.1 * timeScale;
+    var turnRate = curHandling * 1.3 * timeScale;
     if (this.aiDrifting) turnRate *= 1.5;
     // Minimum turn rate so AI can always steer
-    turnRate = Math.max(turnRate, 0.015 * timeScale);
-    turnRate *= Math.max(0.4, Math.min(1, Math.abs(this.spd) / 0.6));
+    turnRate = Math.max(turnRate, 0.02 * timeScale);
+    turnRate *= Math.max(0.5, Math.min(1, Math.abs(this.spd) / 0.6));
 
     if (absAngDiff > turnRate) {
       this.ang += turnRate * (angDiff > 0 ? 1 : -1);
@@ -1247,9 +1243,13 @@ Racer.prototype.update = function (input, racers, scene, dt) {
     }
 
     var aiMaxSpd = curMax * this.aiSkill * rubberFactor;
-    // Slow down in sharp curves
-    if (absAngDiff > 0.3) {
-      aiMaxSpd *= 0.85;
+    // Slow down in sharp curves (progressive)
+    if (absAngDiff > 0.5) {
+      aiMaxSpd *= 0.7;
+    } else if (absAngDiff > 0.3) {
+      aiMaxSpd *= 0.82;
+    } else if (absAngDiff > 0.15) {
+      aiMaxSpd *= 0.92;
     }
 
     if (this.spd < aiMaxSpd) {
@@ -1637,11 +1637,13 @@ Racer.prototype.updateMesh = function () {
   }
 
   // Skill active visual - transparency for shadow phase
-  if (this.skillActive && this.char.skill === 'shadow_phase') {
+  if (this.char.skill === 'shadow_phase') {
+    var targetOpacity = this.skillActive ? (0.4 + Math.sin(fr * 0.2) * 0.2) : 1.0;
+    var shouldBeTransparent = this.skillActive;
     this.mesh.traverse(function (child) {
       if (child.material) {
-        child.material.transparent = true;
-        child.material.opacity = 0.4 + Math.sin(fr * 0.2) * 0.2;
+        child.material.transparent = shouldBeTransparent;
+        child.material.opacity = targetOpacity;
       }
     });
   }

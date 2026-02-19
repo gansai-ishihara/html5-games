@@ -246,6 +246,7 @@ function animate() {
     if (player.lap >= TOTAL_LAPS && !player.finished) {
       player.finished = true;
       player.finTime = raceTime;
+      player.finishCountdown = 180; // 3 seconds grace period
       SND.finish();
     }
 
@@ -254,6 +255,23 @@ function animate() {
       if (racers[i].lap >= TOTAL_LAPS && !racers[i].finished) {
         racers[i].finished = true;
         racers[i].finTime = raceTime;
+      }
+    }
+
+    // Grace period: after player finishes, force-finish remaining AI after 3 seconds
+    if (player.finished && player.finishCountdown > 0) {
+      player.finishCountdown--;
+      if (player.finishCountdown <= 0) {
+        // Force all unfinished racers to finish with estimated times
+        for (var i = 1; i < racers.length; i++) {
+          if (!racers[i].finished) {
+            racers[i].finished = true;
+            // Estimate finish time based on remaining progress
+            var remaining = (TOTAL_LAPS * TRACK_POINTS) - racers[i].progress;
+            var estFrames = remaining > 0 ? Math.floor(remaining * 2.5) : 60;
+            racers[i].finTime = raceTime + estFrames;
+          }
+        }
       }
     }
 
@@ -278,7 +296,7 @@ function animate() {
       allFinished = player.finished;
     }
 
-    // End race if all finished or timeout (3 minutes)
+    // End race when all finished or timeout (3 minutes)
     if (allFinished || raceTime > 60 * 180) {
       ghostRecording = false;
       showResults();
