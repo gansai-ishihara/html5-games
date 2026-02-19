@@ -56,6 +56,7 @@ function initScene() {
   engine.setHardwareScalingLevel(1 / dpr);
 
   scene = new BABYLON.Scene(engine);
+  scene.useRightHandedSystem = true;
   scene.clearColor = new BABYLON.Color4(0.051, 0.102, 0.208, 1.0);
   scene.ambientColor = new BABYLON.Color3(0.1, 0.1, 0.2);
 

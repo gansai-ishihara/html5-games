@@ -31,6 +31,7 @@ function initPreview3D() {
   previewEngine.resize();
 
   previewScene = new BABYLON.Scene(previewEngine);
+  previewScene.useRightHandedSystem = true;
   // Background gradient
   previewScene.clearColor = new BABYLON.Color4(0.051, 0.102, 0.176, 1.0);
   previewScene.ambientColor = new BABYLON.Color3(0.1, 0.1, 0.15);
