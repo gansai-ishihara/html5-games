@@ -382,12 +382,15 @@ function showResults() {
     rank.className = 'rank ' + rc[i];
     rank.textContent = (i + 1);
     li.appendChild(rank);
-    // Character portrait + name
+    // Character portrait + name (face close-up like selection screen)
     if (r.char.img) {
+      var pWrap = document.createElement('div');
+      pWrap.style.cssText = 'width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;border:1.5px solid rgba(255,255,255,.2)';
       var portrait = document.createElement('img');
       portrait.src = r.char.img;
-      portrait.style.cssText = 'width:32px;height:32px;border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,.2)';
-      li.appendChild(portrait);
+      portrait.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center 0%;transform:scale(2);transform-origin:center 15%;display:block';
+      pWrap.appendChild(portrait);
+      li.appendChild(pWrap);
     }
     var info = document.createElement('span');
     info.textContent = r.char.n;

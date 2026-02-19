@@ -390,7 +390,7 @@ canvas {
 /* Main select area - horizontal split */
 .select-main{position:relative;z-index:1;display:flex;gap:10px;width:100%;max-width:960px;margin-bottom:4px;flex-shrink:0;height:auto;perspective:none;flex:1;min-height:0}
 .select-preview-panel{flex:0 0 48%;display:flex;flex-direction:column;gap:6px}
-.select-right-panel{flex:1;display:flex;flex-direction:column;gap:0;padding:0 4px;min-width:0;overflow-y:visible;overflow:visible}
+.select-right-panel{flex:1;display:flex;flex-direction:column;gap:4px;padding:0 4px;min-width:0;overflow:visible;justify-content:center}
 
 .section-title{color:#FFCC66;font-size:12px;font-weight:800;margin-bottom:4px;margin-top:4px;text-align:center;letter-spacing:3px;text-shadow:0 0 12px rgba(255,204,102,.25);border-bottom:none;padding-bottom:0}
 .section-title::before{display:none}
@@ -412,11 +412,11 @@ canvas {
 .char-card:hover{border-color:rgba(100,140,200,.4);background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.04))}
 .char-card.sel{border-color:#FFCC66;background:linear-gradient(180deg,rgba(255,204,102,.18),rgba(255,204,102,.06));box-shadow:0 0 18px rgba(255,204,102,.25),inset 0 0 15px rgba(255,204,102,.05)}
 .char-card .emoji{font-size:22px;margin-bottom:1px}
-.char-card .portrait-wrap{width:36px;height:36px;border-radius:8px;overflow:hidden;margin-bottom:1px;flex-shrink:0;border:1.5px solid rgba(255,255,255,.1)}
+.char-card .portrait-wrap{width:56px;height:56px;border-radius:10px;overflow:hidden;margin:0;flex-shrink:0;border:1.5px solid rgba(255,255,255,.1)}
 .char-card .char-portrait{width:100%;height:100%;object-fit:cover;object-position:center 0%;transform:scale(2);transform-origin:center 15%;display:block}
 .char-card.sel .portrait-wrap{border-color:rgba(255,204,102,.4)}
-.char-card .name{color:#fff;font-size:10px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.4)}
-.char-card .type{color:rgba(200,213,232,.5);font-size:8px}
+.char-card .name{display:none}
+.char-card .type{display:none}
 .char-stats{display:none}
 .char-stat-compact{display:none}
 .stat-seg{display:none}
@@ -534,3 +534,45 @@ canvas {
 #fullscreen-btn{position:fixed;top:8px;right:8px;z-index:200;width:36px;height:36px;border:2px solid rgba(255,255,255,.3);border-radius:8px;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;pointer-events:auto;line-height:1}
 #fullscreen-btn:hover{border-color:rgba(255,255,255,.6);background:rgba(0,0,0,.7)}
 #fullscreen-btn:active{transform:scale(.9)}
+
+/* Mobile: allow scroll (hidden scrollbar), compact layout */
+@media (max-height: 500px) {
+  #title-screen{overflow-y:auto!important;scrollbar-width:none;-ms-overflow-style:none}
+  #title-screen::-webkit-scrollbar{display:none}
+  .title-logo{margin:0 0 2px}
+  .title-main{font-size:min(7vw,36px)!important}
+  .title-sub{font-size:14px!important;margin-top:0}
+  .course-label{font-size:10px;margin-bottom:2px;padding:2px 10px}
+  .select-main{gap:6px}
+  .select-preview-panel{flex:0 0 40%}
+  #preview-container{height:140px!important}
+  .char-desc{font-size:10px;margin-top:2px;min-height:12px}
+  .char-stats-panel{padding:4px 8px;gap:2px}
+  .stat-bar-label{font-size:9px;width:60px}
+  .stat-bar-track{height:6px}
+  .skill-preview{padding:3px 6px;min-height:28px}
+  .skill-preview .sk-name{font-size:10px}
+  .skill-preview .sk-desc{font-size:8px}
+  .section-title{font-size:10px!important;margin:2px 0!important}
+  .char-select{gap:3px}
+  .char-card{padding:2px 1px}
+  .char-card .portrait-wrap{width:40px;height:40px}
+  .kart-card{padding:3px 2px}
+  .kart-card .kart-emoji{font-size:14px}
+  .kart-card .kart-name{font-size:9px}
+  .kart-card .kart-desc{font-size:7px}
+  .kart-card .kart-bonus{font-size:6px}
+  .equip-card{padding:3px 2px}
+  .equip-card .eq-emoji{font-size:12px}
+  .equip-card .eq-name{font-size:8px}
+  .equip-card .eq-desc{font-size:6px}
+  .start-btn{padding:8px 30px!important;font-size:16px!important;margin:2px 0 6px!important}
+}
+
+/* Very small mobile landscape */
+@media (max-height: 380px) {
+  .select-preview-panel{display:none!important}
+  .select-right-panel{flex:1!important}
+  .char-card .portrait-wrap{width:44px;height:44px}
+  .start-btn{padding:6px 24px!important;font-size:14px!important}
+}

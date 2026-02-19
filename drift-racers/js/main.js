@@ -280,9 +280,31 @@ preloadKartModels(function () {
   buildPreviewKart();
 });
 
+// Request fullscreen and lock orientation on mobile
+function requestMobileFullscreen() {
+  var el = document.documentElement;
+  try {
+    if (el.requestFullscreen) {
+      el.requestFullscreen().catch(function () {});
+    } else if (el.webkitRequestFullscreen) {
+      el.webkitRequestFullscreen();
+    } else if (el.msRequestFullscreen) {
+      el.msRequestFullscreen();
+    }
+  } catch (e) {}
+  // Lock to landscape
+  try {
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('landscape').catch(function () {});
+    }
+  } catch (e) {}
+}
+
 // Start button handler
 document.getElementById('start-btn').onclick = function () {
   AUDIO.init();
+  // Auto-fullscreen on mobile (needs user gesture)
+  if (isMobile) requestMobileFullscreen();
   var btn = document.getElementById('start-btn');
   var needCharModels = !glbModelsLoaded;
   var needEnvModels = !envModelsLoaded;

@@ -915,18 +915,17 @@ Racer.prototype.update = function (input, racers, scene, dt) {
   if (this.finished) {
     var autoSpd = this.maxSpd * 0.5;
     if (this.spd < autoSpd) {
-      this.spd += this.accel * 0.5 * timeScale;
+      this.spd += this.accel * 0.3 * timeScale;
     } else {
-      this.spd *= Math.pow(0.98, timeScale);
+      this.spd *= Math.pow(0.99, timeScale);
     }
 
-    // Use nearest track index to keep waypoint in sync with actual position
+    // Use nearest track index with dynamic speed-based lookahead (same as AI)
     var nearIdx = nearestTrackIndex(this.x, this.z);
-    var lookAhead = nearIdx + 5;
-    if (lookAhead >= TRACK_POINTS) lookAhead -= TRACK_POINTS;
-    this.aiTargetIdx = lookAhead;
+    var lookahead = 4 + Math.floor(this.spd * 6);
+    this.aiTargetIdx = (nearIdx + lookahead) % TRACK_POINTS;
 
-    // Steer toward track waypoint
+    // Steer toward track waypoint (smooth interpolation)
     var targetPt = getTrackPoint(this.aiTargetIdx);
     var dx = targetPt.x - this.x;
     var dz = targetPt.z - this.z;
@@ -934,28 +933,27 @@ Racer.prototype.update = function (input, racers, scene, dt) {
     var angDiff = targetAng - this.ang;
     while (angDiff > Math.PI) angDiff -= Math.PI * 2;
     while (angDiff < -Math.PI) angDiff += Math.PI * 2;
-    var turnRate = this.handling * 1.5 * timeScale; // Faster turning for track following
-    if (Math.abs(angDiff) > turnRate) {
-      this.ang += turnRate * (angDiff > 0 ? 1 : -1);
-    } else {
-      this.ang += angDiff;
-    }
-    this.tilt = angDiff * 0.3;
-
-    // Pull toward track center to prevent drifting off-road
-    var nearNode = trackNodes[nearIdx];
-    if (nearNode) {
-      this.x += (nearNode.x - this.x) * 0.03 * timeScale;
-      this.z += (nearNode.z - this.z) * 0.03 * timeScale;
-    }
+    // Smooth steering - blend toward target angle
+    this.ang += angDiff * Math.min(0.08 * timeScale, 1.0);
+    this.tilt += (angDiff * 0.2 - this.tilt) * 0.1 * timeScale;
 
     // Apply movement
     this.x += Math.cos(this.ang) * this.spd * timeScale;
     this.z += Math.sin(this.ang) * this.spd * timeScale;
 
-    // Track Y position
+    // Gently pull toward track center only when drifting far off
+    var nearNode = trackNodes[nearIdx];
     if (nearNode) {
-      this.y += (nearNode.y - this.y) * 0.15 * timeScale;
+      var offDx = this.x - nearNode.x;
+      var offDz = this.z - nearNode.z;
+      var offDist = Math.sqrt(offDx * offDx + offDz * offDz);
+      if (offDist > TRACK_WIDTH * 0.3) {
+        var pullStr = 0.02 * timeScale;
+        this.x -= offDx * pullStr;
+        this.z -= offDz * pullStr;
+      }
+      // Smooth Y position
+      this.y += (nearNode.y - this.y) * 0.08 * timeScale;
     }
     this.totalIdx = nearIdx;
 
@@ -1130,12 +1128,18 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       var offDx = this.x - nearNode.x;
       var offDz = this.z - nearNode.z;
       var offDist = Math.sqrt(offDx * offDx + offDz * offDz);
-      var halfTrack = TRACK_WIDTH * 0.4;
+      var halfTrack = TRACK_WIDTH * 0.35;
       if (offDist > halfTrack) {
         // Pull back toward track center - stronger the further off
-        var pullStr = Math.min(0.4, (offDist - halfTrack) * 0.03) * timeScale;
-        this.x -= offDx / offDist * pullStr * offDist * 0.1;
-        this.z -= offDz / offDist * pullStr * offDist * 0.1;
+        var excess = offDist - halfTrack;
+        var pullStr = Math.min(0.6, excess * 0.05) * timeScale;
+        this.x -= offDx / offDist * pullStr;
+        this.z -= offDz / offDist * pullStr;
+        // Emergency: if very far off, aggressively teleport back
+        if (offDist > TRACK_WIDTH * 0.6) {
+          this.x += (nearNode.x - this.x) * 0.1 * timeScale;
+          this.z += (nearNode.z - this.z) * 0.1 * timeScale;
+        }
       }
     }
 
@@ -1174,10 +1178,11 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       this.aiDrifting = false;
     }
 
-    var turnRate = curHandling * 0.9 * timeScale;
+    var turnRate = curHandling * 1.1 * timeScale;
     if (this.aiDrifting) turnRate *= 1.5;
-    // Minimum turn rate so AI can steer even at low speed (e.g. at race start)
-    turnRate *= Math.max(0.3, Math.min(1, Math.abs(this.spd) / 0.8));
+    // Minimum turn rate so AI can always steer
+    turnRate = Math.max(turnRate, 0.015 * timeScale);
+    turnRate *= Math.max(0.4, Math.min(1, Math.abs(this.spd) / 0.6));
 
     if (absAngDiff > turnRate) {
       this.ang += turnRate * (angDiff > 0 ? 1 : -1);

@@ -377,22 +377,41 @@ function checkOrientation() {
 // === Fullscreen toggle ===
 var fsBtn = document.getElementById('fullscreen-btn');
 if (fsBtn) {
-    fsBtn.onclick = function () {
+    function toggleFullscreen() {
         if (!document.fullscreenElement && !document.webkitFullscreenElement) {
             var el = document.documentElement;
-            if (el.requestFullscreen) {
-                el.requestFullscreen();
-            } else if (el.webkitRequestFullscreen) {
-                el.webkitRequestFullscreen();
-            }
+            try {
+                if (el.requestFullscreen) {
+                    el.requestFullscreen().catch(function () {});
+                } else if (el.webkitRequestFullscreen) {
+                    el.webkitRequestFullscreen();
+                } else if (el.msRequestFullscreen) {
+                    el.msRequestFullscreen();
+                }
+            } catch (e) {}
+            // Lock landscape on mobile
+            try {
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(function () {});
+                }
+            } catch (e) {}
         } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            }
+            try {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            } catch (e) {}
         }
-    };
+    }
+
+    fsBtn.onclick = toggleFullscreen;
+    // Also handle touch for mobile (touchend fires more reliably)
+    fsBtn.addEventListener('touchend', function (e) {
+        e.preventDefault();
+        toggleFullscreen();
+    }, { passive: false });
 
     // Update button icon on fullscreen change
     function updateFsIcon() {
