@@ -132,6 +132,36 @@ var NUM_RACERS = 6;
 var TRACK_POINTS = 100;
 var TRACK_WIDTH = 28;
 
+// Game mode and difficulty
+var gameMode = 'cpu'; // 'cpu' or 'ghost'
+var cpuDifficulty = 'normal'; // 'easy', 'normal', 'hard'
+
+var DIFFICULTY = {
+  easy: {
+    aiSkillMin: 0.55, aiSkillMax: 0.70,
+    rubberBehind: 0.04, rubberAhead: -0.12,
+    itemFreq: 0.5, skillFreq: 0.3
+  },
+  normal: {
+    aiSkillMin: 0.75, aiSkillMax: 0.98,
+    rubberBehind: 0.08, rubberAhead: -0.08,
+    itemFreq: 1.0, skillFreq: 1.0
+  },
+  hard: {
+    aiSkillMin: 0.92, aiSkillMax: 1.05,
+    rubberBehind: 0.12, rubberAhead: -0.03,
+    itemFreq: 1.8, skillFreq: 2.0
+  }
+};
+
+// Online / account state
+var currentUser = null; // { uid, displayName, email }
+
+// Ghost recording
+var ghostSamples = []; // player position samples during race
+var ghostRecording = false;
+var GHOST_SAMPLE_INTERVAL = 3; // record every N frames
+
 // Game state
 var gameState = 'title';
 var raceTime = 0;

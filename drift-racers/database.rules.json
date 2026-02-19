@@ -1,0 +1,20 @@
+{
+  "rules": {
+    "rankings": {
+      ".read": true,
+      ".write": "auth != null",
+      ".indexOn": ["time"]
+    },
+    "ghosts": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".indexOn": ["time"]
+    },
+    "users": {
+      "$uid": {
+        ".read": true,
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    }
+  }
+}

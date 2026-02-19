@@ -494,7 +494,288 @@ function updateCharStats() {
   }
 }
 
+// === Account Bar ===
+function updateAccountBar() {
+  var bar = document.getElementById('account-bar');
+  if (!bar) return;
+  bar.textContent = '';
+  if (currentUser) {
+    var name = document.createElement('span');
+    name.className = 'user-name';
+    name.textContent = currentUser.displayName;
+    bar.appendChild(name);
+    var btn = document.createElement('button');
+    btn.className = 'logout-btn';
+    btn.textContent = 'LOGOUT';
+    btn.onclick = function() {
+      if (typeof logoutFirebase === 'function') logoutFirebase();
+    };
+    bar.appendChild(btn);
+  } else {
+    var btn = document.createElement('button');
+    btn.className = 'login-btn';
+    btn.textContent = 'LOGIN';
+    btn.onclick = function() { showLoginModal(); };
+    bar.appendChild(btn);
+  }
+  // Update ghost mode availability
+  buildModeSelect();
+}
+
+// === Login Modal ===
+function showLoginModal() {
+  var modal = document.getElementById('login-modal');
+  if (modal) modal.classList.add('show');
+}
+
+function hideLoginModal() {
+  var modal = document.getElementById('login-modal');
+  if (modal) modal.classList.remove('show');
+  var err = document.getElementById('login-error');
+  if (err) err.textContent = '';
+}
+
+function initLoginModal() {
+  var closeBtn = document.getElementById('login-close');
+  if (closeBtn) closeBtn.onclick = hideLoginModal;
+
+  // Tab switching
+  var tabs = document.querySelectorAll('.login-tab');
+  var isSignup = false;
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].onclick = function() {
+      for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
+      this.classList.add('active');
+      isSignup = this.dataset.tab === 'signup';
+      var nameInput = document.getElementById('login-name');
+      var submitBtn = document.getElementById('login-submit');
+      if (nameInput) nameInput.style.display = isSignup ? 'block' : 'none';
+      if (submitBtn) submitBtn.textContent = isSignup ? '新規登録' : 'ログイン';
+    };
+  }
+
+  // Email submit
+  var submitBtn = document.getElementById('login-submit');
+  if (submitBtn) {
+    submitBtn.onclick = function() {
+      var email = document.getElementById('login-email').value;
+      var pass = document.getElementById('login-pass').value;
+      var errEl = document.getElementById('login-error');
+      if (!email || !pass) { if (errEl) errEl.textContent = 'メールとパスワードを入力'; return; }
+
+      var currentTab = document.querySelector('.login-tab.active');
+      var doSignup = currentTab && currentTab.dataset.tab === 'signup';
+
+      if (doSignup) {
+        var name = document.getElementById('login-name').value || email.split('@')[0];
+        if (typeof signupEmail === 'function') {
+          signupEmail(email, pass, name).then(function() {
+            hideLoginModal();
+          }).catch(function(e) { if (errEl) errEl.textContent = e.message || 'エラー'; });
+        }
+      } else {
+        if (typeof loginEmail === 'function') {
+          loginEmail(email, pass).then(function() {
+            hideLoginModal();
+          }).catch(function(e) { if (errEl) errEl.textContent = e.message || 'エラー'; });
+        }
+      }
+    };
+  }
+
+  // Google login
+  var googleBtn = document.getElementById('login-google');
+  if (googleBtn) {
+    googleBtn.onclick = function() {
+      var errEl = document.getElementById('login-error');
+      if (typeof loginGoogle === 'function') {
+        loginGoogle().then(function() {
+          hideLoginModal();
+        }).catch(function(e) { if (errEl) errEl.textContent = e.message || 'エラー'; });
+      }
+    };
+  }
+}
+
+// === Mode & Difficulty Select ===
+function buildModeSelect() {
+  var cont = document.getElementById('mode-select');
+  if (!cont) return;
+  cont.textContent = '';
+
+  // CPU mode
+  var cpuCard = document.createElement('div');
+  cpuCard.className = 'mode-card' + (gameMode === 'cpu' ? ' sel' : '');
+  cpuCard.innerHTML = '<span class="mode-icon">🏎️</span>CPU RACE';
+  cpuCard.onclick = function() {
+    gameMode = 'cpu';
+    buildModeSelect();
+  };
+  cont.appendChild(cpuCard);
+
+  // Ghost mode
+  var ghostCard = document.createElement('div');
+  ghostCard.className = 'mode-card' + (gameMode === 'ghost' ? ' sel' : '');
+  if (!currentUser) ghostCard.classList.add('disabled');
+  ghostCard.innerHTML = '<span class="mode-icon">👻</span>GHOST';
+  if (!currentUser) {
+    var lbl = document.createElement('span');
+    lbl.className = 'mode-label';
+    lbl.textContent = 'ログイン必須';
+    ghostCard.appendChild(lbl);
+  }
+  ghostCard.onclick = function() {
+    if (!currentUser) { showLoginModal(); return; }
+    gameMode = 'ghost';
+    buildModeSelect();
+  };
+  cont.appendChild(ghostCard);
+
+  // Difficulty select (only for CPU mode)
+  if (gameMode === 'cpu') {
+    var diffCont = document.createElement('div');
+    diffCont.className = 'diff-select';
+    var diffs = [
+      {key: 'easy', label: 'EASY'},
+      {key: 'normal', label: 'NORMAL'},
+      {key: 'hard', label: 'HARD'}
+    ];
+    for (var i = 0; i < diffs.length; i++) {
+      (function(d) {
+        var dc = document.createElement('div');
+        dc.className = 'diff-card' + (cpuDifficulty === d.key ? ' sel' : '');
+        dc.dataset.diff = d.key;
+        dc.textContent = d.label;
+        dc.onclick = function() {
+          cpuDifficulty = d.key;
+          buildModeSelect();
+        };
+        diffCont.appendChild(dc);
+      })(diffs[i]);
+    }
+    cont.appendChild(diffCont);
+  }
+}
+
+// === Ranking Screen ===
+function showRankingScreen() {
+  var screen = document.getElementById('ranking-screen');
+  if (!screen) return;
+  screen.classList.add('show');
+
+  var list = document.getElementById('ranking-list');
+  if (list) {
+    list.textContent = '';
+    var loading = document.createElement('div');
+    loading.style.cssText = 'color:rgba(200,213,232,.5);text-align:center;padding:20px';
+    loading.textContent = 'Loading...';
+    list.appendChild(loading);
+  }
+
+  if (typeof getRankings === 'function') {
+    getRankings(50, function(results) {
+      if (!list) return;
+      list.textContent = '';
+      if (results.length === 0) {
+        var empty = document.createElement('div');
+        empty.style.cssText = 'color:rgba(200,213,232,.5);text-align:center;padding:20px';
+        empty.textContent = 'まだランキングデータがありません';
+        list.appendChild(empty);
+        return;
+      }
+      for (var i = 0; i < results.length; i++) {
+        var r = results[i];
+        var entry = document.createElement('div');
+        entry.className = 'ranking-entry';
+        if (currentUser && r.uid === currentUser.uid) entry.classList.add('mine');
+
+        var rankNum = document.createElement('span');
+        rankNum.className = 'rank-num' + (i === 1 ? ' r2' : i === 2 ? ' r3' : '');
+        rankNum.textContent = i + 1;
+        entry.appendChild(rankNum);
+
+        var charIcon = document.createElement('span');
+        charIcon.className = 'rank-char';
+        charIcon.textContent = CHARACTERS[r.charIdx] ? CHARACTERS[r.charIdx].e : '?';
+        entry.appendChild(charIcon);
+
+        var name = document.createElement('span');
+        name.className = 'rank-name';
+        name.textContent = r.displayName || 'Unknown';
+        entry.appendChild(name);
+
+        var time = document.createElement('span');
+        time.className = 'rank-time';
+        time.textContent = formatTime(r.time);
+        entry.appendChild(time);
+
+        list.appendChild(entry);
+      }
+    });
+  }
+}
+
+function hideRankingScreen() {
+  var screen = document.getElementById('ranking-screen');
+  if (screen) screen.classList.remove('show');
+}
+
+// === Results Ranking Addon ===
+function showResultRanking() {
+  if (!currentUser || typeof getRankings !== 'function') return;
+  getRankings(5, function(results) {
+    if (results.length === 0) return;
+    var resultsEl = document.getElementById('results');
+    if (!resultsEl) return;
+
+    // Check if ranking section already exists
+    var existing = resultsEl.querySelector('.result-ranking');
+    if (existing) existing.remove();
+
+    var div = document.createElement('div');
+    div.className = 'result-ranking';
+    var h4 = document.createElement('h4');
+    h4.textContent = 'TOP 5 RANKING';
+    div.appendChild(h4);
+
+    for (var i = 0; i < results.length; i++) {
+      var r = results[i];
+      var row = document.createElement('div');
+      row.className = 'rk-row';
+      if (currentUser && r.uid === currentUser.uid) row.classList.add('mine');
+
+      var pos = document.createElement('span');
+      pos.className = 'rk-pos';
+      pos.textContent = i + 1;
+      row.appendChild(pos);
+
+      var nm = document.createElement('span');
+      nm.className = 'rk-name';
+      nm.textContent = (CHARACTERS[r.charIdx] ? CHARACTERS[r.charIdx].e + ' ' : '') + (r.displayName || '?');
+      row.appendChild(nm);
+
+      var tm = document.createElement('span');
+      tm.className = 'rk-time';
+      tm.textContent = formatTime(r.time);
+      row.appendChild(tm);
+
+      div.appendChild(row);
+    }
+
+    // Insert before retry button
+    var retryBtn = document.getElementById('retry-btn');
+    if (retryBtn) {
+      resultsEl.insertBefore(div, retryBtn);
+    } else {
+      resultsEl.appendChild(div);
+    }
+  });
+}
+
 function buildCharSelect() {
+  // === モード選択構築 ===
+  buildModeSelect();
+
   // === キャラクター選択 ===
   var cont = document.getElementById('char-select');
   cont.textContent = '';

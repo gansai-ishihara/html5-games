@@ -7,18 +7,21 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=51">
+<link rel="stylesheet" href="css/style.css?v=52">
 </head>
 <body>
 
 <div id="rotate-prompt"><div class="icon">📱</div><p>横向きにしてください</p></div>
 
 <div id="title-screen">
+  <div class="account-bar" id="account-bar"></div>
   <div class="title-logo">
     <div class="title-main">DRIFT RACERS</div>
     <div class="title-sub">ドリフトレーサーズ</div>
   </div>
   <div class="course-label">🏁 ドリームサーキット - 3 LAPS</div>
+
+  <div class="mode-select" id="mode-select"></div>
 
   <div class="select-main">
     <div class="select-preview-panel">
@@ -45,7 +48,36 @@
     </div>
   </div>
 
-  <button class="start-btn" id="start-btn">START RACE</button>
+  <div class="title-buttons">
+    <button class="start-btn" id="start-btn">START RACE</button>
+    <button class="ranking-btn" id="ranking-btn">RANKING</button>
+  </div>
+</div>
+
+<div id="login-modal" class="login-modal">
+  <div class="login-content">
+    <button class="login-close" id="login-close">&times;</button>
+    <h3 class="login-title">LOGIN</h3>
+    <div id="login-tabs" class="login-tabs">
+      <button class="login-tab active" data-tab="login">ログイン</button>
+      <button class="login-tab" data-tab="signup">新規登録</button>
+    </div>
+    <div id="login-form" class="login-form">
+      <input type="email" id="login-email" placeholder="メールアドレス" class="login-input">
+      <input type="password" id="login-pass" placeholder="パスワード" class="login-input">
+      <input type="text" id="login-name" placeholder="表示名" class="login-input" style="display:none">
+      <button class="login-submit" id="login-submit">ログイン</button>
+      <div class="login-divider"><span>or</span></div>
+      <button class="login-google" id="login-google">Googleでログイン</button>
+      <div class="login-error" id="login-error"></div>
+    </div>
+  </div>
+</div>
+
+<div id="ranking-screen" class="ranking-screen">
+  <h2 class="ranking-title">RANKING</h2>
+  <div class="ranking-list" id="ranking-list"></div>
+  <button class="ranking-back" id="ranking-back">BACK</button>
 </div>
 
 <div id="hud">
@@ -96,6 +128,11 @@
   </div>
 </div>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <!-- Three.js from CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -111,14 +148,15 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/pmrem/PMREMGenerator.js"></script>
 
 <!-- Game modules -->
-<script src="js/audio.js?v=51"></script>
-<script src="js/config.js?v=51"></script>
-<script src="js/track.js?v=51"></script>
-<script src="js/items.js?v=51"></script>
-<script src="js/kart.js?v=51"></script>
-<script src="js/input.js?v=51"></script>
-<script src="js/graphics.js?v=51"></script>
-<script src="js/hud.js?v=51"></script>
-<script src="js/main.js?v=51"></script>
+<script src="js/audio.js?v=52"></script>
+<script src="js/config.js?v=52"></script>
+<script src="js/firebase.js?v=52"></script>
+<script src="js/track.js?v=52"></script>
+<script src="js/items.js?v=52"></script>
+<script src="js/kart.js?v=52"></script>
+<script src="js/input.js?v=52"></script>
+<script src="js/graphics.js?v=52"></script>
+<script src="js/hud.js?v=52"></script>
+<script src="js/main.js?v=52"></script>
 </body>
 </html>

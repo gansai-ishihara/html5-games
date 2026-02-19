@@ -576,3 +576,84 @@ canvas {
   .char-card .portrait-wrap{width:44px;height:44px}
   .start-btn{padding:6px 24px!important;font-size:14px!important}
 }
+
+/* === Account Bar === */
+.account-bar{position:absolute;top:8px;right:48px;z-index:10;display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(200,213,232,.7)}
+.account-bar .user-name{color:#FFCC66;font-weight:700}
+.account-bar .login-btn,.account-bar .logout-btn{padding:4px 12px;border-radius:16px;border:1px solid rgba(100,140,200,.3);background:rgba(255,255,255,.06);color:#fff;font-size:11px;cursor:pointer;transition:all .2s}
+.account-bar .login-btn:hover,.account-bar .logout-btn:hover{background:rgba(255,255,255,.15);border-color:rgba(255,204,102,.4)}
+
+/* === Mode Select === */
+.mode-select{display:flex;gap:6px;justify-content:center;margin-bottom:4px;flex-shrink:0;z-index:1;position:relative}
+.mode-card{padding:6px 16px;border-radius:20px;border:2px solid rgba(100,140,200,.2);background:rgba(255,255,255,.05);cursor:pointer;text-align:center;transition:all .2s;color:#fff;font-size:12px;font-weight:700;letter-spacing:1px}
+.mode-card:hover{border-color:rgba(100,140,200,.4);background:rgba(255,255,255,.1)}
+.mode-card.sel{border-color:#FFCC66;background:linear-gradient(180deg,rgba(255,204,102,.18),rgba(255,204,102,.06));color:#FFCC66;box-shadow:0 0 12px rgba(255,204,102,.2)}
+.mode-card.disabled{opacity:.4;cursor:not-allowed}
+.mode-card .mode-icon{font-size:18px;display:block;margin-bottom:2px}
+.mode-card .mode-label{font-size:10px;color:rgba(200,213,232,.6);font-weight:400}
+
+/* Difficulty select (inside mode-select area) */
+.diff-select{display:flex;gap:4px;margin-left:12px;align-items:center}
+.diff-card{padding:4px 10px;border-radius:14px;border:1.5px solid rgba(100,140,200,.15);background:rgba(255,255,255,.04);cursor:pointer;font-size:10px;font-weight:700;color:rgba(200,213,232,.7);transition:all .2s}
+.diff-card:hover{border-color:rgba(100,140,200,.3)}
+.diff-card.sel{border-color:#44CC88;color:#44CC88;background:rgba(68,204,136,.1);box-shadow:0 0 8px rgba(68,204,136,.15)}
+.diff-card[data-diff="easy"]{color:#88DDAA}
+.diff-card[data-diff="easy"].sel{border-color:#88DDAA;color:#88DDAA;background:rgba(136,221,170,.1)}
+.diff-card[data-diff="hard"]{color:#FF8866}
+.diff-card[data-diff="hard"].sel{border-color:#FF6644;color:#FF6644;background:rgba(255,102,68,.1)}
+
+/* === Title Buttons Row === */
+.title-buttons{display:flex;gap:10px;align-items:center;flex-shrink:0;z-index:1;position:relative;margin:4px 0 10px}
+.ranking-btn{padding:10px 24px;font-size:14px;font-weight:700;color:#FFCC66;background:rgba(255,204,102,.08);border:2px solid rgba(255,204,102,.3);border-radius:50px;cursor:pointer;letter-spacing:3px;transition:all .2s}
+.ranking-btn:hover{background:rgba(255,204,102,.15);box-shadow:0 0 20px rgba(255,204,102,.2)}
+
+/* === Login Modal === */
+.login-modal{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(8px)}
+.login-modal.show{display:flex}
+.login-content{background:linear-gradient(160deg,#0A1A35,#122448);border:1px solid rgba(100,140,200,.2);border-radius:16px;padding:24px;width:min(90%,340px);position:relative}
+.login-close{position:absolute;top:8px;right:12px;background:none;border:none;color:rgba(200,213,232,.6);font-size:24px;cursor:pointer}
+.login-close:hover{color:#fff}
+.login-title{color:#FFCC66;font-size:20px;text-align:center;margin-bottom:12px;letter-spacing:3px}
+.login-tabs{display:flex;gap:4px;margin-bottom:12px}
+.login-tab{flex:1;padding:6px;border:none;border-radius:8px;background:rgba(255,255,255,.05);color:rgba(200,213,232,.6);font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
+.login-tab.active{background:rgba(68,136,221,.2);color:#fff}
+.login-form{display:flex;flex-direction:column;gap:8px}
+.login-input{padding:8px 12px;border-radius:8px;border:1px solid rgba(100,140,200,.2);background:rgba(0,0,0,.3);color:#fff;font-size:13px;outline:none;transition:.2s}
+.login-input:focus{border-color:rgba(68,136,221,.5);box-shadow:0 0 8px rgba(68,136,221,.15)}
+.login-submit{padding:8px;border-radius:8px;border:none;background:linear-gradient(135deg,#4488DD,#6B5B95);color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:.2s}
+.login-submit:hover{opacity:.9;box-shadow:0 0 15px rgba(68,136,221,.3)}
+.login-divider{text-align:center;color:rgba(200,213,232,.3);font-size:11px;margin:4px 0;position:relative}
+.login-divider::before,.login-divider::after{content:'';position:absolute;top:50%;width:35%;height:1px;background:rgba(200,213,232,.15)}
+.login-divider::before{left:0}
+.login-divider::after{right:0}
+.login-google{padding:8px;border-radius:8px;border:1px solid rgba(100,140,200,.2);background:rgba(255,255,255,.06);color:#fff;font-size:13px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.login-google:hover{background:rgba(255,255,255,.12)}
+.login-error{color:#FF6644;font-size:11px;text-align:center;min-height:16px}
+
+/* === Ranking Screen === */
+.ranking-screen{position:fixed;inset:0;z-index:300;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,5,16,.95);backdrop-filter:blur(10px)}
+.ranking-screen.show{display:flex}
+.ranking-title{font-size:32px;color:#FFCC66;letter-spacing:6px;margin-bottom:16px;text-shadow:0 0 20px rgba(255,204,102,.3)}
+.ranking-list{width:min(90%,450px);max-height:60vh;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent}
+.ranking-entry{display:flex;align-items:center;gap:10px;padding:10px 14px;margin:3px 0;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);font-size:14px}
+.ranking-entry.mine{background:rgba(255,204,102,.08);border-color:rgba(255,204,102,.2)}
+.ranking-entry .rank-num{font-size:18px;font-weight:900;width:32px;text-align:center;color:#ffd700}
+.ranking-entry .rank-num.r2{color:#c0c0c0}
+.ranking-entry .rank-num.r3{color:#cd7f32}
+.ranking-entry .rank-name{flex:1;color:#fff;font-weight:600}
+.ranking-entry .rank-char{font-size:18px}
+.ranking-entry .rank-time{color:rgba(200,213,232,.7);font-variant-numeric:tabular-nums;font-weight:700}
+.ranking-back{margin-top:16px;padding:10px 30px;border-radius:30px;border:1.5px solid rgba(100,140,200,.3);background:rgba(255,255,255,.06);color:#fff;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:2px;transition:.2s}
+.ranking-back:hover{background:rgba(255,255,255,.12);border-color:rgba(255,204,102,.4)}
+
+/* === Ghost name label === */
+.ghost-name{position:absolute;color:#fff;font-size:10px;font-weight:700;text-align:center;pointer-events:none;text-shadow:0 0 6px rgba(0,0,0,.8);white-space:nowrap}
+
+/* === Results ranking addon === */
+.result-ranking{margin-top:12px;padding:10px;border-radius:10px;background:rgba(255,204,102,.06);border:1px solid rgba(255,204,102,.15);width:min(90%,400px)}
+.result-ranking h4{color:#FFCC66;font-size:12px;text-align:center;margin-bottom:6px;letter-spacing:2px}
+.result-ranking .rk-row{display:flex;align-items:center;gap:8px;padding:4px 8px;font-size:12px;color:rgba(200,213,232,.7)}
+.result-ranking .rk-row.mine{color:#FFCC66;font-weight:700}
+.result-ranking .rk-pos{width:20px;text-align:center;font-weight:900}
+.result-ranking .rk-name{flex:1}
+.result-ranking .rk-time{font-variant-numeric:tabular-nums}

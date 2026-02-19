@@ -398,7 +398,13 @@ function Racer(charIdx, isPlayer, kartIdx, equipType) {
   if (!isPlayer) {
     this.aiTargetIdx = 0;
     this.aiInner = Math.random() > 0.5;
-    this.aiSkill = 0.75 + Math.random() * 0.23; // 0.75~0.98 (higher baseline)
+    // Difficulty-based AI skill
+    var diff = (typeof DIFFICULTY !== 'undefined' && typeof cpuDifficulty !== 'undefined') ? DIFFICULTY[cpuDifficulty] : DIFFICULTY.normal;
+    this.aiSkill = diff.aiSkillMin + Math.random() * (diff.aiSkillMax - diff.aiSkillMin);
+    this.aiDiffItemFreq = diff.itemFreq || 1.0;
+    this.aiDiffSkillFreq = diff.skillFreq || 1.0;
+    this.aiDiffRubberBehind = diff.rubberBehind || 0.08;
+    this.aiDiffRubberAhead = diff.rubberAhead || -0.08;
     this.aiLateral = (Math.random() - 0.5) * 5; // lane offset for variety (reduced to avoid walls)
     this.aiDrifting = false;
     this.aiDriftCharge = 0;
@@ -1218,23 +1224,25 @@ Racer.prototype.update = function (input, racers, scene, dt) {
 
     // --- Rubber banding: AI adapts speed based on position relative to player ---
     var rubberFactor = 1.0;
+    var rbBehind = this.aiDiffRubberBehind || 0.08;
+    var rbAhead = this.aiDiffRubberAhead || -0.08;
     if (player) {
       var playerProgress = player.progress || 0;
       var myProgress = this.progress || 0;
       var progressDiff = playerProgress - myProgress; // positive = AI is behind
 
       if (progressDiff > 30) {
-        // AI far behind player: speed up significantly
-        rubberFactor = 1.08 + Math.min(progressDiff - 30, 80) * 0.002;
+        // AI far behind player: speed up based on difficulty
+        rubberFactor = 1.0 + rbBehind + Math.min(progressDiff - 30, 80) * 0.002;
       } else if (progressDiff > 10) {
         // AI somewhat behind: slight speed boost
-        rubberFactor = 1.0 + (progressDiff - 10) * 0.003;
+        rubberFactor = 1.0 + (progressDiff - 10) * (rbBehind / 20);
       } else if (progressDiff < -30) {
-        // AI far ahead: slow down slightly
-        rubberFactor = 0.92;
+        // AI far ahead: slow down based on difficulty
+        rubberFactor = 1.0 + rbAhead;
       } else if (progressDiff < -10) {
         // AI somewhat ahead: slight slow down
-        rubberFactor = 0.97;
+        rubberFactor = 1.0 + rbAhead * 0.4;
       }
     }
 
@@ -1252,20 +1260,21 @@ Racer.prototype.update = function (input, racers, scene, dt) {
     }
 
     // --- Smart skill use: use when it makes sense ---
+    var skFreq = this.aiDiffSkillFreq || 1.0;
     if (this.skillReady && !this.skillActive) {
       var useSkill = false;
       var skill = this.char.skill;
       if (skill === 'flame_burst' || skill === 'solar_boost' || skill === 'overclock') {
         // Speed skills: use on straightaways or when behind
-        if (absAngDiff < 0.15 && this.spd > this.maxSpd * 0.7) useSkill = Math.random() < 0.01;
-        if (player && (player.progress - this.progress) > 20) useSkill = Math.random() < 0.02;
+        if (absAngDiff < 0.15 && this.spd > this.maxSpd * 0.7) useSkill = Math.random() < 0.01 * skFreq;
+        if (player && (player.progress - this.progress) > 20) useSkill = Math.random() < 0.02 * skFreq;
       } else if (skill === 'aqua_shield') {
         // Shield: use when near enemies or projectiles
         for (var sr = 0; sr < racers.length; sr++) {
           if (racers[sr] !== this) {
             var sdx = racers[sr].x - this.x;
             var sdz = racers[sr].z - this.z;
-            if (sdx * sdx + sdz * sdz < 100) { useSkill = Math.random() < 0.006; break; }
+            if (sdx * sdx + sdz * sdz < 100) { useSkill = Math.random() < 0.006 * skFreq; break; }
           }
         }
       } else if (skill === 'quake') {
@@ -1278,32 +1287,33 @@ Racer.prototype.update = function (input, racers, scene, dt) {
             if (sdx * sdx + sdz * sdz < 900) nearCount++;
           }
         }
-        if (nearCount >= 2) useSkill = Math.random() < 0.008;
+        if (nearCount >= 2) useSkill = Math.random() < 0.008 * skFreq;
       } else if (skill === 'sakura_drift') {
         // Drift skill: use when approaching curves
-        if (absAngDiff > 0.2) useSkill = Math.random() < 0.012;
+        if (absAngDiff > 0.2) useSkill = Math.random() < 0.012 * skFreq;
       } else {
         // Other skills: moderate random use
-        useSkill = Math.random() < 0.005;
+        useSkill = Math.random() < 0.005 * skFreq;
       }
       if (useSkill) this.activateSkill(racers);
     }
 
     // --- Smart item use ---
+    var itFreq = this.aiDiffItemFreq || 1.0;
     if (this.aiItemDelay > 0) this.aiItemDelay -= timeScale;
     if (this.item && this.aiItemDelay <= 0) {
       var useItem = false;
       if (this.item === 'boost') {
         // Use boost on straightaways
-        if (absAngDiff < 0.15) useItem = Math.random() < 0.02;
+        if (absAngDiff < 0.15) useItem = Math.random() < 0.02 * itFreq;
         // Or when behind
-        if (player && (player.progress - this.progress) > 15) useItem = Math.random() < 0.04;
+        if (player && (player.progress - this.progress) > 15) useItem = Math.random() < 0.04 * itFreq;
       } else if (this.item === 'trap') {
         // Drop trap when enemy is close behind
         for (var ir = 0; ir < racers.length; ir++) {
           if (racers[ir] !== this && racers[ir].progress < this.progress &&
             (this.progress - racers[ir].progress) < 15) {
-            useItem = Math.random() < 0.03;
+            useItem = Math.random() < 0.03 * itFreq;
             break;
           }
         }
@@ -1312,20 +1322,20 @@ Racer.prototype.update = function (input, racers, scene, dt) {
         for (var ir = 0; ir < racers.length; ir++) {
           if (racers[ir] !== this && racers[ir].progress > this.progress &&
             (racers[ir].progress - this.progress) < 40) {
-            useItem = Math.random() < 0.02;
+            useItem = Math.random() < 0.02 * itFreq;
             break;
           }
         }
       } else if (this.item === 'shield') {
         // Shield when enemies nearby
-        useItem = Math.random() < 0.01;
+        useItem = Math.random() < 0.01 * itFreq;
       } else if (this.item === 'thunder') {
         // Thunder when in last places
         var myRank = 1;
         for (var ir = 0; ir < racers.length; ir++) {
           if (racers[ir].progress > this.progress) myRank++;
         }
-        if (myRank >= 4) useItem = Math.random() < 0.015;
+        if (myRank >= 4) useItem = Math.random() < 0.015 * itFreq;
       }
       if (useItem) {
         this.useItem(racers, scene);
@@ -1579,6 +1589,22 @@ Racer.prototype.update = function (input, racers, scene, dt) {
     }
   }
 
+  // Ghost recording: record player position every N frames
+  if (this.isPlayer && typeof ghostRecording !== 'undefined' && ghostRecording && typeof ghostSamples !== 'undefined') {
+    if (fr % GHOST_SAMPLE_INTERVAL === 0) {
+      var flags = 0;
+      if (this.drifting) flags |= 1;
+      if (this.boostTimer > 0) flags |= 2;
+      ghostSamples.push([
+        Math.round(this.x * 10) / 10,
+        Math.round(this.z * 10) / 10,
+        Math.round(this.y * 10) / 10,
+        Math.round(this.ang * 100) / 100,
+        flags
+      ]);
+    }
+  }
+
   this.updateMesh();
 };
 
@@ -1719,4 +1745,124 @@ Racer.prototype.useItem = function (racers, scene) {
     }
     if (SND && SND.thunder) SND.thunder();
   }
+};
+
+// === Ghost Racer (replays recorded ghost data) ===
+var ghostRacers = []; // active ghost racer instances
+
+function GhostRacer(ghostData, scene) {
+  this.displayName = ghostData.displayName || 'Ghost';
+  this.charIdx = ghostData.charIdx || 0;
+  this.kartIdx = ghostData.kartIdx || 0;
+  this.char = CHARACTERS[this.charIdx] || CHARACTERS[0];
+  this.samples = ghostData.samples || [];
+  this.sampleIdx = 0;
+  this.finished = false;
+  this.isGhost = true;
+  this.x = 0; this.y = 0; this.z = 0; this.ang = 0;
+
+  // Create ghost mesh (semi-transparent clone)
+  this.mesh = new THREE.Group();
+  var bodyType = this.char.body || 'dragon';
+  var hasKartModel = kartModelCache[bodyType] !== undefined;
+  if (hasKartModel) {
+    var kartClone = kartModelCache[bodyType].clone();
+    kartClone.rotation.y = Math.PI;
+    this.mesh.add(kartClone);
+  } else if (glbModelCache[bodyType]) {
+    var glbClone = glbModelCache[bodyType].clone();
+    this.mesh.add(glbClone);
+  } else {
+    // Simple placeholder
+    var geo = new THREE.BoxGeometry(1.5, 0.8, 2.5);
+    var mat = new THREE.MeshLambertMaterial({ color: this.char.col, transparent: true, opacity: 0.4 });
+    this.mesh.add(new THREE.Mesh(geo, mat));
+  }
+
+  // Make all materials semi-transparent
+  this.mesh.traverse(function(child) {
+    if (child.isMesh && child.material) {
+      var mats = Array.isArray(child.material) ? child.material : [child.material];
+      for (var i = 0; i < mats.length; i++) {
+        mats[i] = mats[i].clone();
+        mats[i].transparent = true;
+        mats[i].opacity = 0.35;
+        mats[i].depthWrite = false;
+      }
+      child.material = mats.length === 1 ? mats[0] : mats;
+    }
+  });
+
+  scene.add(this.mesh);
+
+  // Name label (CSS2D-like: rendered in DOM overlay)
+  this.nameDiv = document.createElement('div');
+  this.nameDiv.className = 'ghost-name';
+  this.nameDiv.textContent = this.displayName;
+  this.nameDiv.style.display = 'none';
+  document.body.appendChild(this.nameDiv);
+
+  // Set initial position from first sample
+  if (this.samples.length > 0) {
+    var s = this.samples[0];
+    this.x = s[0]; this.z = s[1]; this.y = s[2]; this.ang = s[3];
+  }
+}
+
+GhostRacer.prototype.update = function(currentFrame) {
+  if (this.finished || this.samples.length === 0) return;
+
+  // Calculate sample index from current frame
+  var sIdx = Math.floor(currentFrame / GHOST_SAMPLE_INTERVAL);
+  if (sIdx >= this.samples.length) {
+    this.finished = true;
+    if (this.mesh) this.mesh.visible = false;
+    if (this.nameDiv) this.nameDiv.style.display = 'none';
+    return;
+  }
+
+  // Interpolate between samples for smooth motion
+  var fracFrame = currentFrame / GHOST_SAMPLE_INTERVAL;
+  var idx0 = Math.floor(fracFrame);
+  var idx1 = Math.min(idx0 + 1, this.samples.length - 1);
+  var t = fracFrame - idx0;
+
+  var s0 = this.samples[idx0];
+  var s1 = this.samples[idx1];
+
+  this.x = s0[0] + (s1[0] - s0[0]) * t;
+  this.z = s0[1] + (s1[1] - s0[1]) * t;
+  this.y = s0[2] + (s1[2] - s0[2]) * t;
+
+  // Angle interpolation (handle wraparound)
+  var angDiff = s1[3] - s0[3];
+  if (angDiff > Math.PI) angDiff -= Math.PI * 2;
+  if (angDiff < -Math.PI) angDiff += Math.PI * 2;
+  this.ang = s0[3] + angDiff * t;
+
+  // Update mesh
+  if (this.mesh) {
+    this.mesh.position.set(this.x, this.y, this.z);
+    this.mesh.rotation.y = -this.ang - Math.PI / 2;
+  }
+
+  // Update name label position (project 3D to 2D)
+  if (this.nameDiv && typeof camera !== 'undefined' && camera && typeof renderer !== 'undefined' && renderer) {
+    var pos3d = new THREE.Vector3(this.x, this.y + 2.5, this.z);
+    pos3d.project(camera);
+    if (pos3d.z < 1) {
+      var hw = renderer.domElement.width / 2;
+      var hh = renderer.domElement.height / 2;
+      this.nameDiv.style.left = ((pos3d.x * hw) + hw) + 'px';
+      this.nameDiv.style.top = ((-pos3d.y * hh) + hh) + 'px';
+      this.nameDiv.style.display = 'block';
+    } else {
+      this.nameDiv.style.display = 'none';
+    }
+  }
+};
+
+GhostRacer.prototype.cleanup = function(scene) {
+  if (this.mesh) scene.remove(this.mesh);
+  if (this.nameDiv && this.nameDiv.parentNode) this.nameDiv.parentNode.removeChild(this.nameDiv);
 };

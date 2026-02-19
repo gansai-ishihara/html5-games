@@ -23,19 +23,18 @@ function startRace() {
   buildTrackMesh(scene);
   buildTrackDecorations(scene);
 
+  // Start ghost recording
+  ghostSamples = [];
+  ghostRecording = true;
+
   // Mario Kart-style 2-column starting grid BEHIND the start/finish line
-  // Start line is at node 0, racers line up close together (1-node gaps)
-  // Grid layout (3 rows x 2 columns, player at back):
-  //   Row 1 (front): AI1  AI2    (node 99)
-  //   Row 2 (mid):   AI3  AI4    (node 98)
-  //   Row 3 (back):  AI5  Player (node 97)
   var gridPositions = [
-    { node: 99, lateral: -2.5 },  // Row 1 left
-    { node: 99, lateral: 2.5 },  // Row 1 right
-    { node: 98, lateral: -2.5 },  // Row 2 left
-    { node: 98, lateral: 2.5 },  // Row 2 right
-    { node: 97, lateral: -2.5 },  // Row 3 left  (AI)
-    { node: 97, lateral: 2.5 },  // Row 3 right (Player)
+    { node: 99, lateral: -2.5 },
+    { node: 99, lateral: 2.5 },
+    { node: 98, lateral: -2.5 },
+    { node: 98, lateral: 2.5 },
+    { node: 97, lateral: -2.5 },
+    { node: 97, lateral: 2.5 },
   ];
 
   // Player goes in last grid slot (back-right)
@@ -48,25 +47,38 @@ function startRace() {
   player.createMesh(scene);
   racers.push(player);
 
-  // AI racers fill the remaining grid slots (front to back-left)
-  var usedChars = [selectedChar];
-  for (var i = 0; i < NUM_RACERS - 1; i++) {
-    var aiCharIdx;
-    do {
-      aiCharIdx = Math.floor(Math.random() * CHARACTERS.length);
-    } while (usedChars.indexOf(aiCharIdx) !== -1 && usedChars.length < CHARACTERS.length);
-    usedChars.push(aiCharIdx);
+  if (gameMode === 'ghost') {
+    // Ghost mode: load top ghosts instead of AI racers
+    ghostRacers = [];
+    if (typeof getTopGhosts === 'function') {
+      getTopGhosts(5, function(ghosts) {
+        for (var gi = 0; gi < ghosts.length; gi++) {
+          var gr = new GhostRacer(ghosts[gi], scene);
+          ghostRacers.push(gr);
+        }
+      });
+    }
+  } else {
+    // CPU mode: AI racers fill the remaining grid slots
+    var usedChars = [selectedChar];
+    for (var i = 0; i < NUM_RACERS - 1; i++) {
+      var aiCharIdx;
+      do {
+        aiCharIdx = Math.floor(Math.random() * CHARACTERS.length);
+      } while (usedChars.indexOf(aiCharIdx) !== -1 && usedChars.length < CHARACTERS.length);
+      usedChars.push(aiCharIdx);
 
-    var aiKart = Math.floor(Math.random() * KARTS.length);
-    var aiEquip = EQUIPMENT[Math.floor(Math.random() * EQUIPMENT.length)].type;
-    var aiRacer = new Racer(aiCharIdx, false, aiKart, aiEquip);
-    var slot = gridPositions[i];
-    aiRacer.placeAt(slot.node);
-    var perpAng = getTrackAngle(slot.node) + Math.PI / 2;
-    aiRacer.x += Math.cos(perpAng) * slot.lateral;
-    aiRacer.z += Math.sin(perpAng) * slot.lateral;
-    aiRacer.createMesh(scene);
-    racers.push(aiRacer);
+      var aiKart = Math.floor(Math.random() * KARTS.length);
+      var aiEquip = EQUIPMENT[Math.floor(Math.random() * EQUIPMENT.length)].type;
+      var aiRacer = new Racer(aiCharIdx, false, aiKart, aiEquip);
+      var slot = gridPositions[i];
+      aiRacer.placeAt(slot.node);
+      var perpAng = getTrackAngle(slot.node) + Math.PI / 2;
+      aiRacer.x += Math.cos(perpAng) * slot.lateral;
+      aiRacer.z += Math.sin(perpAng) * slot.lateral;
+      aiRacer.createMesh(scene);
+      racers.push(aiRacer);
+    }
   }
 
   // Generate item boxes on track
@@ -136,6 +148,39 @@ function startRace() {
 
   // Start the animation loop
   animate();
+}
+
+// Called when race finishes - uploads ranking and ghost data
+function onRaceFinished() {
+  if (!currentUser || !player) return;
+
+  var finTime = player.finTime || raceTime;
+
+  // Upload ranking
+  if (typeof uploadRanking === 'function') {
+    uploadRanking({
+      charIdx: selectedChar,
+      kartIdx: selectedKart,
+      equipIdx: selectedEquip,
+      time: finTime
+    });
+  }
+
+  // Upload ghost data (only if recording has reasonable data)
+  if (typeof uploadGhost === 'function' && ghostSamples.length > 100) {
+    uploadGhost({
+      charIdx: selectedChar,
+      kartIdx: selectedKart,
+      equipIdx: selectedEquip,
+      time: finTime,
+      samples: ghostSamples
+    });
+  }
+
+  // Show ranking in results
+  if (typeof showResultRanking === 'function') {
+    setTimeout(showResultRanking, 500); // Small delay for DB write
+  }
 }
 
 var animFrameId = null;
@@ -212,6 +257,13 @@ function animate() {
       }
     }
 
+    // Update ghost racers
+    if (typeof ghostRacers !== 'undefined') {
+      for (var gi = 0; gi < ghostRacers.length; gi++) {
+        ghostRacers[gi].update(raceTime);
+      }
+    }
+
     // Check if race is complete
     var allFinished = true;
     for (var i = 0; i < racers.length; i++) {
@@ -221,9 +273,16 @@ function animate() {
       }
     }
 
+    // In ghost mode, only player needs to finish
+    if (gameMode === 'ghost') {
+      allFinished = player.finished;
+    }
+
     // End race if all finished or timeout (3 minutes)
     if (allFinished || raceTime > 60 * 180) {
+      ghostRecording = false;
       showResults();
+      onRaceFinished();
     }
   }
 
@@ -266,6 +325,27 @@ checkMobile();
 checkOrientation();
 buildCharSelect();
 setupMobile();
+
+// Initialize login modal and account bar
+if (typeof initLoginModal === 'function') initLoginModal();
+if (typeof updateAccountBar === 'function') updateAccountBar();
+
+// Initialize Firebase
+if (typeof initFirebase === 'function') initFirebase();
+
+// Ranking button handler
+var rankingBtn = document.getElementById('ranking-btn');
+if (rankingBtn) {
+  rankingBtn.onclick = function() {
+    if (typeof showRankingScreen === 'function') showRankingScreen();
+  };
+}
+var rankingBack = document.getElementById('ranking-back');
+if (rankingBack) {
+  rankingBack.onclick = function() {
+    if (typeof hideRankingScreen === 'function') hideRankingScreen();
+  };
+}
 
 // Initialize 3D preview on title screen
 initPreview3D();
@@ -388,6 +468,18 @@ document.getElementById('retry-btn').onclick = function () {
   // Reset racers
   racers = [];
   player = null;
+
+  // Cleanup ghost racers
+  if (typeof ghostRacers !== 'undefined') {
+    for (var gi = 0; gi < ghostRacers.length; gi++) {
+      if (ghostRacers[gi].cleanup) ghostRacers[gi].cleanup(scene);
+    }
+    ghostRacers = [];
+  }
+
+  // Reset ghost recording
+  ghostSamples = [];
+  ghostRecording = false;
 
   // Reset particles
   particles = { driftLeft: null, driftRight: null, boostFlame: null, dustClouds: [] };
