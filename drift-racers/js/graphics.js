@@ -1,239 +1,218 @@
 // graphics.js - Scene setup, lighting, particles, camera, and post-processing
-// Mario Kart-style 3D racing game using Three.js r128
+// Babylon.js engine (migrated from Three.js r128)
 
-var scene, camera, renderer, clock;
-var composer = null; // EffectComposer for post-processing
-var envMap = null;   // Environment map for reflections
-var particles = { driftLeft: null, driftRight: null, boostFlame: null, dustClouds: [] };
-var cloudMeshes = []; // For animating clouds
+var scene, camera, engine;
+var pipeline = null;
+var shadowGen = null;
+var particles = { driftLeft: null, driftRight: null, boostFlame: null };
+var cloudMeshes = [];
+var envParticleSystem = null;
+
+// Compatibility shims for other files that still reference Three.js globals
+var renderer = null;
+var clock = null;
+var composer = null;
+var envMap = null;
+
+// Camera state
+var cameraShake = { x: 0, y: 0 };
+var currentFOV = 70;
+
+// Helper: hex int to Babylon Color3
+function c3(hex) {
+  return new BABYLON.Color3((hex >> 16 & 255) / 255, (hex >> 8 & 255) / 255, (hex & 255) / 255);
+}
+
+// Helper: hex int to Babylon Color4
+function c4(hex, a) {
+  return new BABYLON.Color4((hex >> 16 & 255) / 255, (hex >> 8 & 255) / 255, (hex & 255) / 255, a !== undefined ? a : 1);
+}
+
+// Helper: create custom mesh from vertex data arrays
+function createCustomMesh(name, positions, indices, uvs, colors, sc) {
+  var mesh = new BABYLON.Mesh(name, sc || scene);
+  var vd = new BABYLON.VertexData();
+  vd.positions = positions;
+  vd.indices = indices;
+  if (uvs) vd.uvs = uvs;
+  if (colors) vd.colors = colors;
+  var normals = [];
+  BABYLON.VertexData.ComputeNormals(positions, indices, normals);
+  vd.normals = normals;
+  vd.applyToMesh(mesh);
+  return mesh;
+}
 
 function initScene() {
-  // Create scene - Darker atmosphere for neon contrast
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0a1a33);
-  scene.fog = new THREE.FogExp2(0x0a1a33, 0.0015);
+  var canvas = document.getElementById('renderCanvas');
 
-  // Camera setup
-  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 2000);
-  camera.position.set(0, 10, 20);
-
-  // Renderer setup
-  renderer = new THREE.WebGLRenderer({
-    antialias: false, // We use FXAA post-process instead
-    powerPreference: 'high-performance'
+  engine = new BABYLON.Engine(canvas, false, {
+    preserveDrawingBuffer: false,
+    stencil: true,
+    disableWebGL2Support: false
   });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
-  renderer.shadowMap.enabled = !isMobile;
+
+  var dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2);
+  engine.setHardwareScalingLevel(1 / dpr);
+
+  scene = new BABYLON.Scene(engine);
+  scene.clearColor = new BABYLON.Color4(0.051, 0.102, 0.208, 1.0);
+  scene.ambientColor = new BABYLON.Color3(0.1, 0.1, 0.2);
+
+  // Fog
+  scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
+  scene.fogDensity = 0.002;
+  scene.fogColor = new BABYLON.Color3(0.051, 0.102, 0.208);
+
+  // Compatibility shims for scene.add/remove used by other files
+  scene.add = function () { };
+  scene.remove = function (obj) {
+    if (obj && obj.dispose) obj.dispose();
+  };
+
+  // Camera
+  camera = new BABYLON.FreeCamera('cam', new BABYLON.Vector3(0, 10, -20), scene);
+  camera.inputs.clear();
+  camera.minZ = 0.5;
+  camera.maxZ = 2000;
+  camera.fov = BABYLON.Tools.ToRadians(60);
+
+  // === Lighting ===
+
+  // Hemisphere (ambient + ground color)
+  var hemiLight = new BABYLON.HemisphericLight('hemi', new BABYLON.Vector3(0, 1, 0), scene);
+  hemiLight.intensity = 0.85;
+  hemiLight.diffuse = new BABYLON.Color3(0.87, 0.93, 1.0);
+  hemiLight.groundColor = new BABYLON.Color3(0.2, 0.3, 0.2);
+
+  // Sun (main directional)
+  var sunLight = new BABYLON.DirectionalLight('sun',
+    new BABYLON.Vector3(-1, -1.5, 1).normalize(), scene);
+  sunLight.intensity = 2.5;
+  sunLight.diffuse = new BABYLON.Color3(1.0, 0.98, 0.93);
+  sunLight.position = new BABYLON.Vector3(100, 150, -100);
+
+  // Shadows (desktop only)
   if (!isMobile) {
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    shadowGen = new BABYLON.ShadowGenerator(4096, sunLight);
+    shadowGen.usePercentageCloserFiltering = true;
+    shadowGen.bias = 0.0001;
+    shadowGen.normalBias = 0.01;
   }
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.95;
-  renderer.outputEncoding = THREE.sRGBEncoding;
-  // No CSS filter - post-processing handles color grading
-  document.body.insertBefore(renderer.domElement, document.body.firstChild);
-
-  // === Generate Environment Map for reflections ===
-  generateEnvMap();
-
-  // === Lighting setup - PBR Optimized ===
-
-  // Ambient - dim cool blue for shadows
-  var ambientLight = new THREE.AmbientLight(0x112244, 0.4);
-  scene.add(ambientLight);
-
-  // Main Sun - Bright for PBR
-  var sunLight = new THREE.DirectionalLight(0xfffaed, 2.5); // Boosted intensity for PBR
-  sunLight.position.set(100, 150, -100);
-  if (!isMobile) {
-    sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 4096;
-    sunLight.shadow.mapSize.height = 4096;
-    sunLight.shadow.bias = -0.0001;
-  }
-  scene.add(sunLight);
   window._sunLight = sunLight;
+  window._shadowGen = shadowGen;
 
-  // Hemisphere - Environment fill
-  var hemiLight = new THREE.HemisphereLight(0xddeeff, 0x224422, 0.5);
-  scene.add(hemiLight);
+  // Fill light
+  var fillLight = new BABYLON.DirectionalLight('fill',
+    new BABYLON.Vector3(1, -1, -0.75).normalize(), scene);
+  fillLight.intensity = 0.6;
+  fillLight.diffuse = new BABYLON.Color3(0.87, 0.91, 1.0);
 
-  // Rim/Backlight - Artistic purple glow
-  var rimLight = new THREE.DirectionalLight(0xaa88ff, 1.2);
-  rimLight.position.set(-50, 50, -100);
-  scene.add(rimLight);
+  // Rim light (cool blue artistic)
+  var rimLight = new BABYLON.DirectionalLight('rim',
+    new BABYLON.Vector3(0.5, -0.5, 1).normalize(), scene);
+  rimLight.intensity = 0.8;
+  rimLight.diffuse = new BABYLON.Color3(0.65, 0.70, 1.0);
 
-  // Ground - lush fantasy meadow
+  // Environment texture for PBR materials (IBL)
+  scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
+    'https://assets.babylonjs.com/environments/environmentSpecular.env', scene);
+  scene.environmentIntensity = 0.4;
+
+  // Build world
   buildGround();
-
-  // Sky dome
   buildSky();
-
-  // Clouds (billboard style, animated)
   buildClouds();
-
-  // Stars
   buildStars();
-
-  // Sun + glow
   buildSunDecor();
+  buildDistantMountains();
+  createEnvParticles();
 
-  // Rainbow removed - Crystal Kingdom doesn't need rainbow
+  // Clock shim (replaces THREE.Clock)
+  clock = {
+    _lastTime: 0,
+    getDelta: function () {
+      var now = performance.now();
+      var dt = this._lastTime ? (now - this._lastTime) / 1000 : 0.016;
+      this._lastTime = now;
+      return dt;
+    }
+  };
 
-  // Terrain structures
-  buildBridgePillars(scene);
-  buildTunnels(scene);
-  buildRamps(scene);
+  // Renderer shim (for main.js cleanup compatibility)
+  renderer = {
+    dispose: function () {
+      if (engine) { engine.stopRenderLoop(); engine.dispose(); }
+    },
+    domElement: canvas,
+    capabilities: { getMaxAnisotropy: function () { return 8; } }
+  };
 
-  clock = new THREE.Clock();
+  // Particle effects
+  createDriftParticles();
+  createBoostEffect();
 
-  // Initialize particle systems
-  createDriftParticles(scene);
-  createBoostEffect(scene);
-
-  // === Post-processing ===
+  // Post-processing
   initPostProcessing();
 }
 
-// Generate environment cubemap for reflections
-function generateEnvMap() {
-  // Create a simple gradient cubemap procedurally
-  var pmremGen = new THREE.PMREMGenerator(renderer);
-  pmremGen.compileCubemapShader();
-
-  // Create a small scene for the env map
-  var envScene = new THREE.Scene();
-
-  // Gradient sky sphere
-  var envSkyGeo = new THREE.SphereGeometry(100, 16, 16);
-  var envSkyVS = [
-    'varying vec3 vWorldPos;',
-    'void main() {',
-    '  vec4 wp = modelMatrix * vec4(position, 1.0);',
-    '  vWorldPos = wp.xyz;',
-    '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
-    '}'
-  ].join('\n');
-  var envSkyFS = [
-    'varying vec3 vWorldPos;',
-    'void main() {',
-    '  float h = normalize(vWorldPos).y;',
-    '  vec3 top = vec3(0.10, 0.18, 0.29);',
-    '  vec3 mid = vec3(0.42, 0.36, 0.58);',
-    '  vec3 bot = vec3(0.78, 0.84, 0.91);',
-    '  vec3 col = h > 0.0 ? mix(mid, top, h) : mix(mid, bot, -h);',
-    '  gl_FragColor = vec4(col, 1.0);',
-    '}'
-  ].join('\n');
-  var envSkyMat = new THREE.ShaderMaterial({
-    vertexShader: envSkyVS,
-    fragmentShader: envSkyFS,
-    side: THREE.BackSide
-  });
-  envScene.add(new THREE.Mesh(envSkyGeo, envSkyMat));
-
-  // Add some colored lights to create reflections
-  envScene.add(new THREE.AmbientLight(0xffffff, 0.5));
-
-  var rt = pmremGen.fromScene(envScene, 0.04);
-  envMap = rt.texture;
-  pmremGen.dispose();
-}
-
-// Post-processing: Bloom + FXAA + Vignette
-// NOTE: Three.js r128 EffectComposer uses linear color space internally.
-// The renderer's outputEncoding is bypassed, so we must handle gamma in the final pass.
+// Post-processing: Bloom + FXAA + Vignette + Color Grading
 function initPostProcessing() {
-  if (!THREE.EffectComposer || !THREE.RenderPass || !THREE.UnrealBloomPass) {
-    console.warn('Post-processing not available, falling back to direct render');
+  if (!BABYLON.DefaultRenderingPipeline) {
+    console.warn('DefaultRenderingPipeline not available');
     return;
   }
 
-  // Create render target with sRGB encoding to match renderer output
-  var rtParams = {
-    minFilter: THREE.LinearFilter,
-    magFilter: THREE.LinearFilter,
-    format: THREE.RGBAFormat,
-    encoding: THREE.sRGBEncoding
-  };
-  var renderTarget = new THREE.WebGLRenderTarget(
-    window.innerWidth * renderer.getPixelRatio(),
-    window.innerHeight * renderer.getPixelRatio(),
-    rtParams
-  );
-  composer = new THREE.EffectComposer(renderer, renderTarget);
+  pipeline = new BABYLON.DefaultRenderingPipeline('default', true, scene, [camera]);
 
-  // Render pass
-  var renderPass = new THREE.RenderPass(scene, camera);
-  composer.addPass(renderPass);
+  // Bloom
+  pipeline.bloomEnabled = true;
+  pipeline.bloomWeight = 0.45;
+  pipeline.bloomKernel = 64;
+  pipeline.bloomThreshold = 0.85;
 
-  // Bloom pass - subtle glow for emissive objects only
-  var bloomPass = new THREE.UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.35,  // strength (subtle)
-    0.4,   // radius
-    0.92   // threshold (high = only bright things bloom)
-  );
-  composer.addPass(bloomPass);
+  // FXAA
+  pipeline.fxaaEnabled = true;
 
-  // FXAA anti-aliasing
-  if (THREE.FXAAShader) {
-    var fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
-    var pixelRatio = renderer.getPixelRatio();
-    fxaaPass.material.uniforms['resolution'].value.set(
-      1 / (window.innerWidth * pixelRatio),
-      1 / (window.innerHeight * pixelRatio)
-    );
-    composer.addPass(fxaaPass);
+  // Image processing (tone mapping, vignette)
+  pipeline.imageProcessingEnabled = true;
+  pipeline.imageProcessing.toneMappingEnabled = true;
+  pipeline.imageProcessing.toneMappingType = BABYLON.ImageProcessingConfiguration.TONEMAPPING_ACES;
+  pipeline.imageProcessing.exposure = 1.0;
+  pipeline.imageProcessing.contrast = 1.06;
+
+  pipeline.imageProcessing.vignetteEnabled = true;
+  pipeline.imageProcessing.vignetteWeight = 2.5;
+  pipeline.imageProcessing.vignetteBlendMode = BABYLON.ImageProcessingConfiguration.VIGNETTEMODE_MULTIPLY;
+
+  // Chromatic aberration (desktop only)
+  if (!isMobile) {
+    pipeline.chromaticAberrationEnabled = true;
+    pipeline.chromaticAberration.aberrationAmount = 2;
   }
 
-  // Vignette + color grading (final pass, no gamma correction needed with Lambert)
-  var finalShader = {
-    uniforms: {
-      tDiffuse: { value: null },
-      darkness: { value: 0.25 },
-      offset: { value: 1.2 },
-      saturation: { value: 1.2 },
-      contrast: { value: 1.05 }
-    },
-    vertexShader: [
-      'varying vec2 vUv;',
-      'void main() {',
-      '  vUv = uv;',
-      '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
-      '}'
-    ].join('\n'),
-    fragmentShader: [
-      'uniform sampler2D tDiffuse;',
-      'uniform float darkness;',
-      'uniform float offset;',
-      'uniform float saturation;',
-      'uniform float contrast;',
-      'varying vec2 vUv;',
-      'void main() {',
-      '  vec4 texel = texture2D(tDiffuse, vUv);',
-      '  vec3 col = texel.rgb;',
-      '  // Saturation boost',
-      '  float grey = dot(col, vec3(0.299, 0.587, 0.114));',
-      '  col = mix(vec3(grey), col, saturation);',
-      '  // Contrast',
-      '  col = (col - 0.5) * contrast + 0.5;',
-      '  // Vignette',
-      '  vec2 uv = (vUv - 0.5) * 2.0;',
-      '  float vig = 1.0 - darkness * dot(uv, uv) / (offset * offset);',
-      '  col *= clamp(vig, 0.0, 1.0);',
-      '  gl_FragColor = vec4(col, texel.a);',
-      '}'
-    ].join('\n')
-  };
-  var finalPass = new THREE.ShaderPass(finalShader);
-  composer.addPass(finalPass);
+  window._pipeline = pipeline;
+
+  // Custom warm color shift + saturation boost
+  BABYLON.Effect.ShadersStore['warmColorFragmentShader'] = [
+    'precision highp float;',
+    'varying vec2 vUV;',
+    'uniform sampler2D textureSampler;',
+    'void main() {',
+    '  vec4 c = texture2D(textureSampler, vUV);',
+    '  c.r += 0.04;',
+    '  c.b -= 0.02;',
+    '  float grey = dot(c.rgb, vec3(0.299, 0.587, 0.114));',
+    '  c.rgb = mix(vec3(grey), c.rgb, 1.22);',
+    '  gl_FragColor = c;',
+    '}'
+  ].join('\n');
+
+  new BABYLON.PostProcess('warmColor', 'warmColor', [], null, 1.0, camera);
 }
 
 // Simple noise function for terrain generation
 function terrainNoise(x, z) {
-  // Multiple octaves of sine-based noise for natural terrain
   var n = 0;
   n += Math.sin(x * 0.008 + 1.3) * Math.cos(z * 0.006 + 0.7) * 12;
   n += Math.sin(x * 0.015 + 2.1) * Math.cos(z * 0.012 - 0.3) * 6;
@@ -242,7 +221,7 @@ function terrainNoise(x, z) {
   return n;
 }
 
-// Check if point is near the track (returns distance to nearest track node)
+// Distance to nearest track center
 function distToTrackCenter(wx, wz) {
   var minDist = Infinity;
   for (var i = 0; i < trackNodes.length; i += 2) {
@@ -258,19 +237,15 @@ function distToTrackCenter(wx, wz) {
 // Get terrain height at world position, considering track clearance
 function getTerrainHeight(wx, wz) {
   var baseNoise = terrainNoise(wx, wz);
-
-  // Near the track: flatten terrain and lower it below road
   var trackD = distToTrackCenter(wx, wz);
-  var trackClearance = TRACK_WIDTH * 0.7; // Zone where terrain stays flat
-  var transitionZone = 30; // Smooth transition from flat to hills
+  var trackClearance = TRACK_WIDTH * 0.7;
+  var transitionZone = 30;
 
   if (trackD < trackClearance) {
-    // Under/near the road: low and flat
     return -4;
   } else if (trackD < trackClearance + transitionZone) {
-    // Transition zone: smoothly rise from road level to terrain
     var t = (trackD - trackClearance) / transitionZone;
-    t = t * t * (3 - 2 * t); // Smooth-step
+    t = t * t * (3 - 2 * t);
     return -4 + t * (baseNoise + 4);
   } else {
     return baseNoise;
@@ -280,19 +255,16 @@ function getTerrainHeight(wx, wz) {
 // Build 3D terrain mesh with hills and valleys
 function buildGround() {
   var terrainSize = 1600;
-  var segments = 120; // Improved terrain resolution
+  var segments = 120;
   var segSize = terrainSize / segments;
 
-  var grassCanvas = document.createElement('canvas');
-  grassCanvas.width = 512;
-  grassCanvas.height = 512;
-  var ctx = grassCanvas.getContext('2d');
+  // Create grass texture
+  var grassTex = new BABYLON.DynamicTexture('grassTex', { width: 512, height: 512 }, scene, true);
+  var ctx = grassTex.getContext();
 
-  // Rich emerald green (saturated)
   ctx.fillStyle = '#2E8B57';
   ctx.fillRect(0, 0, 512, 512);
 
-  // Variation patches
   for (var i = 0; i < 30; i++) {
     var px = Math.random() * 512;
     var py = Math.random() * 512;
@@ -306,37 +278,32 @@ function buildGround() {
     ctx.fillRect(px - pr, py - pr, pr * 2, pr * 2);
   }
 
-  // Grass blades
   for (var i = 0; i < 8000; i++) {
     var gx = Math.random() * 512;
     var gy = Math.random() * 512;
-    var light = 40 + Math.random() * 25;
-    ctx.fillStyle = 'hsl(' + (100 + Math.random() * 40) + ',55%,' + light + '%)';
+    var gl = 40 + Math.random() * 25;
+    ctx.fillStyle = 'hsl(' + (100 + Math.random() * 40) + ',55%,' + gl + '%)';
     ctx.fillRect(gx, gy, 0.8, 2 + Math.random() * 4);
   }
 
-  // Flowers - lavender and rose only
   var fColors = ['#9988CC', '#DDA0BB'];
   for (var i = 0; i < 120; i++) {
     var fx = Math.random() * 512;
     var fy = Math.random() * 512;
     ctx.fillStyle = fColors[Math.floor(Math.random() * fColors.length)];
-    ctx.globalAlpha = 1.0;
     ctx.beginPath();
     ctx.arc(fx, fy, 1.5 + Math.random() * 1.5, 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.globalAlpha = 1.0;
 
-  var grassTexture = new THREE.CanvasTexture(grassCanvas);
-  grassTexture.wrapS = THREE.RepeatWrapping;
-  grassTexture.wrapT = THREE.RepeatWrapping;
-  grassTexture.repeat.set(40, 40);
-  grassTexture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
-  grassTexture.encoding = THREE.sRGBEncoding;
+  grassTex.update();
+  grassTex.uScale = 40;
+  grassTex.vScale = 40;
+  grassTex.wrapU = BABYLON.Texture.WRAP_ADDRESSMODE;
+  grassTex.wrapV = BABYLON.Texture.WRAP_ADDRESSMODE;
+  grassTex.anisotropicFilteringLevel = 8;
 
-  // Generate terrain geometry with height variation
-  var terrainGeom = new THREE.BufferGeometry();
+  // Generate terrain geometry
   var vertices = [];
   var uvs = [];
   var indices = [];
@@ -352,12 +319,11 @@ function buildGround() {
       vertices.push(wx, wy, wz);
       uvs.push(ix / segments, iz / segments);
 
-      // Color variation based on height (greener valleys, brown hills)
       var hFactor = Math.max(0, Math.min(1, (wy + 4) / 20));
       var r = 0.3 + hFactor * 0.25;
       var g = 0.6 - hFactor * 0.15;
       var b = 0.25 + hFactor * 0.1;
-      colors.push(r, g, b);
+      colors.push(r, g, b, 1.0); // RGBA for Babylon.js
     }
   }
 
@@ -365,46 +331,64 @@ function buildGround() {
     for (var ix = 0; ix < segments; ix++) {
       var a = iz * (segments + 1) + ix;
       var b = a + 1;
-      var c = a + (segments + 1);
-      var d = c + 1;
-      indices.push(a, c, b);
-      indices.push(b, c, d);
+      var cc = a + (segments + 1);
+      var d = cc + 1;
+      indices.push(a, b, cc);
+      indices.push(b, d, cc);
     }
   }
 
-  terrainGeom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-  terrainGeom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-  terrainGeom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  terrainGeom.setIndex(indices);
-  terrainGeom.computeVertexNormals();
+  var ground = createCustomMesh('ground', vertices, indices, uvs, colors);
 
-  var groundMaterial = new THREE.MeshStandardMaterial({
-    map: grassTexture,
-    vertexColors: true,
-    roughness: 0.8,
-    metalness: 0.1,
-    flatShading: true
-  });
+  var groundMat = new BABYLON.StandardMaterial('groundMat', scene);
+  groundMat.diffuseTexture = grassTex;
+  groundMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+  ground.material = groundMat;
+  ground.receiveShadows = true;
 
-  var ground = new THREE.Mesh(terrainGeom, groundMaterial);
-  ground.receiveShadow = true;
-  scene.add(ground);
-
-  // Additional cliff/rock faces along steep terrain changes near track
-  buildTerrainCliffs(scene);
+  buildFlowerPatches();
+  buildTerrainCliffs();
 }
 
-// Build cliff faces near the track where terrain drops sharply
-function buildTerrainCliffs(scene) {
-  // Create rocky cliff meshes along the sides of the road
-  // Create rocky cliff meshes along the sides of the road
-  var cliffMat = new THREE.MeshStandardMaterial({
-    color: 0x554433,
-    roughness: 0.9,
-    metalness: 0.0
-  });
+function buildFlowerPatches() {
+  var fCount = 40;
+  var fColorsHex = [0x9988CC, 0xDDA0BB, 0x66AAEE];
 
-  // Place cliff sections at track-adjacent positions
+  for (var i = 0; i < fCount; i++) {
+    var ang = Math.random() * Math.PI * 2;
+    var dist = 50 + Math.random() * 400;
+    var wx = Math.cos(ang) * dist;
+    var wz = Math.sin(ang) * dist;
+
+    if (distToTrackCenter(wx, wz) < 40) continue;
+
+    var wy = getTerrainHeight(wx, wz);
+
+    for (var j = 0; j < 5; j++) {
+      var r = 0.5 + Math.random() * 0.5;
+      var flower = BABYLON.MeshBuilder.CreateSphere('flower_' + i + '_' + j,
+        { diameter: r * 2, segments: 6 }, scene);
+      flower.position.set(
+        wx + (Math.random() - 0.5) * 5,
+        wy + r * 0.5,
+        wz + (Math.random() - 0.5) * 5
+      );
+      flower.scaling.y = 0.4;
+      var fMat = new BABYLON.StandardMaterial('fMat_' + i + '_' + j, scene);
+      fMat.diffuseColor = c3(fColorsHex[Math.floor(Math.random() * fColorsHex.length)]);
+      fMat.specularColor = BABYLON.Color3.Black();
+      flower.material = fMat;
+      trackMeshes.push(flower);
+    }
+  }
+}
+
+// Build cliff faces near the track
+function buildTerrainCliffs() {
+  var cliffMat = new BABYLON.StandardMaterial('cliffMat', scene);
+  cliffMat.diffuseColor = c3(0x554433);
+  cliffMat.specularColor = BABYLON.Color3.Black();
+
   for (var i = 0; i < trackNodes.length; i += 4) {
     var node = trackNodes[i];
     var angle = getTrackAngle(i);
@@ -417,96 +401,73 @@ function buildTerrainCliffs(scene) {
       var cz = node.z + perpZ * cliffDist * side;
       var terrainH = terrainNoise(cx, cz);
 
-      // Only build cliff where terrain is significantly below road
       if (terrainH < node.y - 2) {
         var cliffH = node.y - terrainH + 1;
         var cliffW = 6 + Math.random() * 4;
+        var cliffD = 3 + Math.random() * 2;
 
-        // Randomized rocky shape
-        var cliffGeo = new THREE.BoxGeometry(cliffW, cliffH, 3 + Math.random() * 2);
-        var cliff = new THREE.Mesh(cliffGeo, cliffMat);
+        var cliff = BABYLON.MeshBuilder.CreateBox('cliff_' + i + '_' + side,
+          { width: cliffW, height: cliffH, depth: cliffD }, scene);
         cliff.position.set(cx, terrainH + cliffH / 2, cz);
         cliff.rotation.y = angle + Math.random() * 0.3;
-
-        // Slight random distortion for natural look
-        var posAttr = cliff.geometry.attributes.position;
-        for (var v = 0; v < posAttr.count; v++) {
-          posAttr.setX(v, posAttr.getX(v) + (Math.random() - 0.5) * 0.8);
-          posAttr.setZ(v, posAttr.getZ(v) + (Math.random() - 0.5) * 0.8);
-        }
-        cliff.geometry.computeVertexNormals();
-
-        cliff.castShadow = true;
-        scene.add(cliff);
+        cliff.material = cliffMat;
+        if (shadowGen) shadowGen.addShadowCaster(cliff);
         trackMeshes.push(cliff);
       }
     }
   }
 }
 
-// Build bridge supports/pillars under elevated road sections
-function buildBridgePillars(scene) {
-  var pillarMat = new THREE.MeshStandardMaterial({
-    color: 0x8899aa,
-    roughness: 0.6,
-    metalness: 0.3
-  });
+// Build bridge supports under elevated road sections
+function buildBridgePillars(sc) {
+  var pillarMat = new BABYLON.StandardMaterial('pillarMat', sc);
+  pillarMat.diffuseColor = c3(0x8899aa);
+  pillarMat.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
 
   for (var i = 0; i < trackNodes.length; i += 8) {
-    // Skip start/finish area to avoid overlap with karts
     if (i < 6 || i > trackNodes.length - 6) continue;
 
     var node = trackNodes[i];
     var terrainH = getTerrainHeight(node.x, node.z);
     var heightAboveTerrain = node.y - terrainH;
 
-    // Only build pillars where road is well above terrain
     if (heightAboveTerrain > 5) {
       var pillarHeight = heightAboveTerrain + 1;
 
-      // Main pillar
-      var pillarGeo = new THREE.CylinderGeometry(1.5, 2.0, pillarHeight, 8);
-      var pillar = new THREE.Mesh(pillarGeo, pillarMat);
+      var pillar = BABYLON.MeshBuilder.CreateCylinder('pillar_' + i,
+        { height: pillarHeight, diameterTop: 3, diameterBottom: 4, tessellation: 8 }, sc);
       pillar.position.set(node.x, terrainH + pillarHeight / 2, node.z);
-      pillar.castShadow = true;
-      scene.add(pillar);
+      if (shadowGen) shadowGen.addShadowCaster(pillar);
+      pillar.material = pillarMat;
       trackMeshes.push(pillar);
 
-      // Cross beam at top
+      // Cross beam
       var angle = getTrackAngle(i);
-      var perpX = -Math.sin(angle);
-      var perpZ = Math.cos(angle);
       var beamWidth = TRACK_WIDTH * 0.8;
-
-      var beamGeo = new THREE.BoxGeometry(beamWidth, 1.0, 2.0);
-      var beam = new THREE.Mesh(beamGeo, pillarMat);
+      var beam = BABYLON.MeshBuilder.CreateBox('beam_' + i,
+        { width: beamWidth, height: 1.0, depth: 2.0 }, sc);
       beam.position.set(node.x, node.y - 2, node.z);
       beam.rotation.y = -angle;
-      scene.add(beam);
+      beam.material = pillarMat;
       trackMeshes.push(beam);
     }
   }
 }
 
-// Build tunnel/arch structures at specific track points
-function buildTunnels(scene) {
-  // Tunnel positions (track index ranges)
+// Build tunnel/arch structures
+function buildTunnels(sc) {
   var tunnelSpots = [
     { start: 25, end: 30 },
     { start: 70, end: 75 }
   ];
 
-  var tunnelMat = new THREE.MeshStandardMaterial({
-    color: 0x556688,
-    roughness: 0.7,
-    metalness: 0.2
-  });
+  var tunnelMat = new BABYLON.StandardMaterial('tunnelMat', sc);
+  tunnelMat.diffuseColor = c3(0x556688);
+  tunnelMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
 
-  var innerMat = new THREE.MeshStandardMaterial({
-    color: 0x334466,
-    roughness: 0.9,
-    side: THREE.BackSide
-  });
+  var innerMat = new BABYLON.StandardMaterial('innerMat', sc);
+  innerMat.diffuseColor = c3(0x334466);
+  innerMat.backFaceCulling = false;
 
   for (var t = 0; t < tunnelSpots.length; t++) {
     var spot = tunnelSpots[t];
@@ -520,38 +481,29 @@ function buildTunnels(scene) {
       var archW = TRACK_WIDTH + 4;
       var archH = 10;
 
-      // Arch shape using a half-cylinder
-      var archGeo = new THREE.CylinderGeometry(archW / 2, archW / 2, 3, 16, 1, true, 0, Math.PI);
-      var arch = new THREE.Mesh(archGeo, tunnelMat);
+      // Arch shape using half cylinder
+      var arch = BABYLON.MeshBuilder.CreateCylinder('arch_' + t + '_' + i,
+        { height: 3, diameterTop: archW, diameterBottom: archW, tessellation: 16,
+          arc: 0.5 }, sc);
       arch.position.set(node.x, node.y + archH / 2, node.z);
       arch.rotation.y = -angle;
       arch.rotation.z = Math.PI / 2;
-      arch.scale.y = 1;
-      arch.scale.x = archH / (archW / 2);
-      scene.add(arch);
+      arch.scaling.x = archH / (archW / 2);
+      arch.material = tunnelMat;
       trackMeshes.push(arch);
-
-      // Inner surface (visible from inside)
-      var innerGeo = new THREE.CylinderGeometry(archW / 2 - 0.5, archW / 2 - 0.5, 2.8, 16, 1, true, 0, Math.PI);
-      var inner = new THREE.Mesh(innerGeo, innerMat);
-      inner.position.copy(arch.position);
-      inner.rotation.copy(arch.rotation);
-      inner.scale.copy(arch.scale);
-      scene.add(inner);
-      trackMeshes.push(inner);
 
       // Side walls
       for (var side = -1; side <= 1; side += 2) {
-        var wallGeo = new THREE.BoxGeometry(1.5, archH, 3);
-        var wall = new THREE.Mesh(wallGeo, tunnelMat);
+        var wall = BABYLON.MeshBuilder.CreateBox('twall_' + t + '_' + i + '_' + side,
+          { width: 1.5, height: archH, depth: 3 }, sc);
         wall.position.set(
           node.x + perpX * (archW / 2) * side,
           node.y + archH / 2,
           node.z + perpZ * (archW / 2) * side
         );
         wall.rotation.y = -angle;
-        wall.castShadow = true;
-        scene.add(wall);
+        wall.material = tunnelMat;
+        if (shadowGen) shadowGen.addShadowCaster(wall);
         trackMeshes.push(wall);
       }
 
@@ -559,84 +511,67 @@ function buildTunnels(scene) {
       if (i % 2 === 0) {
         var lightColors = [0x4488DD, 0x8866BB, 0xFFCC66];
         var lColor = lightColors[(i - spot.start) % lightColors.length];
-        var lightGeo = new THREE.BoxGeometry(archW * 0.8, 0.15, 0.15);
-        var lightMat = new THREE.MeshBasicMaterial({
-          color: lColor,
-          transparent: true,
-          opacity: 0.9
-        });
-        var neonLight = new THREE.Mesh(lightGeo, lightMat);
+        var neonLight = BABYLON.MeshBuilder.CreateBox('neon_' + t + '_' + i,
+          { width: archW * 0.8, height: 0.15, depth: 0.15 }, sc);
         neonLight.position.set(node.x, node.y + archH - 1, node.z);
         neonLight.rotation.y = -angle;
-        scene.add(neonLight);
+        var neonMat = new BABYLON.StandardMaterial('neonMat_' + t + '_' + i, sc);
+        neonMat.diffuseColor = c3(lColor);
+        neonMat.emissiveColor = c3(lColor);
+        neonMat.alpha = 0.9;
+        neonLight.material = neonMat;
         trackMeshes.push(neonLight);
       }
     }
   }
 }
 
-// Build ramps/jumps at specific track sections
-function buildRamps(scene) {
-  var rampMat = new THREE.MeshLambertMaterial({
-    color: 0x4488DD,
-    emissive: 0x2266BB,
-    emissiveIntensity: 0.35
-  });
+// Build ramps/jumps
+function buildRamps(sc) {
+  var rampMat = new BABYLON.StandardMaterial('rampMat', sc);
+  rampMat.diffuseColor = c3(0x4488DD);
+  rampMat.emissiveColor = new BABYLON.Color3(0.13, 0.4, 0.73).scale(0.35);
 
-  var rampSpots = [48, 92]; // Track indices for ramps
+  var rampSpots = [48, 92];
 
   for (var r = 0; r < rampSpots.length; r++) {
     var idx = rampSpots[r];
     var node = trackNodes[idx];
     var angle = getTrackAngle(idx);
 
-    // Ramp shape: wedge
-    var rampGeo = new THREE.BufferGeometry();
     var w = TRACK_WIDTH * 0.6;
     var h = 2.5;
     var d = 8;
 
     // Wedge vertices
     var rv = [
-      // Bottom face
       -w / 2, 0, -d / 2, w / 2, 0, -d / 2, w / 2, 0, d / 2, -w / 2, 0, d / 2,
-      // Top face (angled)
       -w / 2, 0, -d / 2, w / 2, 0, -d / 2, w / 2, h, d / 2, -w / 2, h, d / 2
     ];
     var ri = [
-      // Top surface (ramp)
       4, 5, 6, 4, 6, 7,
-      // Bottom
       0, 2, 1, 0, 3, 2,
-      // Back wall
       2, 6, 5, 2, 5, 1,
-      // Front (short side)
       0, 4, 7, 0, 7, 3,
-      // Left
       0, 1, 5, 0, 5, 4,
-      // Right
       3, 7, 6, 3, 6, 2
     ];
 
-    rampGeo.setAttribute('position', new THREE.Float32BufferAttribute(rv, 3));
-    rampGeo.setIndex(ri);
-    rampGeo.computeVertexNormals();
-
-    var ramp = new THREE.Mesh(rampGeo, rampMat);
+    var ramp = createCustomMesh('ramp_' + r, rv, ri, null, null, sc);
     ramp.position.set(node.x, node.y, node.z);
     ramp.rotation.y = -angle - Math.PI / 2;
-    scene.add(ramp);
+    ramp.material = rampMat;
     trackMeshes.push(ramp);
 
-    // Arrow markings on ramp
-    var arrowMat = new THREE.MeshBasicMaterial({
-      color: 0xFFCC66,
-      transparent: true,
-      opacity: 0.85
-    });
+    // Arrow markings
+    var arrowMat = new BABYLON.StandardMaterial('arrowMat_' + r, sc);
+    arrowMat.diffuseColor = c3(0xFFCC66);
+    arrowMat.emissiveColor = c3(0xFFCC66).scale(0.5);
+    arrowMat.alpha = 0.85;
+
     for (var a = 0; a < 3; a++) {
-      var arrowGeo = new THREE.ConeGeometry(0.8, 1.5, 3);
-      var arrow = new THREE.Mesh(arrowGeo, arrowMat);
+      var arrow = BABYLON.MeshBuilder.CreateCylinder('arrow_' + r + '_' + a,
+        { height: 1.5, diameterTop: 0, diameterBottom: 1.6, tessellation: 3 }, sc);
       arrow.position.set(
         node.x + Math.cos(angle) * (-2 + a * 2),
         node.y + 0.5 + a * 0.5,
@@ -644,26 +579,33 @@ function buildRamps(scene) {
       );
       arrow.rotation.x = -Math.PI / 4;
       arrow.rotation.y = -angle;
-      scene.add(arrow);
+      arrow.material = arrowMat;
       trackMeshes.push(arrow);
     }
   }
 }
 
-// Sky dome with rich gradient
+// Sky dome with rich gradient and aurora
 function buildSky() {
-  var skyGeometry = new THREE.SphereGeometry(800, 64, 48);
-  var skyVertexShader = [
+  // Register sky shaders
+  BABYLON.Effect.ShadersStore['skyVertexShader'] = [
+    'precision highp float;',
+    'attribute vec3 position;',
+    'attribute vec2 uv;',
+    'uniform mat4 world;',
+    'uniform mat4 worldViewProjection;',
     'varying vec3 vWorldPosition;',
     'varying vec2 vUv;',
     'void main() {',
-    '  vec4 worldPosition = modelMatrix * vec4(position, 1.0);',
-    '  vWorldPosition = worldPosition.xyz;',
+    '  vec4 wp = world * vec4(position, 1.0);',
+    '  vWorldPosition = wp.xyz;',
     '  vUv = uv;',
-    '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+    '  gl_Position = worldViewProjection * vec4(position, 1.0);',
     '}'
   ].join('\n');
-  var skyFragmentShader = [
+
+  BABYLON.Effect.ShadersStore['skyFragmentShader'] = [
+    'precision highp float;',
     'uniform vec3 zenithColor;',
     'uniform vec3 upperColor;',
     'uniform vec3 midColor;',
@@ -698,44 +640,50 @@ function buildSky() {
     '  gl_FragColor = vec4(color, 1.0);',
     '}'
   ].join('\n');
-  var skyMaterial = new THREE.ShaderMaterial({
-    uniforms: {
-      zenithColor: { value: new THREE.Color(0x0D1B33) },
-      upperColor: { value: new THREE.Color(0x1A2E4A) },
-      midColor: { value: new THREE.Color(0x6B5B95) },
-      horizonColor: { value: new THREE.Color(0xC8D5E8) },
-      belowColor: { value: new THREE.Color(0x8899CC) },
-      auroraColor1: { value: new THREE.Color(0x6688CC) },
-      auroraColor2: { value: new THREE.Color(0xAABBEE) }
-    },
-    vertexShader: skyVertexShader,
-    fragmentShader: skyFragmentShader,
-    side: THREE.BackSide
+
+  var skyMesh = BABYLON.MeshBuilder.CreateSphere('sky', {
+    diameter: 1600, segments: 48,
+    sideOrientation: BABYLON.Mesh.BACKSIDE
+  }, scene);
+
+  var skyMat = new BABYLON.ShaderMaterial('skyShader', scene, {
+    vertex: 'sky',
+    fragment: 'sky'
+  }, {
+    attributes: ['position', 'uv', 'normal'],
+    uniforms: ['world', 'worldViewProjection',
+      'zenithColor', 'upperColor', 'midColor', 'horizonColor', 'belowColor',
+      'auroraColor1', 'auroraColor2'],
+    needAlphaBlending: false
   });
-  scene.add(new THREE.Mesh(skyGeometry, skyMaterial));
+
+  skyMat.setColor3('zenithColor', c3(0x0D1B33));
+  skyMat.setColor3('upperColor', c3(0x1A2E4A));
+  skyMat.setColor3('midColor', c3(0x6B5B95));
+  skyMat.setColor3('horizonColor', c3(0xC8D5E8));
+  skyMat.setColor3('belowColor', c3(0x8899CC));
+  skyMat.setColor3('auroraColor1', c3(0x6688CC));
+  skyMat.setColor3('auroraColor2', c3(0xAABBEE));
+  skyMat.backFaceCulling = false;
+
+  skyMesh.material = skyMat;
+  skyMesh.infiniteDistance = true;
 }
 
-// Billboard clouds - soft, translucent, animated
+// Billboard clouds
 function buildClouds() {
   cloudMeshes = [];
 
-  // Create a cloud texture procedurally
-  var cloudCanvas = document.createElement('canvas');
-  cloudCanvas.width = 256;
-  cloudCanvas.height = 128;
-  var cCtx = cloudCanvas.getContext('2d');
+  // Cloud texture
+  var cloudTex = new BABYLON.DynamicTexture('cloudTex', { width: 256, height: 128 }, scene, true);
+  var cCtx = cloudTex.getContext();
 
-  // Soft fluffy cloud using radial gradients
   cCtx.clearRect(0, 0, 256, 128);
   var cloudPuffs = [
-    { x: 128, y: 70, r: 55 },
-    { x: 90, y: 75, r: 42 },
-    { x: 170, y: 72, r: 45 },
-    { x: 60, y: 82, r: 30 },
-    { x: 200, y: 80, r: 32 },
-    { x: 128, y: 55, r: 35 },
-    { x: 105, y: 60, r: 30 },
-    { x: 155, y: 58, r: 32 }
+    { x: 128, y: 70, r: 55 }, { x: 90, y: 75, r: 42 },
+    { x: 170, y: 72, r: 45 }, { x: 60, y: 82, r: 30 },
+    { x: 200, y: 80, r: 32 }, { x: 128, y: 55, r: 35 },
+    { x: 105, y: 60, r: 30 }, { x: 155, y: 58, r: 32 }
   ];
   for (var i = 0; i < cloudPuffs.length; i++) {
     var cp = cloudPuffs[i];
@@ -746,10 +694,8 @@ function buildClouds() {
     cCtx.fillStyle = grad;
     cCtx.fillRect(cp.x - cp.r, cp.y - cp.r, cp.r * 2, cp.r * 2);
   }
-
-  var cloudTexture = new THREE.CanvasTexture(cloudCanvas);
-
-  var cloudTints = [0xDDE8FF, 0xCCD5EE, 0xBBCCDD, 0xD5DDEE, 0xC8D5E8];
+  cloudTex.update();
+  cloudTex.hasAlpha = true;
 
   for (var i = 0; i < 35; i++) {
     var sizeRoll = Math.random();
@@ -758,89 +704,159 @@ function buildClouds() {
         (80 + Math.random() * 40);
     var cloudH = cloudScale * 0.4;
 
-    var geo = new THREE.PlaneGeometry(cloudScale, cloudH);
-    var tint = cloudTints[Math.floor(Math.random() * cloudTints.length)];
-    var mat = new THREE.MeshBasicMaterial({
-      map: cloudTexture,
-      color: tint,
-      transparent: true,
-      opacity: 0.55 + Math.random() * 0.25,
-      depthWrite: false,
-      side: THREE.DoubleSide
-    });
-    var cloud = new THREE.Mesh(geo, mat);
+    var cloud = BABYLON.MeshBuilder.CreatePlane('cloud_' + i,
+      { width: cloudScale, height: cloudH }, scene);
+
+    var cloudMat = new BABYLON.StandardMaterial('cloudMat_' + i, scene);
+    cloudMat.diffuseTexture = cloudTex;
+    cloudMat.opacityTexture = cloudTex;
+    cloudMat.diffuseColor = c3([0xDDE8FF, 0xCCD5EE, 0xBBCCDD, 0xD5DDEE, 0xC8D5E8][i % 5]);
+    cloudMat.alpha = 0.55 + Math.random() * 0.25;
+    cloudMat.backFaceCulling = false;
+    cloudMat.disableLighting = true;
+    cloudMat.emissiveColor = cloudMat.diffuseColor.scale(0.7);
+    cloud.material = cloudMat;
 
     cloud.position.x = (Math.random() - 0.5) * 1400;
     cloud.position.y = 80 + Math.random() * 150;
     cloud.position.z = (Math.random() - 0.5) * 1400;
-    cloud.userData.driftSpeed = 0.015 + Math.random() * 0.03;
-    cloud.userData.startX = cloud.position.x;
+    cloud.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
 
-    scene.add(cloud);
+    cloud.metadata = {
+      driftSpeed: 0.015 + Math.random() * 0.03,
+      startX: cloud.position.x
+    };
+
     cloudMeshes.push(cloud);
   }
 }
 
+// Stars
 function buildStars() {
-  var starGeometry = new THREE.BufferGeometry();
-  var starPositions = [];
-  var starColors = [];
   var starCount = 300;
+  var positions = [];
+  var colors = [];
+  var indices = [];
+
   for (var i = 0; i < starCount; i++) {
     var sAngle = Math.random() * Math.PI * 2;
     var sElev = 0.2 + Math.random() * 0.8;
     var sDist = 500 + Math.random() * 300;
-    starPositions.push(
+    positions.push(
       Math.cos(sAngle) * sDist,
       sElev * sDist,
       Math.sin(sAngle) * sDist
     );
+
     var starHues = [0xFFFFFF, 0xFFDD88, 0xFFAACC, 0x88DDFF, 0xDDBBFF];
-    var sColor = new THREE.Color(starHues[Math.floor(Math.random() * starHues.length)]);
-    starColors.push(sColor.r, sColor.g, sColor.b);
+    var sColor = c3(starHues[Math.floor(Math.random() * starHues.length)]);
+    colors.push(sColor.r, sColor.g, sColor.b, 0.8);
+    indices.push(i);
   }
-  starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
-  starGeometry.setAttribute('color', new THREE.Float32BufferAttribute(starColors, 3));
-  var starMaterial = new THREE.PointsMaterial({
-    size: 2.5,
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.8
-  });
-  scene.add(new THREE.Points(starGeometry, starMaterial));
+
+  var starMesh = createCustomMesh('stars', positions, indices, null, colors);
+  var starMat = new BABYLON.StandardMaterial('starMat', scene);
+  starMat.emissiveColor = new BABYLON.Color3(1, 1, 1);
+  starMat.disableLighting = true;
+  starMat.pointsCloud = true;
+  starMat.pointSize = 2.5;
+  starMesh.material = starMat;
 }
 
+// Sun decoration
 function buildSunDecor() {
-  var sunGeo = new THREE.SphereGeometry(40, 16, 16);
-  var sunMat = new THREE.MeshBasicMaterial({ color: 0xFFEECC });
-  var sun = new THREE.Mesh(sunGeo, sunMat);
+  var sunMat = new BABYLON.StandardMaterial('sunMat', scene);
+  sunMat.emissiveColor = c3(0xFFEECC);
+  sunMat.disableLighting = true;
+
+  var sun = BABYLON.MeshBuilder.CreateSphere('sun', { diameter: 80, segments: 16 }, scene);
   sun.position.set(300, 80, -400);
-  scene.add(sun);
+  sun.material = sunMat;
 
-  var flareGeo = new THREE.SphereGeometry(60, 16, 16);
-  var flareMat = new THREE.MeshBasicMaterial({ color: 0xFFEECC, transparent: true, opacity: 0.12 });
-  var flare = new THREE.Mesh(flareGeo, flareMat);
-  flare.position.copy(sun.position);
-  scene.add(flare);
+  var flareMat = new BABYLON.StandardMaterial('flareMat', scene);
+  flareMat.emissiveColor = c3(0xFFEECC);
+  flareMat.disableLighting = true;
+  flareMat.alpha = 0.12;
 
-  var flare2Geo = new THREE.SphereGeometry(90, 16, 16);
-  var flare2Mat = new THREE.MeshBasicMaterial({ color: 0xFFDDAA, transparent: true, opacity: 0.06 });
-  var flare2 = new THREE.Mesh(flare2Geo, flare2Mat);
-  flare2.position.copy(sun.position);
-  scene.add(flare2);
+  var flare = BABYLON.MeshBuilder.CreateSphere('flare', { diameter: 120, segments: 16 }, scene);
+  flare.position.set(300, 80, -400);
+  flare.material = flareMat;
+
+  var flare2Mat = new BABYLON.StandardMaterial('flare2Mat', scene);
+  flare2Mat.emissiveColor = c3(0xFFDDAA);
+  flare2Mat.disableLighting = true;
+  flare2Mat.alpha = 0.06;
+
+  var flare2 = BABYLON.MeshBuilder.CreateSphere('flare2', { diameter: 180, segments: 16 }, scene);
+  flare2.position.set(300, 80, -400);
+  flare2.material = flare2Mat;
 }
 
-// Rainbow removed for Crystal Kingdom theme
+// Distant mountains
+function buildDistantMountains() {
+  var mtMat = new BABYLON.StandardMaterial('mtMat', scene);
+  mtMat.diffuseColor = c3(0x223355);
+  mtMat.specularColor = BABYLON.Color3.Black();
 
-// Camera
-var cameraOffset = { x: 0, y: 6, z: 12 };
-var cameraShake = { x: 0, y: 0 };
-var currentFOV = 70;
+  for (var i = 0; i < 8; i++) {
+    var ang = (i / 8) * Math.PI * 2;
+    var dist = 900 + Math.random() * 200;
+    var scale = 200 + Math.random() * 200;
+    var h = 150 + Math.random() * 150;
 
+    var mt = BABYLON.MeshBuilder.CreateCylinder('mt_' + i,
+      { height: h, diameterTop: 0, diameterBottom: scale * 2, tessellation: 4 }, scene);
+    mt.position.set(Math.cos(ang) * dist, h / 2 - 20, Math.sin(ang) * dist);
+    mt.rotation.y = Math.random() * Math.PI;
+    mt.material = mtMat;
+  }
+}
+
+// Environment particles (floating motes/petals)
+function createEnvParticles() {
+  // Create particle texture
+  var particleTex = new BABYLON.DynamicTexture('envParticleTex', 32, scene, true);
+  var ptCtx = particleTex.getContext();
+  var ptGrad = ptCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
+  ptGrad.addColorStop(0, 'rgba(255,255,255,1)');
+  ptGrad.addColorStop(0.5, 'rgba(200,200,255,0.5)');
+  ptGrad.addColorStop(1, 'rgba(150,150,255,0)');
+  ptCtx.fillStyle = ptGrad;
+  ptCtx.fillRect(0, 0, 32, 32);
+  particleTex.update();
+  particleTex.hasAlpha = true;
+
+  var count = isMobile ? 300 : 500;
+  envParticleSystem = new BABYLON.ParticleSystem('envParticles', count, scene);
+  envParticleSystem.particleTexture = particleTex;
+  envParticleSystem.emitter = new BABYLON.Vector3(0, 40, 0);
+  envParticleSystem.createBoxEmitter(
+    new BABYLON.Vector3(-0.5, -1, -0.5),
+    new BABYLON.Vector3(0.5, 0, 0.5),
+    new BABYLON.Vector3(-300, 20, -300),
+    new BABYLON.Vector3(300, 60, 300)
+  );
+  envParticleSystem.minLifeTime = 8;
+  envParticleSystem.maxLifeTime = 15;
+  envParticleSystem.emitRate = count / 10;
+  envParticleSystem.gravity = new BABYLON.Vector3(0, -1, 0);
+  envParticleSystem.minSize = 0.5;
+  envParticleSystem.maxSize = 2.5;
+  envParticleSystem.color1 = new BABYLON.Color4(0.5, 0.5, 1.0, 0.65);
+  envParticleSystem.color2 = new BABYLON.Color4(0.9, 0.8, 0.3, 0.65);
+  envParticleSystem.colorDead = new BABYLON.Color4(0.5, 0.5, 1.0, 0);
+  envParticleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+  envParticleSystem.start();
+}
+
+function updateEnvParticles(dt) {
+  // Handled automatically by Babylon.js ParticleSystem
+}
+
+// Camera follow (Mario Kart style)
 function updateCamera(pl) {
   if (!pl || !camera) return;
 
-  // Close camera behind the kart (Mario Kart style)
   var camDist = 5.0, camH = 2.8;
 
   var idealX = pl.x - Math.cos(pl.ang) * camDist;
@@ -855,7 +871,6 @@ function updateCamera(pl) {
     cameraShake.y *= 0.85;
   }
 
-  // Tighter follow - no lag/pull-back during boosts
   var lerpFactor = 0.18 + Math.min(pl.spd * 0.1, 0.22);
   if (pl.boostTimer > 0) lerpFactor = Math.max(lerpFactor, 0.6);
   camera.position.x += (idealX - camera.position.x) * lerpFactor + cameraShake.x;
@@ -865,180 +880,108 @@ function updateCamera(pl) {
   var lookAhead = 2.0;
   var lookX = pl.x + Math.cos(pl.ang) * lookAhead;
   var lookZ = pl.z + Math.sin(pl.ang) * lookAhead;
-  camera.lookAt(new THREE.Vector3(lookX, pl.y + 1.4, lookZ));
+  camera.setTarget(new BABYLON.Vector3(lookX, pl.y + 1.4, lookZ));
 
-  // 影をプレイヤーに追従させる（近くシャープ、遠くはカット）
-  if (window._sunLight && window._sunLight.shadow) {
+  // Shadow light follows player
+  if (window._sunLight && window._sunLight.getShadowGenerator && window._sunLight.getShadowGenerator()) {
     var sl = window._sunLight;
-    sl.position.set(pl.x + 100, pl.y + 120, pl.z - 150);
-    sl.target.position.set(pl.x, pl.y, pl.z);
-    sl.target.updateMatrixWorld();
+    sl.position = new BABYLON.Vector3(pl.x + 100, pl.y + 120, pl.z - 150);
   }
 }
 
-// Animate clouds (call each frame)
+// Animate clouds
 function updateClouds(dt) {
   var timeScale = (dt || 0.016) * 60;
   for (var i = 0; i < cloudMeshes.length; i++) {
     var c = cloudMeshes[i];
-    c.position.x += c.userData.driftSpeed * timeScale;
-    // Wrap around
+    c.position.x += c.metadata.driftSpeed * timeScale;
     if (c.position.x > 700) c.position.x = -700;
-    // Billboard: face camera
-    if (camera) c.lookAt(camera.position);
   }
 }
 
-// Drift particles using sprites for soft smoke
-function createDriftParticles(scene) {
-  var particleCount = 25;
-
-  // Create smoke sprite texture
-  var smokeCanvas = document.createElement('canvas');
-  smokeCanvas.width = 64;
-  smokeCanvas.height = 64;
-  var sCtx = smokeCanvas.getContext('2d');
+// Drift smoke particle systems
+function createDriftParticles() {
+  // Smoke texture
+  var smokeTex = new BABYLON.DynamicTexture('smokeTex', 64, scene, true);
+  var sCtx = smokeTex.getContext();
   var grad = sCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
   grad.addColorStop(0, 'rgba(255,255,255,0.8)');
   grad.addColorStop(0.4, 'rgba(220,220,220,0.4)');
   grad.addColorStop(1, 'rgba(200,200,200,0)');
   sCtx.fillStyle = grad;
   sCtx.fillRect(0, 0, 64, 64);
-  var smokeTex = new THREE.CanvasTexture(smokeCanvas);
+  smokeTex.update();
+  smokeTex.hasAlpha = true;
 
-  // Left drift particles
-  var leftGroup = new THREE.Group();
-  for (var i = 0; i < particleCount; i++) {
-    var spriteMat = new THREE.SpriteMaterial({
-      map: smokeTex,
-      color: 0xFFFFFF,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      blending: THREE.NormalBlending
-    });
-    var sprite = new THREE.Sprite(spriteMat);
-    sprite.scale.set(0.6, 0.6, 1);
-    sprite.userData = { active: false, life: 0, velocity: { x: 0, y: 0, z: 0 } };
-    leftGroup.add(sprite);
-  }
-  scene.add(leftGroup);
-  particles.driftLeft = leftGroup;
+  // Left drift
+  var driftLeft = new BABYLON.ParticleSystem('driftL', 50, scene);
+  driftLeft.particleTexture = smokeTex;
+  driftLeft.emitter = new BABYLON.Vector3(0, -100, 0);
+  driftLeft.minLifeTime = 0.5;
+  driftLeft.maxLifeTime = 1.0;
+  driftLeft.minSize = 0.3;
+  driftLeft.maxSize = 1.8;
+  driftLeft.emitRate = 0;
+  driftLeft.color1 = new BABYLON.Color4(1, 1, 1, 0.6);
+  driftLeft.color2 = new BABYLON.Color4(0.8, 0.8, 0.8, 0.3);
+  driftLeft.colorDead = new BABYLON.Color4(0.7, 0.7, 0.7, 0);
+  driftLeft.direction1 = new BABYLON.Vector3(-2, 1, -2);
+  driftLeft.direction2 = new BABYLON.Vector3(2, 2, 2);
+  driftLeft.gravity = new BABYLON.Vector3(0, 0.5, 0);
+  driftLeft.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+  driftLeft.start();
+  particles.driftLeft = driftLeft;
 
-  // Right drift particles
-  var rightGroup = new THREE.Group();
-  for (var i = 0; i < particleCount; i++) {
-    var spriteMat2 = new THREE.SpriteMaterial({
-      map: smokeTex,
-      color: 0xFFFFFF,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      blending: THREE.NormalBlending
-    });
-    var sprite2 = new THREE.Sprite(spriteMat2);
-    sprite2.scale.set(0.6, 0.6, 1);
-    sprite2.userData = { active: false, life: 0, velocity: { x: 0, y: 0, z: 0 } };
-    rightGroup.add(sprite2);
-  }
-  scene.add(rightGroup);
-  particles.driftRight = rightGroup;
+  // Right drift
+  var driftRight = new BABYLON.ParticleSystem('driftR', 50, scene);
+  driftRight.particleTexture = smokeTex;
+  driftRight.emitter = new BABYLON.Vector3(0, -100, 0);
+  driftRight.minLifeTime = 0.5;
+  driftRight.maxLifeTime = 1.0;
+  driftRight.minSize = 0.3;
+  driftRight.maxSize = 1.8;
+  driftRight.emitRate = 0;
+  driftRight.color1 = new BABYLON.Color4(1, 1, 1, 0.6);
+  driftRight.color2 = new BABYLON.Color4(0.8, 0.8, 0.8, 0.3);
+  driftRight.colorDead = new BABYLON.Color4(0.7, 0.7, 0.7, 0);
+  driftRight.direction1 = new BABYLON.Vector3(-2, 1, -2);
+  driftRight.direction2 = new BABYLON.Vector3(2, 2, 2);
+  driftRight.gravity = new BABYLON.Vector3(0, 0.5, 0);
+  driftRight.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+  driftRight.start();
+  particles.driftRight = driftRight;
 }
 
 function updateDriftParticles(player, dt) {
   if (!player || !particles.driftLeft || !particles.driftRight) return;
 
-  // Use actual delta time
-  dt = dt || 0.016;
-
-  function updateGroup(group) {
-    for (var i = 0; i < group.children.length; i++) {
-      var p = group.children[i];
-      if (p.userData.active) {
-        p.position.x += p.userData.velocity.x * dt;
-        p.position.y += p.userData.velocity.y * dt;
-        p.position.z += p.userData.velocity.z * dt;
-
-        p.userData.life -= dt;
-        var lifeRatio = Math.max(0, p.userData.life / 1.0);
-        p.material.opacity = lifeRatio * 0.6;
-
-        // Fade to grey
-        var gv = 1.0 - (1 - lifeRatio) * 0.3;
-        p.material.color.setRGB(gv, gv, gv);
-
-        // Scale up
-        var scale = 0.6 + (1 - lifeRatio) * 1.2;
-        p.scale.set(scale, scale, 1);
-
-        if (p.userData.life <= 0) {
-          p.userData.active = false;
-          p.material.opacity = 0;
-        }
-      }
-    }
-  }
-
-  updateGroup(particles.driftLeft);
-  updateGroup(particles.driftRight);
-
-  // Emit new particles if drifting
   if (player.drifting) {
-    var emitChance = 0.35;
     var wheelOffset = 1.2;
     var rearOffset = 1.5;
 
-    var leftX = player.x + Math.cos(player.ang + Math.PI / 2) * wheelOffset + Math.cos(player.ang) * rearOffset;
-    var leftZ = player.z + Math.sin(player.ang + Math.PI / 2) * wheelOffset + Math.sin(player.ang) * rearOffset;
-    var rightX = player.x - Math.cos(player.ang + Math.PI / 2) * wheelOffset + Math.cos(player.ang) * rearOffset;
-    var rightZ = player.z - Math.sin(player.ang + Math.PI / 2) * wheelOffset + Math.sin(player.ang) * rearOffset;
+    particles.driftLeft.emitter = new BABYLON.Vector3(
+      player.x + Math.cos(player.ang + Math.PI / 2) * wheelOffset + Math.cos(player.ang) * rearOffset,
+      player.y + 0.2,
+      player.z + Math.sin(player.ang + Math.PI / 2) * wheelOffset + Math.sin(player.ang) * rearOffset
+    );
+    particles.driftLeft.emitRate = 20;
 
-    if (Math.random() < emitChance) {
-      for (var i = 0; i < particles.driftLeft.children.length; i++) {
-        var p = particles.driftLeft.children[i];
-        if (!p.userData.active) {
-          p.userData.active = true;
-          p.userData.life = 1.0;
-          p.position.set(leftX, player.y + 0.2, leftZ);
-          var outAng = player.ang + Math.PI / 2;
-          p.userData.velocity.x = Math.cos(outAng) * 2 + (Math.random() - 0.5);
-          p.userData.velocity.y = 1 + Math.random() * 0.5;
-          p.userData.velocity.z = Math.sin(outAng) * 2 + (Math.random() - 0.5);
-          p.scale.set(0.6, 0.6, 1);
-          break;
-        }
-      }
-    }
-
-    if (Math.random() < emitChance) {
-      for (var i = 0; i < particles.driftRight.children.length; i++) {
-        var p = particles.driftRight.children[i];
-        if (!p.userData.active) {
-          p.userData.active = true;
-          p.userData.life = 1.0;
-          p.position.set(rightX, player.y + 0.2, rightZ);
-          var outAng2 = player.ang - Math.PI / 2;
-          p.userData.velocity.x = Math.cos(outAng2) * 2 + (Math.random() - 0.5);
-          p.userData.velocity.y = 1 + Math.random() * 0.5;
-          p.userData.velocity.z = Math.sin(outAng2) * 2 + (Math.random() - 0.5);
-          p.scale.set(0.6, 0.6, 1);
-          break;
-        }
-      }
-    }
+    particles.driftRight.emitter = new BABYLON.Vector3(
+      player.x - Math.cos(player.ang + Math.PI / 2) * wheelOffset + Math.cos(player.ang) * rearOffset,
+      player.y + 0.2,
+      player.z - Math.sin(player.ang + Math.PI / 2) * wheelOffset + Math.sin(player.ang) * rearOffset
+    );
+    particles.driftRight.emitRate = 20;
+  } else {
+    particles.driftLeft.emitRate = 0;
+    particles.driftRight.emitRate = 0;
   }
 }
 
-function createBoostEffect(scene) {
-  // Boost flame sprites
-  var boostGroup = new THREE.Group();
-  var particleCount = 18;
-
-  // Fire sprite texture
-  var fireCanvas = document.createElement('canvas');
-  fireCanvas.width = 64;
-  fireCanvas.height = 64;
-  var fCtx = fireCanvas.getContext('2d');
+// Boost flame particle system
+function createBoostEffect() {
+  var fireTex = new BABYLON.DynamicTexture('fireTex', 64, scene, true);
+  var fCtx = fireTex.getContext();
   var fGrad = fCtx.createRadialGradient(32, 32, 0, 32, 32, 30);
   fGrad.addColorStop(0, 'rgba(255,220,100,1)');
   fGrad.addColorStop(0.3, 'rgba(255,130,0,0.8)');
@@ -1046,84 +989,44 @@ function createBoostEffect(scene) {
   fGrad.addColorStop(1, 'rgba(200,0,0,0)');
   fCtx.fillStyle = fGrad;
   fCtx.fillRect(0, 0, 64, 64);
-  var fireTex = new THREE.CanvasTexture(fireCanvas);
+  fireTex.update();
+  fireTex.hasAlpha = true;
 
-  for (var i = 0; i < particleCount; i++) {
-    var mat = new THREE.SpriteMaterial({
-      map: fireTex,
-      color: 0xFF6600,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
-    });
-    var sprite = new THREE.Sprite(mat);
-    sprite.scale.set(0.8, 1.0, 1);
-    sprite.userData = { active: false, life: 0, velocity: { x: 0, y: 0, z: 0 } };
-    boostGroup.add(sprite);
-  }
-
-  scene.add(boostGroup);
-  particles.boostFlame = boostGroup;
+  var boostPS = new BABYLON.ParticleSystem('boostFlame', 40, scene);
+  boostPS.particleTexture = fireTex;
+  boostPS.emitter = new BABYLON.Vector3(0, -100, 0);
+  boostPS.minLifeTime = 0.15;
+  boostPS.maxLifeTime = 0.4;
+  boostPS.minSize = 0.4;
+  boostPS.maxSize = 1.2;
+  boostPS.emitRate = 0;
+  boostPS.color1 = new BABYLON.Color4(1, 0.8, 0.2, 0.9);
+  boostPS.color2 = new BABYLON.Color4(1, 0.3, 0, 0.7);
+  boostPS.colorDead = new BABYLON.Color4(0.8, 0, 0, 0);
+  boostPS.direction1 = new BABYLON.Vector3(-1, -0.5, -1);
+  boostPS.direction2 = new BABYLON.Vector3(1, 0.5, 1);
+  boostPS.gravity = new BABYLON.Vector3(0, 0, 0);
+  boostPS.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+  boostPS.start();
+  particles.boostFlame = boostPS;
 }
 
 function updateBoostEffect(player, dt) {
   if (!player || !particles.boostFlame) return;
 
-  // Use actual delta time
-  dt = dt || 0.016;
-
-  for (var i = 0; i < particles.boostFlame.children.length; i++) {
-    var p = particles.boostFlame.children[i];
-    if (p.userData.active) {
-      p.position.x += p.userData.velocity.x * dt;
-      p.position.y += p.userData.velocity.y * dt;
-      p.position.z += p.userData.velocity.z * dt;
-
-      p.userData.life -= dt * 3;
-      var lifeRatio = Math.max(0, p.userData.life);
-      p.material.opacity = lifeRatio * 0.9;
-
-      // Color from yellow to red
-      p.material.color.setRGB(1.0, lifeRatio * 0.5, 0);
-
-      // Scale down as it ages
-      var scale = 0.8 + lifeRatio * 0.5;
-      p.scale.set(scale, scale * 1.3, 1);
-
-      if (p.userData.life <= 0) {
-        p.userData.active = false;
-        p.material.opacity = 0;
-      }
-    }
-  }
-
-  // Emit new boost particles
   if (player.boostTimer > 0) {
-    if (Math.random() < 0.5) {
-      for (var i = 0; i < particles.boostFlame.children.length; i++) {
-        var p = particles.boostFlame.children[i];
-        if (!p.userData.active) {
-          p.userData.active = true;
-          p.userData.life = 1.0;
-
-          var exhaustX = player.x + Math.sin(player.ang) * 2;
-          var exhaustZ = player.z + Math.cos(player.ang) * 2;
-          p.position.set(exhaustX, player.y + 0.5 + Math.random() * 0.3, exhaustZ);
-
-          p.userData.velocity.x = Math.sin(player.ang) * 4 + (Math.random() - 0.5);
-          p.userData.velocity.y = (Math.random() - 0.3) * 0.5;
-          p.userData.velocity.z = Math.cos(player.ang) * 4 + (Math.random() - 0.5);
-
-          p.scale.set(0.8, 1.0, 1);
-          break;
-        }
-      }
-    }
+    particles.boostFlame.emitter = new BABYLON.Vector3(
+      player.x + Math.sin(player.ang) * 2,
+      player.y + 0.5,
+      player.z + Math.cos(player.ang) * 2
+    );
+    particles.boostFlame.emitRate = 30;
+  } else {
+    particles.boostFlame.emitRate = 0;
   }
 }
 
-// Speed lines overlay
+// Speed lines overlay (2D canvas - no 3D dependency)
 var speedLinesCanvas = null;
 var speedLinesCtx = null;
 
@@ -1184,24 +1087,15 @@ function updateSpeedLines(pl) {
 
 // Render scene
 function renderScene() {
-  if (composer) {
-    composer.render();
-  } else {
-    renderer.render(scene, camera);
+  if (scene && engine) {
+    scene.render();
   }
 }
 
+// Handle resize
 function handleResize() {
-  if (!camera || !renderer) return;
-
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-
-  // Update composer size
-  if (composer) {
-    composer.setSize(window.innerWidth, window.innerHeight);
-  }
+  if (!engine) return;
+  engine.resize();
 
   if (speedLinesCanvas) {
     speedLinesCanvas.width = window.innerWidth;

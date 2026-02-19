@@ -1,102 +1,127 @@
 // HUD/UI module for drift-racers game
+// Babylon.js engine (migrated from Three.js r128)
 
-// === 3D Preview System ===
+// === 3D Preview System (separate Babylon engine on preview-canvas) ===
 var previewScene = null;
 var previewCamera = null;
-var previewRenderer = null;
+var previewEngine = null;
 var previewMesh = null;
-var previewAnimId = null;
 var previewAngle = 0;
-var previewParticles = null;
+var previewParticlePositions = null;
+var previewParticleMeshes = [];
 
 function initPreview3D() {
   var container = document.getElementById('preview-container');
-  if (!container || previewRenderer) return;
+  if (!container || previewEngine) return;
 
   var canvas = document.getElementById('preview-canvas');
   var w = container.clientWidth;
   var h = container.clientHeight;
   if (w === 0 || h === 0) { w = 360; h = 220; }
 
-  previewScene = new THREE.Scene();
-  // Gradient background via shader
-  var bgCanvas = document.createElement('canvas');
-  bgCanvas.width = 256; bgCanvas.height = 256;
-  var bgCtx = bgCanvas.getContext('2d');
-  var grad = bgCtx.createRadialGradient(128, 80, 20, 128, 128, 180);
-  grad.addColorStop(0, '#2A4A6A');
-  grad.addColorStop(0.5, '#1A2E4A');
-  grad.addColorStop(1, '#0D1A2D');
-  bgCtx.fillStyle = grad;
-  bgCtx.fillRect(0, 0, 256, 256);
-  // Add subtle stars
-  for (var si = 0; si < 40; si++) {
-    var sx = Math.random() * 256, sy = Math.random() * 140;
-    var brightness = Math.floor(80 + Math.random() * 100);
-    bgCtx.fillStyle = 'rgba(' + brightness + ',' + brightness + ',' + (brightness + 40) + ',0.6)';
-    bgCtx.fillRect(sx, sy, 1, 1);
-  }
-  var bgTex = new THREE.CanvasTexture(bgCanvas);
-  previewScene.background = bgTex;
+  // Create a separate Babylon engine for the preview
+  previewEngine = new BABYLON.Engine(canvas, true, {
+    preserveDrawingBuffer: false,
+    stencil: false,
+    disableWebGL2Support: false
+  });
+  previewEngine.setHardwareScalingLevel(1 / Math.min(window.devicePixelRatio || 1, 2));
 
-  previewScene.fog = new THREE.FogExp2(0x1A2E4A, 0.02);
+  // Babylon.js sets position:fixed on the canvas - CSS !important overrides this
+  previewEngine.resize();
 
-  previewCamera = new THREE.PerspectiveCamera(30, w / h, 0.1, 100);
-  previewCamera.position.set(4, 2.5, 4);
-  previewCamera.lookAt(0, 0.7, 0);
+  previewScene = new BABYLON.Scene(previewEngine);
+  // Background gradient
+  previewScene.clearColor = new BABYLON.Color4(0.051, 0.102, 0.176, 1.0);
+  previewScene.ambientColor = new BABYLON.Color3(0.1, 0.1, 0.15);
 
-  previewRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-  previewRenderer.setSize(w, h);
-  previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  previewRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-  previewRenderer.toneMappingExposure = 1.1;
+  // Compatibility shims for kart creation code that uses global `scene`
+  previewScene.add = function () {};
+  previewScene.remove = function (obj) { if (obj && obj.dispose) obj.dispose(); };
+
+  // Camera
+  previewCamera = new BABYLON.FreeCamera('previewCam', new BABYLON.Vector3(4, 2.5, 4), previewScene);
+  previewCamera.setTarget(new BABYLON.Vector3(0, 0.7, 0));
+  previewCamera.inputs.clear(); // No user control
 
   // Lighting (brighter for preview)
-  previewScene.add(new THREE.AmbientLight(0xFFFFFF, 0.8));
-  var sun = new THREE.DirectionalLight(0xFFEEDD, 1.6);
-  sun.position.set(5, 8, 3);
-  previewScene.add(sun);
-  var fill = new THREE.DirectionalLight(0xCCDDFF, 0.6);
-  fill.position.set(-3, 2, -1);
-  previewScene.add(fill);
-  var rim = new THREE.DirectionalLight(0xAABBFF, 0.5);
-  rim.position.set(-2, 1, -5);
-  previewScene.add(rim);
+  var hemi = new BABYLON.HemisphericLight('pHemi', new BABYLON.Vector3(0, 1, 0), previewScene);
+  hemi.intensity = 0.8;
+  hemi.diffuse = new BABYLON.Color3(1, 1, 1);
+  hemi.groundColor = new BABYLON.Color3(0.3, 0.35, 0.4);
+
+  var sun = new BABYLON.DirectionalLight('pSun', new BABYLON.Vector3(-5, -8, -3), previewScene);
+  sun.intensity = 1.2;
+  sun.diffuse = new BABYLON.Color3(1, 0.93, 0.87);
+
+  var fill = new BABYLON.DirectionalLight('pFill', new BABYLON.Vector3(3, -2, 1), previewScene);
+  fill.intensity = 0.5;
+  fill.diffuse = new BABYLON.Color3(0.8, 0.87, 1);
+
+  var rim = new BABYLON.DirectionalLight('pRim', new BABYLON.Vector3(2, -1, 5), previewScene);
+  rim.intensity = 0.4;
+  rim.diffuse = new BABYLON.Color3(0.67, 0.73, 1);
 
   // Ground - glossy circular platform
-  var groundGeo = new THREE.CylinderGeometry(3.5, 3.8, 0.15, 48);
-  var groundMat = new THREE.MeshPhongMaterial({
-    color: 0x2A4A5A, specular: 0x446688, shininess: 60,
-    emissive: 0x0A1520, emissiveIntensity: 0.3
-  });
-  var ground = new THREE.Mesh(groundGeo, groundMat);
+  var groundMat = new BABYLON.StandardMaterial('pGround', previewScene);
+  groundMat.diffuseColor = new BABYLON.Color3(0.165, 0.29, 0.353);
+  groundMat.emissiveColor = new BABYLON.Color3(0.04, 0.08, 0.12);
+  groundMat.specularColor = new BABYLON.Color3(0.27, 0.4, 0.53);
+  groundMat.specularPower = 60;
+  var ground = BABYLON.MeshBuilder.CreateCylinder('pGroundMesh', {
+    diameterTop: 7, diameterBottom: 7.6, height: 0.15, tessellation: 48
+  }, previewScene);
+  ground.material = groundMat;
   ground.position.y = -0.1;
-  previewScene.add(ground);
 
   // Glowing ring around platform
-  var ringGeo = new THREE.TorusGeometry(3.65, 0.04, 8, 64);
-  var ringMat = new THREE.MeshBasicMaterial({ color: 0x4488DD, transparent: true, opacity: 0.6 });
-  var ring = new THREE.Mesh(ringGeo, ringMat);
-  ring.rotation.x = -Math.PI / 2;
+  var ringMat = new BABYLON.StandardMaterial('pRing', previewScene);
+  ringMat.diffuseColor = new BABYLON.Color3(0.27, 0.53, 0.87);
+  ringMat.emissiveColor = new BABYLON.Color3(0.27, 0.53, 0.87).scale(0.6);
+  ringMat.alpha = 0.6;
+  ringMat.disableLighting = true;
+  var ring = BABYLON.MeshBuilder.CreateTorus('pRingMesh', {
+    diameter: 7.3, thickness: 0.04, tessellation: 64
+  }, previewScene);
+  ring.material = ringMat;
+  ring.rotation.x = Math.PI / 2;
   ring.position.y = -0.02;
-  previewScene.add(ring);
 
-  // Floating particles
-  var particleGeo = new THREE.BufferGeometry();
-  var pCount = 60;
-  var pPositions = new Float32Array(pCount * 3);
-  for (var pi = 0; pi < pCount; pi++) {
-    pPositions[pi * 3] = (Math.random() - 0.5) * 12;
-    pPositions[pi * 3 + 1] = Math.random() * 5;
-    pPositions[pi * 3 + 2] = (Math.random() - 0.5) * 12;
+  // Floating particles (simple small spheres)
+  previewParticlePositions = [];
+  previewParticleMeshes = [];
+  var pMat = new BABYLON.StandardMaterial('pPart', previewScene);
+  pMat.diffuseColor = new BABYLON.Color3(0.53, 0.73, 1);
+  pMat.emissiveColor = new BABYLON.Color3(0.53, 0.73, 1).scale(0.5);
+  pMat.alpha = 0.5;
+  pMat.disableLighting = true;
+  for (var pi = 0; pi < 30; pi++) {
+    var px = (Math.random() - 0.5) * 12;
+    var py = Math.random() * 5;
+    var pz = (Math.random() - 0.5) * 12;
+    previewParticlePositions.push({ x: px, y: py, z: pz });
+    var pm = BABYLON.MeshBuilder.CreateSphere('pp' + pi, { diameter: 0.06, segments: 4 }, previewScene);
+    pm.material = pMat;
+    pm.position.copyFromFloats(px, py, pz);
+    previewParticleMeshes.push(pm);
   }
-  particleGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
-  var particleMat = new THREE.PointsMaterial({ color: 0x88BBFF, size: 0.06, transparent: true, opacity: 0.5 });
-  previewParticles = new THREE.Points(particleGeo, particleMat);
-  previewScene.add(previewParticles);
 
   buildPreviewKart();
-  animatePreview3D();
+
+  // Render loop
+  previewEngine.runRenderLoop(function () {
+    if (previewMesh) {
+      previewAngle += 0.008;
+      previewMesh.rotation.y = previewAngle;
+    }
+    // Animate particles
+    for (var i = 0; i < previewParticlePositions.length; i++) {
+      previewParticlePositions[i].y += 0.003;
+      if (previewParticlePositions[i].y > 5) previewParticlePositions[i].y = 0;
+      previewParticleMeshes[i].position.y = previewParticlePositions[i].y;
+    }
+    previewScene.render();
+  });
 }
 
 function buildPreviewKart() {
@@ -104,60 +129,41 @@ function buildPreviewKart() {
 
   // Remove old mesh
   if (previewMesh) {
-    previewScene.remove(previewMesh);
+    previewMesh.dispose();
     previewMesh = null;
   }
+
+  // Temporarily swap global scene to previewScene so kart creation works
+  var savedScene = scene;
+  var savedShadowGen = shadowGen;
+  scene = previewScene;
+  shadowGen = null; // No shadows in preview
 
   // Build kart+character via temporary Racer
   var tempRacer = new Racer(selectedChar, true, selectedKart, EQUIPMENT[selectedEquip].type);
   tempRacer.createMesh(previewScene);
   previewMesh = tempRacer.mesh;
 
+  // Restore global scene
+  scene = savedScene;
+  shadowGen = savedShadowGen;
+
   // Override position/rotation for turntable display
-  previewMesh.position.set(0, 0, 0);
-  previewMesh.rotation.set(0, previewAngle, 0);
-}
-
-function animatePreview3D() {
-  previewAnimId = requestAnimationFrame(animatePreview3D);
-
-  if (previewMesh) {
-    previewAngle += 0.008;
-    previewMesh.rotation.y = previewAngle;
-  }
-
-  // Animate floating particles
-  if (previewParticles) {
-    var pos = previewParticles.geometry.attributes.position.array;
-    for (var i = 0; i < pos.length; i += 3) {
-      pos[i + 1] += 0.003;
-      if (pos[i + 1] > 5) pos[i + 1] = 0;
-    }
-    previewParticles.geometry.attributes.position.needsUpdate = true;
-    previewParticles.rotation.y += 0.002;
-  }
-
-  if (previewRenderer && previewScene && previewCamera) {
-    previewRenderer.render(previewScene, previewCamera);
-  }
+  previewMesh.position.copyFromFloats(0, 0, 0);
+  previewMesh.rotation.copyFromFloats(0, previewAngle, 0);
 }
 
 function cleanupPreview3D() {
-  if (previewAnimId) {
-    cancelAnimationFrame(previewAnimId);
-    previewAnimId = null;
+  if (previewEngine) {
+    previewEngine.stopRenderLoop();
+    previewEngine.dispose();
+    previewEngine = null;
   }
-  if (previewMesh) {
-    previewScene.remove(previewMesh);
-    previewMesh = null;
-  }
-  if (previewRenderer) {
-    previewRenderer.dispose();
-    previewRenderer = null;
-  }
+  previewMesh = null;
   previewScene = null;
   previewCamera = null;
-  previewParticles = null;
+  previewParticlePositions = null;
+  previewParticleMeshes = [];
 }
 
 function updateHUD() {
@@ -213,7 +219,7 @@ function updateHUD() {
   // Update ring display
   var ringEl = document.getElementById('ring-display');
   if (ringEl) {
-    ringEl.textContent = '💎 ' + (player.rings || 0);
+    ringEl.textContent = '\uD83D\uDC8E ' + (player.rings || 0);
   }
 
   // Update skill gauge
@@ -243,7 +249,6 @@ function updateSkillGauge() {
   if (!gauge || !player) return;
 
   if (!gauge.firstChild) {
-    // Build skill button
     var btn = document.createElement('div');
     btn.className = 'skill-btn';
     var icon = document.createElement('div');
@@ -320,7 +325,7 @@ function drawMinimap() {
   ctx.closePath();
   ctx.stroke();
 
-  // Energy rings on minimap
+  // Energy rings
   if (typeof energyRings !== 'undefined') {
     ctx.fillStyle = 'rgba(0,221,255,0.6)';
     for (var i = 0; i < energyRings.length; i++) {
@@ -382,7 +387,7 @@ function showResults() {
     rank.className = 'rank ' + rc[i];
     rank.textContent = (i + 1);
     li.appendChild(rank);
-    // Character portrait + name (face close-up like selection screen)
+    // Character portrait
     if (r.char.img) {
       var pWrap = document.createElement('div');
       pWrap.style.cssText = 'width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;border:1.5px solid rgba(255,255,255,.2)';
@@ -432,7 +437,7 @@ function updateSkillPreview() {
   el.appendChild(ds);
   var cd = document.createElement('div');
   cd.className = 'sk-cd';
-  cd.textContent = 'CT: ' + Math.round(c.skillCD / 60) + '秒 / 効果: ' + Math.round(c.skillDur / 60) + '秒';
+  cd.textContent = 'CT: ' + Math.round(c.skillCD / 60) + '\u79D2 / \u52B9\u679C: ' + Math.round(c.skillDur / 60) + '\u79D2';
   el.appendChild(cd);
 }
 
@@ -444,9 +449,9 @@ function updateCharStats() {
   panel.textContent = '';
 
   var stats = [
-    {label: '⚡ スピード', val: c.s, color: '#4488DD', bonus: k.sBonus * 100},
-    {label: '🚀 加速', val: c.a, color: '#44CC88', bonus: k.aBonus * 1000},
-    {label: '🎯 ハンドリング', val: c.h, color: '#BB66DD', bonus: k.hBonus * 1000}
+    {label: '\u26A1 \u30B9\u30D4\u30FC\u30C9', val: c.s, color: '#4488DD', bonus: k.sBonus * 100},
+    {label: '\uD83D\uDE80 \u52A0\u901F', val: c.a, color: '#44CC88', bonus: k.aBonus * 1000},
+    {label: '\uD83C\uDFAF \u30CF\u30F3\u30C9\u30EA\u30F3\u30B0', val: c.h, color: '#BB66DD', bonus: k.hBonus * 1000}
   ];
 
   for (var i = 0; i < stats.length; i++) {
@@ -469,7 +474,6 @@ function updateCharStats() {
     if (stats[i].val >= 9) fill.style.boxShadow = '0 0 8px ' + stats[i].color + '88';
     track.appendChild(fill);
 
-    // Kart bonus indicator
     if (stats[i].bonus > 0) {
       var bonus = document.createElement('div');
       bonus.className = 'stat-bar-fill';
@@ -518,7 +522,6 @@ function updateAccountBar() {
     btn.onclick = function() { showLoginModal(); };
     bar.appendChild(btn);
   }
-  // Update ghost mode availability
   buildModeSelect();
 }
 
@@ -539,7 +542,6 @@ function initLoginModal() {
   var closeBtn = document.getElementById('login-close');
   if (closeBtn) closeBtn.onclick = hideLoginModal;
 
-  // Tab switching
   var tabs = document.querySelectorAll('.login-tab');
   var isSignup = false;
   for (var i = 0; i < tabs.length; i++) {
@@ -550,18 +552,17 @@ function initLoginModal() {
       var nameInput = document.getElementById('login-name');
       var submitBtn = document.getElementById('login-submit');
       if (nameInput) nameInput.style.display = isSignup ? 'block' : 'none';
-      if (submitBtn) submitBtn.textContent = isSignup ? '新規登録' : 'ログイン';
+      if (submitBtn) submitBtn.textContent = isSignup ? '\u65B0\u898F\u767B\u9332' : '\u30ED\u30B0\u30A4\u30F3';
     };
   }
 
-  // Email submit
   var submitBtn = document.getElementById('login-submit');
   if (submitBtn) {
     submitBtn.onclick = function() {
       var email = document.getElementById('login-email').value;
       var pass = document.getElementById('login-pass').value;
       var errEl = document.getElementById('login-error');
-      if (!email || !pass) { if (errEl) errEl.textContent = 'メールとパスワードを入力'; return; }
+      if (!email || !pass) { if (errEl) errEl.textContent = '\u30E1\u30FC\u30EB\u3068\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B'; return; }
 
       var currentTab = document.querySelector('.login-tab.active');
       var doSignup = currentTab && currentTab.dataset.tab === 'signup';
@@ -571,19 +572,18 @@ function initLoginModal() {
         if (typeof signupEmail === 'function') {
           signupEmail(email, pass, name).then(function() {
             hideLoginModal();
-          }).catch(function(e) { if (errEl) errEl.textContent = e.message || 'エラー'; });
+          }).catch(function(e) { if (errEl) errEl.textContent = e.message || '\u30A8\u30E9\u30FC'; });
         }
       } else {
         if (typeof loginEmail === 'function') {
           loginEmail(email, pass).then(function() {
             hideLoginModal();
-          }).catch(function(e) { if (errEl) errEl.textContent = e.message || 'エラー'; });
+          }).catch(function(e) { if (errEl) errEl.textContent = e.message || '\u30A8\u30E9\u30FC'; });
         }
       }
     };
   }
 
-  // Google login
   var googleBtn = document.getElementById('login-google');
   if (googleBtn) {
     googleBtn.onclick = function() {
@@ -591,7 +591,7 @@ function initLoginModal() {
       if (typeof loginGoogle === 'function') {
         loginGoogle().then(function() {
           hideLoginModal();
-        }).catch(function(e) { if (errEl) errEl.textContent = e.message || 'エラー'; });
+        }).catch(function(e) { if (errEl) errEl.textContent = e.message || '\u30A8\u30E9\u30FC'; });
       }
     };
   }
@@ -603,25 +603,20 @@ function buildModeSelect() {
   if (!cont) return;
   cont.textContent = '';
 
-  // CPU mode
   var cpuCard = document.createElement('div');
   cpuCard.className = 'mode-card' + (gameMode === 'cpu' ? ' sel' : '');
-  cpuCard.innerHTML = '<span class="mode-icon">🏎️</span>CPU RACE';
-  cpuCard.onclick = function() {
-    gameMode = 'cpu';
-    buildModeSelect();
-  };
+  cpuCard.innerHTML = '<span class="mode-icon">\uD83C\uDFCE\uFE0F</span>CPU RACE';
+  cpuCard.onclick = function() { gameMode = 'cpu'; buildModeSelect(); };
   cont.appendChild(cpuCard);
 
-  // Ghost mode
   var ghostCard = document.createElement('div');
   ghostCard.className = 'mode-card' + (gameMode === 'ghost' ? ' sel' : '');
   if (!currentUser) ghostCard.classList.add('disabled');
-  ghostCard.innerHTML = '<span class="mode-icon">👻</span>GHOST';
+  ghostCard.innerHTML = '<span class="mode-icon">\uD83D\uDC7B</span>GHOST';
   if (!currentUser) {
     var lbl = document.createElement('span');
     lbl.className = 'mode-label';
-    lbl.textContent = 'ログイン必須';
+    lbl.textContent = '\u30ED\u30B0\u30A4\u30F3\u5FC5\u9808';
     ghostCard.appendChild(lbl);
   }
   ghostCard.onclick = function() {
@@ -631,7 +626,6 @@ function buildModeSelect() {
   };
   cont.appendChild(ghostCard);
 
-  // Difficulty select (only for CPU mode)
   if (gameMode === 'cpu') {
     var diffCont = document.createElement('div');
     diffCont.className = 'diff-select';
@@ -646,10 +640,7 @@ function buildModeSelect() {
         dc.className = 'diff-card' + (cpuDifficulty === d.key ? ' sel' : '');
         dc.dataset.diff = d.key;
         dc.textContent = d.label;
-        dc.onclick = function() {
-          cpuDifficulty = d.key;
-          buildModeSelect();
-        };
+        dc.onclick = function() { cpuDifficulty = d.key; buildModeSelect(); };
         diffCont.appendChild(dc);
       })(diffs[i]);
     }
@@ -679,7 +670,7 @@ function showRankingScreen() {
       if (results.length === 0) {
         var empty = document.createElement('div');
         empty.style.cssText = 'color:rgba(200,213,232,.5);text-align:center;padding:20px';
-        empty.textContent = 'まだランキングデータがありません';
+        empty.textContent = '\u307E\u3060\u30E9\u30F3\u30AD\u30F3\u30B0\u30C7\u30FC\u30BF\u304C\u3042\u308A\u307E\u305B\u3093';
         list.appendChild(empty);
         return;
       }
@@ -720,7 +711,6 @@ function hideRankingScreen() {
   if (screen) screen.classList.remove('show');
 }
 
-// === Results Ranking Addon ===
 function showResultRanking() {
   if (!currentUser || typeof getRankings !== 'function') return;
   getRankings(5, function(results) {
@@ -728,7 +718,6 @@ function showResultRanking() {
     var resultsEl = document.getElementById('results');
     if (!resultsEl) return;
 
-    // Check if ranking section already exists
     var existing = resultsEl.querySelector('.result-ranking');
     if (existing) existing.remove();
 
@@ -762,7 +751,6 @@ function showResultRanking() {
       div.appendChild(row);
     }
 
-    // Insert before retry button
     var retryBtn = document.getElementById('retry-btn');
     if (retryBtn) {
       resultsEl.insertBefore(div, retryBtn);
@@ -773,17 +761,14 @@ function showResultRanking() {
 }
 
 function buildCharSelect() {
-  // === モード選択構築 ===
   buildModeSelect();
 
-  // === キャラクター選択 ===
   var cont = document.getElementById('char-select');
   cont.textContent = '';
   CHARACTERS.forEach(function(c, i) {
     var card = document.createElement('div');
     card.className = 'char-card' + (i === selectedChar ? ' sel' : '');
 
-    // Character portrait image (fallback to emoji if no image)
     if (c.img) {
       var wrap = document.createElement('div');
       wrap.className = 'portrait-wrap';
@@ -830,7 +815,7 @@ function buildCharSelect() {
   updateCharStats();
   updateSkillPreview();
 
-  // === カート選択 ===
+  // Kart select
   var kartCont = document.getElementById('kart-select');
   if (kartCont) {
     kartCont.textContent = '';
@@ -854,11 +839,11 @@ function buildCharSelect() {
       card.appendChild(kd);
 
       var bonusTxt = '';
-      if (k.sBonus > 0) bonusTxt += 'スピード+' + Math.round(k.sBonus * 100) + '% ';
-      if (k.sBonus < 0) bonusTxt += 'スピード' + Math.round(k.sBonus * 100) + '% ';
-      if (k.aBonus > 0) bonusTxt += '加速UP ';
-      if (k.hBonus > 0) bonusTxt += 'ハンドリングUP ';
-      if (k.hBonus < 0) bonusTxt += 'ハンドリングDOWN ';
+      if (k.sBonus > 0) bonusTxt += '\u30B9\u30D4\u30FC\u30C9+' + Math.round(k.sBonus * 100) + '% ';
+      if (k.sBonus < 0) bonusTxt += '\u30B9\u30D4\u30FC\u30C9' + Math.round(k.sBonus * 100) + '% ';
+      if (k.aBonus > 0) bonusTxt += '\u52A0\u901FUP ';
+      if (k.hBonus > 0) bonusTxt += '\u30CF\u30F3\u30C9\u30EA\u30F3\u30B0UP ';
+      if (k.hBonus < 0) bonusTxt += '\u30CF\u30F3\u30C9\u30EA\u30F3\u30B0DOWN ';
       var kb = document.createElement('div');
       kb.className = 'kart-bonus';
       kb.textContent = bonusTxt;
@@ -878,7 +863,7 @@ function buildCharSelect() {
     });
   }
 
-  // === 装備選択 ===
+  // Equipment select
   var equipCont = document.getElementById('equip-select');
   if (equipCont) {
     equipCont.textContent = '';
@@ -913,16 +898,15 @@ function buildCharSelect() {
     });
   }
 
-  // === Character scroll arrows ===
+  // Character scroll arrows
   var charScrollPage = 0;
-  var charsPerPage = 8; // 4 columns x 2 rows
+  var charsPerPage = 8;
   var totalPages = Math.ceil(CHARACTERS.length / charsPerPage);
   var leftBtn = document.getElementById('char-arrow-left');
   var rightBtn = document.getElementById('char-arrow-right');
   function updateCharScroll() {
     var grid = document.getElementById('char-select');
     if (grid) {
-      // Calculate scroll offset based on viewport width
       var viewport = document.querySelector('.char-grid-viewport');
       if (viewport) {
         var scrollAmount = viewport.offsetWidth * charScrollPage;

@@ -1,5 +1,5 @@
 // main.js - Main entry point and game loop for Drift Racers
-// Mario Kart-style 3D racing game using Three.js r128
+// Mario Kart-style 3D racing game using Babylon.js
 
 // Start a new race
 function startRace() {
@@ -19,8 +19,42 @@ function startRace() {
   initScene();
   initSpeedLines();
 
-  // Build the track mesh and decorations
+  // Model caches were loaded into the old preview scene which is now disposed.
+  // Clear caches and reload into the new race scene.
+  kartModelCache = {};
+  glbModelCache = {};
+  envModelCache = {};
+  kartModelsLoaded = false;
+  glbModelsLoaded = false;
+  envModelsLoaded = false;
+
+  // Build track mesh first (no model dependency)
   buildTrackMesh(scene);
+
+  // Show loading indicator
+  var cdEl = document.getElementById('countdown');
+  var cdNum = document.getElementById('cd-num');
+  cdEl.style.display = 'flex';
+  cdNum.textContent = 'LOADING...';
+  cdNum.style.color = '#88bbff';
+  cdNum.style.animation = 'none';
+  cdNum.style.fontSize = '48px';
+
+  // Reload all models into the new scene, then continue
+  var charDone = false, kartDone = false, envDone = false;
+  function onAllModelsReady() {
+    if (!charDone || !kartDone || !envDone) return;
+    cdNum.style.fontSize = '';
+    continueRaceSetup();
+  }
+  preloadModels(function () { charDone = true; onAllModelsReady(); });
+  preloadKartModels(function () { kartDone = true; onAllModelsReady(); });
+  preloadEnvModels(function () { envDone = true; onAllModelsReady(); });
+}
+
+// Continue race setup after models are loaded into the race scene
+function continueRaceSetup() {
+  // Build decorations (needs env models)
   buildTrackDecorations(scene);
 
   // Start ghost recording
@@ -51,7 +85,7 @@ function startRace() {
     // Ghost mode: load top ghosts instead of AI racers
     ghostRacers = [];
     if (typeof getTopGhosts === 'function') {
-      getTopGhosts(5, function(ghosts) {
+      getTopGhosts(5, function (ghosts) {
         for (var gi = 0; gi < ghosts.length; gi++) {
           var gr = new GhostRacer(ghosts[gi], scene);
           ghostRacers.push(gr);
@@ -185,14 +219,21 @@ function onRaceFinished() {
 
 var animFrameId = null;
 
+// Delta time tracking (replaces THREE.Clock)
+var lastFrameTime = 0;
+
 // Main game loop
-var clock = new THREE.Clock(); // Initialize clock
 function animate() {
   animFrameId = requestAnimationFrame(animate);
 
-  var dt = clock.getDelta(); // Get seconds passed since last frame
+  // Calculate delta time in seconds
+  var now = performance.now();
+  var dt = (now - lastFrameTime) / 1000;
+  lastFrameTime = now;
   // Cap dt to prevent physics explosions on lag spikes (e.g. max 0.1s aka 10FPS drop)
   if (dt > 0.1) dt = 0.1;
+  // Skip first frame where dt would be huge
+  if (dt <= 0) return;
 
   fr++;
 
@@ -323,6 +364,9 @@ function animate() {
   // Update water surface animation
   updateWaterSurfaces(dt);
 
+  // Update environmental effects
+  updateEnvParticles(dt);
+
   // Update visual effects
   updateDriftParticles(player, dt);
   updateBoostEffect(player, dt);
@@ -354,13 +398,13 @@ if (typeof initFirebase === 'function') initFirebase();
 // Ranking button handler
 var rankingBtn = document.getElementById('ranking-btn');
 if (rankingBtn) {
-  rankingBtn.onclick = function() {
+  rankingBtn.onclick = function () {
     if (typeof showRankingScreen === 'function') showRankingScreen();
   };
 }
 var rankingBack = document.getElementById('ranking-back');
 if (rankingBack) {
-  rankingBack.onclick = function() {
+  rankingBack.onclick = function () {
     if (typeof hideRankingScreen === 'function') hideRankingScreen();
   };
 }
@@ -383,19 +427,19 @@ function requestMobileFullscreen() {
   var el = document.documentElement;
   try {
     if (el.requestFullscreen) {
-      el.requestFullscreen().catch(function () {});
+      el.requestFullscreen().catch(function () { });
     } else if (el.webkitRequestFullscreen) {
       el.webkitRequestFullscreen();
     } else if (el.msRequestFullscreen) {
       el.msRequestFullscreen();
     }
-  } catch (e) {}
+  } catch (e) { }
   // Lock to landscape
   try {
     if (screen.orientation && screen.orientation.lock) {
-      screen.orientation.lock('landscape').catch(function () {});
+      screen.orientation.lock('landscape').catch(function () { });
     }
-  } catch (e) {}
+  } catch (e) { }
 }
 
 // Start button handler
@@ -403,42 +447,10 @@ document.getElementById('start-btn').onclick = function () {
   AUDIO.init();
   // Auto-fullscreen on mobile (needs user gesture)
   if (isMobile) requestMobileFullscreen();
-  var btn = document.getElementById('start-btn');
-  var needCharModels = !glbModelsLoaded;
-  var needEnvModels = !envModelsLoaded;
-  var needKartModels = !kartModelsLoaded;
-
-  if (needCharModels || needEnvModels || needKartModels) {
-    btn.textContent = 'LOADING MODELS...';
-    btn.disabled = true;
-    var charDone = !needCharModels;
-    var envDone = !needEnvModels;
-    var kartDone = !needKartModels;
-
-    function checkAllDone() {
-      if (charDone && envDone && kartDone) {
-        btn.textContent = 'START RACE';
-        btn.disabled = false;
-        // Reset clock before starting to avoid huge initial dt
-        clock = new THREE.Clock();
-        startRace();
-      }
-    }
-
-    if (needCharModels) {
-      preloadModels(function () { charDone = true; checkAllDone(); });
-    }
-    if (needEnvModels) {
-      preloadEnvModels(function () { envDone = true; checkAllDone(); });
-    }
-    if (needKartModels) {
-      preloadKartModels(function () { kartDone = true; checkAllDone(); });
-    }
-  } else {
-    // Reset clock before starting to avoid huge initial dt
-    clock = new THREE.Clock();
-    startRace();
-  }
+  // Reset frame time before starting to avoid huge initial dt
+  lastFrameTime = performance.now();
+  // startRace() handles its own model loading into the race scene
+  startRace();
 };
 
 // Retry button handler
@@ -454,10 +466,13 @@ document.getElementById('retry-btn').onclick = function () {
     SND.engine(0);
   }
 
-  // Clean up renderer
-  if (renderer) {
-    renderer.dispose();
-    renderer.domElement.remove();
+  // Dispose Babylon.js scene and engine
+  if (scene) {
+    scene.dispose();
+  }
+  if (engine) {
+    engine.dispose();
+    engine = null;
   }
 
   // Clean up speed lines
@@ -502,7 +517,15 @@ document.getElementById('retry-btn').onclick = function () {
   // Reset particles
   particles = { driftLeft: null, driftRight: null, boostFlame: null, dustClouds: [] };
 
-  // Reset scene
+  // Clear model caches (they point to the now-disposed race scene)
+  kartModelCache = {};
+  glbModelCache = {};
+  envModelCache = {};
+  kartModelsLoaded = false;
+  glbModelsLoaded = false;
+  envModelsLoaded = false;
+
+  // Reset scene and camera
   scene = null;
   camera = null;
 
@@ -530,4 +553,8 @@ document.getElementById('retry-btn').onclick = function () {
   // Rebuild character selection and 3D preview
   buildCharSelect();
   initPreview3D();
+
+  // Re-preload models for preview (caches were cleared above)
+  preloadModels(function () { buildPreviewKart(); });
+  preloadKartModels(function () { buildPreviewKart(); });
 };

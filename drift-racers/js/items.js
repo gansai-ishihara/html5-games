@@ -1,5 +1,5 @@
 // items.js - Item boxes, traps, and projectiles for drift-racers
-// Mario Kart-style 3D racing game using Three.js r128
+// Babylon.js engine (migrated from Three.js r128)
 // Dependencies: ITEMS, TRACK_POINTS, TRACK_WIDTH, getTrackPoint, getTrackAngle
 
 var itemBoxes = [];
@@ -11,450 +11,407 @@ var projMeshes = [];
 var energyRings = [];
 var energyRingMeshes = [];
 
+var _itn = 0; // unique name counter for items
+
+// Helper: StandardMaterial shorthand
+function imat(hex, emHex, emInt, alpha) {
+  var mat = new BABYLON.StandardMaterial('imat' + (++_itn), scene);
+  mat.diffuseColor = c3(hex);
+  if (emHex !== undefined) mat.emissiveColor = c3(emHex).scale(emInt || 1);
+  if (alpha !== undefined) { mat.alpha = alpha; }
+  mat.backFaceCulling = true;
+  return mat;
+}
+
+function imatDS(hex, emHex, emInt, alpha) {
+  var mat = imat(hex, emHex, emInt, alpha);
+  mat.backFaceCulling = false;
+  return mat;
+}
+
+function imatUnlit(hex, alpha) {
+  var mat = new BABYLON.StandardMaterial('iunlit' + (++_itn), scene);
+  mat.diffuseColor = c3(hex);
+  mat.emissiveColor = c3(hex);
+  mat.disableLighting = true;
+  if (alpha !== undefined) mat.alpha = alpha;
+  mat.backFaceCulling = true;
+  return mat;
+}
+
 // Helper function to create question mark texture
 function createQuestionMarkTexture() {
-    var canvas = document.createElement('canvas');
-    canvas.width = 128;
-    canvas.height = 128;
-    var ctx = canvas.getContext('2d');
-
-    ctx.fillStyle = 'transparent';
-    ctx.fillRect(0, 0, 128, 128);
-
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 100px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('?', 64, 64);
-
-    var texture = new THREE.CanvasTexture(canvas);
-    return texture;
+  var cvs = document.createElement('canvas');
+  cvs.width = 128;
+  cvs.height = 128;
+  var ctx = cvs.getContext('2d');
+  ctx.clearRect(0, 0, 128, 128);
+  ctx.fillStyle = 'white';
+  ctx.font = 'bold 100px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('?', 64, 64);
+  var url = cvs.toDataURL();
+  var tex = new BABYLON.Texture(url, scene, false, true, BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
+  tex.hasAlpha = true;
+  return tex;
 }
 
 // Generate item boxes along the track
-function generateItemBoxes(scene) {
-    var questionTexture = createQuestionMarkTexture();
+function generateItemBoxes(sc) {
+  var questionTexture = createQuestionMarkTexture();
 
-    for (var i = 10; i < TRACK_POINTS - 5; i += 10) {
-        var trackPoint = getTrackPoint(i);
-        var trackAngle = getTrackAngle(i);
+  for (var i = 10; i < TRACK_POINTS - 5; i += 10) {
+    var trackPoint = getTrackPoint(i);
+    var trackAngle = getTrackAngle(i);
+    var perpAngle = trackAngle + Math.PI / 2;
 
-        // Perpendicular angle (90 degrees to track direction)
-        var perpAngle = trackAngle + Math.PI / 2;
+    var offsets = [-1, 0, 1];
+    for (var j = 0; j < offsets.length; j++) {
+      var lateralOffset = offsets[j] * 8;
 
-        // Place 3 boxes: left, center, right
-        var offsets = [-1, 0, 1];
-        for (var j = 0; j < offsets.length; j++) {
-            var lateralOffset = offsets[j] * 8;
+      var box = {
+        x: trackPoint.x + Math.cos(perpAngle) * lateralOffset,
+        y: trackPoint.y + 2.5,
+        z: trackPoint.z + Math.sin(perpAngle) * lateralOffset,
+        active: true,
+        respawn: 0,
+        baseY: trackPoint.y + 2.5
+      };
+      itemBoxes.push(box);
 
-            var box = {
-                x: trackPoint.x + Math.cos(perpAngle) * lateralOffset,
-                y: trackPoint.y + 2.5,
-                z: trackPoint.z + Math.sin(perpAngle) * lateralOffset,
-                active: true,
-                respawn: 0,
-                baseY: trackPoint.y + 2.5
-            };
+      // Create visual mesh
+      var group = new BABYLON.TransformNode('itemBox' + (++_itn), scene);
 
-            itemBoxes.push(box);
+      // Main rainbow-tinted cube
+      var rainbowHue = (i * 0.12 + j * 0.33) % 1.0;
+      var cubeCol = new BABYLON.Color3();
+      hslToCol(rainbowHue, 0.9, 0.55, cubeCol);
+      var cubeMat = new BABYLON.StandardMaterial('cube' + _itn, scene);
+      cubeMat.diffuseColor = cubeCol;
+      cubeMat.emissiveColor = cubeCol.scale(0.4);
+      cubeMat.alpha = 0.8;
+      var cubeMesh = BABYLON.MeshBuilder.CreateBox('ib' + (++_itn), { size: 2.2 }, scene);
+      cubeMesh.material = cubeMat;
+      cubeMesh.parent = group;
+      if (shadowGen) shadowGen.addShadowCaster(cubeMesh);
 
-            // Create visual mesh - Mario Kart style item box
-            var group = new THREE.Group();
+      // Question marks on each face
+      var qMat = imatUnlit(0xffffff, 1);
+      qMat.diffuseTexture = questionTexture;
+      qMat.opacityTexture = questionTexture;
+      qMat.backFaceCulling = false;
+      qMat.useAlphaFromDiffuseTexture = true;
 
-            // Main rainbow-tinted cube - more Mario Kart feel
-            var cubeGeometry = new THREE.BoxGeometry(2.2, 2.2, 2.2);
-            var rainbowHue = (i * 0.12 + j * 0.33) % 1.0;
-            var cubeColor = new THREE.Color().setHSL(rainbowHue, 0.9, 0.55);
-            var cubeMaterial = new THREE.MeshLambertMaterial({
-                color: cubeColor,
-                emissive: cubeColor,
-                emissiveIntensity: 0.4,
-                transparent: true,
-                opacity: 0.8
-            });
-            var cubeMesh = new THREE.Mesh(cubeGeometry, cubeMaterial);
-            cubeMesh.castShadow = true;
-            group.add(cubeMesh);
+      // 6 faces
+      var faceData = [
+        { x: 0, y: 0, z: 1.11, ry: 0 },           // front
+        { x: 0, y: 0, z: -1.11, ry: Math.PI },      // back
+        { x: 1.11, y: 0, z: 0, ry: Math.PI / 2 },   // right
+        { x: -1.11, y: 0, z: 0, ry: -Math.PI / 2 }, // left
+        { x: 0, y: 1.11, z: 0, rx: -Math.PI / 2 },  // top
+        { x: 0, y: -1.11, z: 0, rx: Math.PI / 2 }   // bottom
+      ];
+      for (var f = 0; f < faceData.length; f++) {
+        var fd = faceData[f];
+        var qm = BABYLON.MeshBuilder.CreatePlane('qm' + (++_itn), { width: 1.8, height: 1.8 }, scene);
+        qm.material = qMat;
+        qm.position.copyFromFloats(fd.x, fd.y, fd.z);
+        if (fd.ry) qm.rotation.y = fd.ry;
+        if (fd.rx) qm.rotation.x = fd.rx;
+        qm.parent = group;
+      }
 
-            // Question marks on each face
-            var qMarkGeometry = new THREE.PlaneGeometry(1.8, 1.8);
-            var qMarkMaterial = new THREE.MeshBasicMaterial({
-                map: questionTexture,
-                transparent: true,
-                side: THREE.DoubleSide
-            });
-
-            // Front face
-            var qMarkFront = new THREE.Mesh(qMarkGeometry, qMarkMaterial);
-            qMarkFront.position.z = 1.11;
-            group.add(qMarkFront);
-
-            // Back face
-            var qMarkBack = new THREE.Mesh(qMarkGeometry, qMarkMaterial);
-            qMarkBack.position.z = -1.11;
-            qMarkBack.rotation.y = Math.PI;
-            group.add(qMarkBack);
-
-            // Right face
-            var qMarkRight = new THREE.Mesh(qMarkGeometry, qMarkMaterial);
-            qMarkRight.position.x = 1.11;
-            qMarkRight.rotation.y = Math.PI / 2;
-            group.add(qMarkRight);
-
-            // Left face
-            var qMarkLeft = new THREE.Mesh(qMarkGeometry, qMarkMaterial);
-            qMarkLeft.position.x = -1.11;
-            qMarkLeft.rotation.y = -Math.PI / 2;
-            group.add(qMarkLeft);
-
-            // Top face
-            var qMarkTop = new THREE.Mesh(qMarkGeometry, qMarkMaterial);
-            qMarkTop.position.y = 1.11;
-            qMarkTop.rotation.x = -Math.PI / 2;
-            group.add(qMarkTop);
-
-            // Bottom face
-            var qMarkBottom = new THREE.Mesh(qMarkGeometry, qMarkMaterial);
-            qMarkBottom.position.y = -1.11;
-            qMarkBottom.rotation.x = Math.PI / 2;
-            group.add(qMarkBottom);
-
-            group.position.set(box.x, box.y, box.z);
-            scene.add(group);
-            itemBoxMeshes.push(group);
-        }
+      group.position.copyFromFloats(box.x, box.y, box.z);
+      itemBoxMeshes.push(group);
     }
+  }
 }
 
 // Add a trap/bomb on the track
-function addTrap(scene, x, y, z, owner) {
-    var trap = {
-        x: x,
-        y: y,
-        z: z,
-        life: 600,
-        owner: owner || null
-    };
+function addTrap(sc, x, y, z, owner) {
+  var trap = {
+    x: x,
+    y: y,
+    z: z,
+    life: 600,
+    owner: owner || null
+  };
+  traps.push(trap);
 
-    traps.push(trap);
+  var group = new BABYLON.TransformNode('trap' + (++_itn), scene);
 
-    // Create spiky bomb visual
-    var group = new THREE.Group();
+  // Main bomb sphere
+  var sphereMat = imat(0x222222);
+  var sphere = BABYLON.MeshBuilder.CreateSphere('ts' + (++_itn), { diameter: 2.4, segments: 12 }, scene);
+  sphere.material = sphereMat;
+  sphere.parent = group;
+  if (shadowGen) shadowGen.addShadowCaster(sphere);
 
-    // Main bomb sphere
-    var sphereGeometry = new THREE.SphereGeometry(1.2, 12, 8);
-    var sphereMaterial = new THREE.MeshLambertMaterial({
-        color: 0x222222
-    });
-    var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-    sphere.castShadow = true;
-    group.add(sphere);
+  // Spikes
+  var spikeMat = imat(0x111111);
+  var spikePositions = [
+    { x: 1.2, y: 0, z: 0, rx: 0, rz: Math.PI / 2 },
+    { x: -1.2, y: 0, z: 0, rx: 0, rz: -Math.PI / 2 },
+    { x: 0, y: 0, z: 1.2, rx: 0, rz: 0 },
+    { x: 0, y: 0, z: -1.2, rx: 0, rz: Math.PI },
+    { x: 0, y: 1.2, z: 0, rx: 0, rz: 0 },
+    { x: 0, y: -1.2, z: 0, rx: Math.PI, rz: 0 },
+    { x: 0.85, y: 0.85, z: 0, rx: Math.PI / 4, rz: Math.PI / 2 },
+    { x: -0.85, y: 0.85, z: 0, rx: Math.PI / 4, rz: -Math.PI / 2 }
+  ];
+  for (var i = 0; i < spikePositions.length; i++) {
+    var sp = spikePositions[i];
+    var spike = BABYLON.MeshBuilder.CreateCylinder('spike' + (++_itn), {
+      diameterTop: 0, diameterBottom: 0.6, height: 0.8, tessellation: 6
+    }, scene);
+    spike.material = spikeMat;
+    spike.position.copyFromFloats(sp.x, sp.y, sp.z);
+    spike.rotation.x = sp.rx;
+    spike.rotation.z = sp.rz;
+    spike.parent = group;
+    if (shadowGen) shadowGen.addShadowCaster(spike);
+  }
 
-    // Add spikes around the sphere
-    var spikeGeometry = new THREE.ConeGeometry(0.3, 0.8, 6);
-    var spikeMaterial = new THREE.MeshLambertMaterial({
-        color: 0x111111
-    });
+  // Red blinking light on top
+  var lightMat = imat(0xff0000, 0xff0000, 1.0);
+  var lightMesh = BABYLON.MeshBuilder.CreateSphere('tl' + (++_itn), { diameter: 0.4, segments: 8 }, scene);
+  lightMesh.material = lightMat;
+  lightMesh.position.y = 1.5;
+  lightMesh.parent = group;
+  group.metadata = { light: lightMesh };
 
-    var spikePositions = [
-        { x: 1.2, y: 0, z: 0, rx: 0, rz: Math.PI / 2 },
-        { x: -1.2, y: 0, z: 0, rx: 0, rz: -Math.PI / 2 },
-        { x: 0, y: 0, z: 1.2, rx: 0, rz: 0 },
-        { x: 0, y: 0, z: -1.2, rx: 0, rz: Math.PI },
-        { x: 0, y: 1.2, z: 0, rx: 0, rz: 0 },
-        { x: 0, y: -1.2, z: 0, rx: Math.PI, rz: 0 },
-        { x: 0.85, y: 0.85, z: 0, rx: Math.PI / 4, rz: Math.PI / 2 },
-        { x: -0.85, y: 0.85, z: 0, rx: Math.PI / 4, rz: -Math.PI / 2 }
-    ];
-
-    for (var i = 0; i < spikePositions.length; i++) {
-        var spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
-        spike.position.set(spikePositions[i].x, spikePositions[i].y, spikePositions[i].z);
-        spike.rotation.x = spikePositions[i].rx;
-        spike.rotation.z = spikePositions[i].rz;
-        spike.castShadow = true;
-        group.add(spike);
-    }
-
-    // Red blinking light on top
-    var lightGeometry = new THREE.SphereGeometry(0.2, 8, 6);
-    var lightMaterial = new THREE.MeshLambertMaterial({
-        color: 0xff0000,
-        emissive: 0xff0000,
-        emissiveIntensity: 1.0
-    });
-    var light = new THREE.Mesh(lightGeometry, lightMaterial);
-    light.position.y = 1.5;
-    group.add(light);
-    group.userData.light = light;
-
-    group.position.set(x, y, z);
-    scene.add(group);
-    trapMeshes.push(group);
+  group.position.copyFromFloats(x, y, z);
+  trapMeshes.push(group);
 }
 
 // Fire a homing projectile
-function addProjectile(scene, x, y, z, ang, owner) {
-    var projectile = {
-        x: x,
-        y: y + 1.5,
-        z: z,
-        ang: ang,
-        spd: 4,
-        life: 180,
-        owner: owner
-    };
+function addProjectile(sc, x, y, z, ang, owner) {
+  var projectile = {
+    x: x,
+    y: y + 1.5,
+    z: z,
+    ang: ang,
+    spd: 4,
+    life: 180,
+    owner: owner
+  };
+  projectiles.push(projectile);
 
-    projectiles.push(projectile);
+  var group = new BABYLON.TransformNode('proj' + (++_itn), scene);
 
-    // Create projectile visual
-    var group = new THREE.Group();
+  // Main body - red sphere
+  var bodyMat = imat(0xff0000, 0x880000, 0.8);
+  var body = BABYLON.MeshBuilder.CreateSphere('pb' + (++_itn), { diameter: 1.2, segments: 8 }, scene);
+  body.material = bodyMat;
+  body.parent = group;
+  if (shadowGen) shadowGen.addShadowCaster(body);
 
-    // Main body - red sphere
-    var bodyGeometry = new THREE.SphereGeometry(0.6, 8, 6);
-    var bodyMaterial = new THREE.MeshLambertMaterial({
-        color: 0xff0000,
-        emissive: 0x880000,
-        emissiveIntensity: 0.8
-    });
-    var body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    body.castShadow = true;
-    group.add(body);
+  // Fire trail
+  var trailMat = imat(0xff6600, 0xff6600, 1.0, 0.7);
+  var trail = BABYLON.MeshBuilder.CreateBox('pt' + (++_itn), { width: 0.4, height: 0.4, depth: 1.2 }, scene);
+  trail.material = trailMat;
+  trail.position.z = -0.8;
+  trail.parent = group;
 
-    // Fire trail - elongated box behind
-    var trailGeometry = new THREE.BoxGeometry(0.4, 0.4, 1.2);
-    var trailMaterial = new THREE.MeshLambertMaterial({
-        color: 0xff6600,
-        emissive: 0xff6600,
-        emissiveIntensity: 1.0,
-        transparent: true,
-        opacity: 0.7
-    });
-    var trail = new THREE.Mesh(trailGeometry, trailMaterial);
-    trail.position.z = -0.8;
-    group.add(trail);
-
-    group.position.set(projectile.x, projectile.y, projectile.z);
-    group.rotation.y = ang;
-    scene.add(group);
-    projMeshes.push(group);
+  group.position.copyFromFloats(projectile.x, projectile.y, projectile.z);
+  group.rotation.y = ang;
+  projMeshes.push(group);
 }
 
 // Update item boxes each frame
 function updateItemBoxes(dt) {
-    var timeScale = (dt || 0.016) * 60;
-    for (var i = 0; i < itemBoxes.length; i++) {
-        var box = itemBoxes[i];
-        var mesh = itemBoxMeshes[i];
+  var timeScale = (dt || 0.016) * 60;
+  for (var i = 0; i < itemBoxes.length; i++) {
+    var box = itemBoxes[i];
+    var mesh = itemBoxMeshes[i];
 
-        if (!box.active) {
-            // Respawn countdown
-            box.respawn -= timeScale;
-            if (box.respawn <= 0) {
-                box.active = true;
-                mesh.visible = true;
-            }
-        } else {
-            // Spin the box - faster, more noticeable
-            mesh.rotation.y += 0.04 * timeScale;
-            mesh.rotation.x = Math.sin(Date.now() * 0.002) * 0.15;
+    if (!box.active) {
+      box.respawn -= timeScale;
+      if (box.respawn <= 0) {
+        box.active = true;
+        mesh.setEnabled(true);
+      }
+    } else {
+      // Spin
+      mesh.rotation.y += 0.04 * timeScale;
+      mesh.rotation.x = Math.sin(Date.now() * 0.002) * 0.15;
 
-            // Bouncy floating animation
-            var floatOffset = Math.sin(Date.now() * 0.004 + i * 0.5) * 0.5;
-            mesh.position.y = box.baseY + floatOffset;
+      // Bouncy floating
+      var floatOffset = Math.sin(Date.now() * 0.004 + i * 0.5) * 0.5;
+      mesh.position.y = box.baseY + floatOffset;
 
-            // Cycle emissive color for rainbow shimmer
-            if (mesh.children[0] && mesh.children[0].material) {
-                var hue = ((Date.now() * 0.001) + i * 0.1) % 1.0;
-                mesh.children[0].material.emissive.setHSL(hue, 0.8, 0.35);
-            }
-        }
+      // Cycle emissive color for rainbow shimmer
+      var childMeshes = mesh.getChildMeshes();
+      if (childMeshes.length > 0 && childMeshes[0].material && childMeshes[0].material.emissiveColor) {
+        var hue = ((Date.now() * 0.001) + i * 0.1) % 1.0;
+        hslToCol(hue, 0.8, 0.35, childMeshes[0].material.emissiveColor);
+      }
     }
+  }
 }
 
 // Update projectiles each frame
-function updateProjectiles(scene, racers, dt) {
-    var timeScale = (dt || 0.016) * 60;
-    for (var i = projectiles.length - 1; i >= 0; i--) {
-        var proj = projectiles[i];
-        var mesh = projMeshes[i];
+function updateProjectiles(sc, racers, dt) {
+  var timeScale = (dt || 0.016) * 60;
+  for (var i = projectiles.length - 1; i >= 0; i--) {
+    var proj = projectiles[i];
+    var mesh = projMeshes[i];
 
-        // Find nearest enemy racer (not owner)
-        var nearestDist = Infinity;
-        var nearestRacer = null;
-
-        for (var r = 0; r < racers.length; r++) {
-            if (racers[r] === proj.owner) continue;
-
-            var dx = racers[r].x - proj.x;
-            var dz = racers[r].z - proj.z;
-            var dist = Math.sqrt(dx * dx + dz * dz);
-
-            if (dist < nearestDist) {
-                nearestDist = dist;
-                nearestRacer = racers[r];
-            }
-        }
-
-        // Steer toward nearest enemy
-        if (nearestRacer) {
-            var targetAngle = Math.atan2(nearestRacer.z - proj.z, nearestRacer.x - proj.x);
-            var angleDiff = targetAngle - proj.ang;
-
-            // Normalize angle difference to -PI to PI
-            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-
-            // Steer with max turn rate
-            var maxTurn = 0.06 * timeScale;
-            if (angleDiff > maxTurn) {
-                proj.ang += maxTurn;
-            } else if (angleDiff < -maxTurn) {
-                proj.ang -= maxTurn;
-            } else {
-                proj.ang += angleDiff;
-            }
-        }
-
-        // Move projectile
-        proj.x += Math.cos(proj.ang) * proj.spd * timeScale;
-        proj.z += Math.sin(proj.ang) * proj.spd * timeScale;
-
-        // Decrement life
-        proj.life -= timeScale;
-
-        // Update mesh
-        mesh.position.set(proj.x, proj.y, proj.z);
-        mesh.rotation.y = proj.ang;
-
-        // Remove if life expired
-        if (proj.life <= 0) {
-            scene.remove(mesh);
-            projectiles.splice(i, 1);
-            projMeshes.splice(i, 1);
-        }
+    // Find nearest enemy racer
+    var nearestDist = Infinity;
+    var nearestRacer = null;
+    for (var r = 0; r < racers.length; r++) {
+      if (racers[r] === proj.owner) continue;
+      var dx = racers[r].x - proj.x;
+      var dz = racers[r].z - proj.z;
+      var dist = Math.sqrt(dx * dx + dz * dz);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearestRacer = racers[r];
+      }
     }
+
+    // Steer toward nearest enemy
+    if (nearestRacer) {
+      var targetAngle = Math.atan2(nearestRacer.z - proj.z, nearestRacer.x - proj.x);
+      var angleDiff = targetAngle - proj.ang;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      var maxTurn = 0.06 * timeScale;
+      if (angleDiff > maxTurn) proj.ang += maxTurn;
+      else if (angleDiff < -maxTurn) proj.ang -= maxTurn;
+      else proj.ang += angleDiff;
+    }
+
+    // Move
+    proj.x += Math.cos(proj.ang) * proj.spd * timeScale;
+    proj.z += Math.sin(proj.ang) * proj.spd * timeScale;
+    proj.life -= timeScale;
+
+    // Update mesh
+    mesh.position.copyFromFloats(proj.x, proj.y, proj.z);
+    mesh.rotation.y = proj.ang;
+
+    // Remove if expired
+    if (proj.life <= 0) {
+      mesh.dispose();
+      projectiles.splice(i, 1);
+      projMeshes.splice(i, 1);
+    }
+  }
 }
 
 // Update traps each frame
-function updateTraps(scene, dt) {
-    var timeScale = (dt || 0.016) * 60;
-    var frameCount = Date.now() / 16;
+function updateTraps(sc, dt) {
+  var timeScale = (dt || 0.016) * 60;
+  var frameCount = Date.now() / 16;
 
-    for (var i = traps.length - 1; i >= 0; i--) {
-        var trap = traps[i];
-        var mesh = trapMeshes[i];
+  for (var i = traps.length - 1; i >= 0; i--) {
+    var trap = traps[i];
+    var mesh = trapMeshes[i];
 
-        // Decrement life
-        trap.life -= timeScale;
+    trap.life -= timeScale;
+    mesh.rotation.y += 0.02 * timeScale;
 
-        // Rotate for visual effect
-        mesh.rotation.y += 0.02 * timeScale;
-
-        // Blink the red light
-        if (mesh.userData.light) {
-            var blinkOn = Math.floor(frameCount / 15) % 2 === 0;
-            mesh.userData.light.material.emissiveIntensity = blinkOn ? 1.0 : 0.2;
-        }
-
-        // Remove if life expired
-        if (trap.life <= 0) {
-            scene.remove(mesh);
-            traps.splice(i, 1);
-            trapMeshes.splice(i, 1);
-        }
+    // Blink the red light
+    if (mesh.metadata && mesh.metadata.light) {
+      var blinkOn = Math.floor(frameCount / 15) % 2 === 0;
+      var lm = mesh.metadata.light;
+      if (lm.material && lm.material.emissiveColor) {
+        lm.material.emissiveColor = c3(0xff0000).scale(blinkOn ? 1.0 : 0.2);
+      }
     }
+
+    // Remove if expired
+    if (trap.life <= 0) {
+      mesh.dispose();
+      traps.splice(i, 1);
+      trapMeshes.splice(i, 1);
+    }
+  }
 }
 
 // Generate energy rings along the track
-function generateEnergyRings(scene) {
-    energyRings = [];
-    energyRingMeshes = [];
+function generateEnergyRings(sc) {
+  energyRings = [];
+  energyRingMeshes = [];
 
-    // Place rings every 5 track points, offset from item boxes
-    for (var i = 3; i < TRACK_POINTS; i += 5) {
-        var trackPoint = getTrackPoint(i);
-        var trackAngle = getTrackAngle(i);
-        var perpAngle = trackAngle + Math.PI / 2;
+  for (var i = 3; i < TRACK_POINTS; i += 5) {
+    var trackPoint = getTrackPoint(i);
+    var trackAngle = getTrackAngle(i);
+    var perpAngle = trackAngle + Math.PI / 2;
 
-        // Alternate sides: left, center, right
-        var side = i % 3;
-        var lateralOffset = (side - 1) * 6;
+    var side = i % 3;
+    var lateralOffset = (side - 1) * 6;
 
-        var ring = {
-            x: trackPoint.x + Math.cos(perpAngle) * lateralOffset,
-            y: trackPoint.y + 2.0,
-            z: trackPoint.z + Math.sin(perpAngle) * lateralOffset,
-            active: true,
-            respawn: 0
-        };
-        energyRings.push(ring);
+    var ring = {
+      x: trackPoint.x + Math.cos(perpAngle) * lateralOffset,
+      y: trackPoint.y + 2.0,
+      z: trackPoint.z + Math.sin(perpAngle) * lateralOffset,
+      active: true,
+      respawn: 0
+    };
+    energyRings.push(ring);
 
-        // Create diamond/crystal mesh
-        var group = new THREE.Group();
+    // Create diamond/crystal mesh
+    var group = new BABYLON.TransformNode('ering' + (++_itn), scene);
 
-        // Diamond shape using two cones
-        var topGeo = new THREE.ConeGeometry(0.6, 0.8, 6);
-        var botGeo = new THREE.ConeGeometry(0.6, 0.4, 6);
-        var ringMat = new THREE.MeshLambertMaterial({
-            color: 0x00ddff,
-            emissive: 0x0088cc,
-            emissiveIntensity: 0.6,
-            transparent: true,
-            opacity: 0.85
-        });
+    var ringMat = imat(0x00ddff, 0x0088cc, 0.6, 0.85);
 
-        var topMesh = new THREE.Mesh(topGeo, ringMat);
-        topMesh.position.y = 0.2;
-        group.add(topMesh);
+    // Diamond shape: top cone + inverted bottom cone
+    var topMesh = BABYLON.MeshBuilder.CreateCylinder('ert' + (++_itn), {
+      diameterTop: 0, diameterBottom: 1.2, height: 0.8, tessellation: 6
+    }, scene);
+    topMesh.material = ringMat;
+    topMesh.position.y = 0.2;
+    topMesh.parent = group;
 
-        var botMesh = new THREE.Mesh(botGeo, ringMat);
-        botMesh.rotation.x = Math.PI;
-        botMesh.position.y = -0.2;
-        group.add(botMesh);
+    var botMesh = BABYLON.MeshBuilder.CreateCylinder('erb' + (++_itn), {
+      diameterTop: 1.2, diameterBottom: 0, height: 0.4, tessellation: 6
+    }, scene);
+    botMesh.material = ringMat;
+    botMesh.position.y = -0.2;
+    botMesh.parent = group;
 
-        // Inner glow sphere
-        var glowGeo = new THREE.SphereGeometry(0.3, 8, 6);
-        var glowMat = new THREE.MeshBasicMaterial({
-            color: 0x88ffff,
-            transparent: true,
-            opacity: 0.4
-        });
-        var glowMesh = new THREE.Mesh(glowGeo, glowMat);
-        group.add(glowMesh);
+    // Inner glow sphere
+    var glowMat = imatUnlit(0x88ffff, 0.4);
+    var glowMesh = BABYLON.MeshBuilder.CreateSphere('erg' + (++_itn), { diameter: 0.6, segments: 8 }, scene);
+    glowMesh.material = glowMat;
+    glowMesh.parent = group;
 
-        group.position.set(ring.x, ring.y, ring.z);
-        scene.add(group);
-        energyRingMeshes.push(group);
-    }
+    group.position.copyFromFloats(ring.x, ring.y, ring.z);
+    energyRingMeshes.push(group);
+  }
 }
 
 // Update energy rings each frame
 function updateEnergyRings(dt) {
-    var timeScale = (dt || 0.016) * 60;
-    for (var i = 0; i < energyRings.length; i++) {
-        var ring = energyRings[i];
-        var mesh = energyRingMeshes[i];
+  var timeScale = (dt || 0.016) * 60;
+  for (var i = 0; i < energyRings.length; i++) {
+    var ring = energyRings[i];
+    var mesh = energyRingMeshes[i];
 
-        if (!ring.active) {
-            ring.respawn -= timeScale;
-            if (ring.respawn <= 0) {
-                ring.active = true;
-                mesh.visible = true;
-            }
-        } else {
-            // Spin and float
-            mesh.rotation.y += 0.05 * timeScale;
-            var floatOffset = Math.sin(Date.now() * 0.003 + i * 0.7) * 0.3;
-            mesh.position.y = ring.y + floatOffset;
+    if (!ring.active) {
+      ring.respawn -= timeScale;
+      if (ring.respawn <= 0) {
+        ring.active = true;
+        mesh.setEnabled(true);
+      }
+    } else {
+      // Spin and float
+      mesh.rotation.y += 0.05 * timeScale;
+      var floatOffset = Math.sin(Date.now() * 0.003 + i * 0.7) * 0.3;
+      mesh.position.y = ring.y + floatOffset;
 
-            // Pulse glow
-            var pulse = 0.5 + Math.sin(Date.now() * 0.005 + i) * 0.2;
-            if (mesh.children[0] && mesh.children[0].material) {
-                mesh.children[0].material.emissiveIntensity = pulse;
-            }
-        }
+      // Pulse glow
+      var pulse = 0.5 + Math.sin(Date.now() * 0.005 + i) * 0.2;
+      var childMeshes = mesh.getChildMeshes();
+      if (childMeshes.length > 0 && childMeshes[0].material && childMeshes[0].material.emissiveColor) {
+        childMeshes[0].material.emissiveColor = c3(0x0088cc).scale(pulse);
+      }
     }
+  }
 }
 
 // ============================================================================
@@ -463,95 +420,86 @@ function updateEnergyRings(dt) {
 var boostPads = [];
 var boostPadMeshes = [];
 
-function generateBoostPads(scene) {
-    boostPads = [];
-    boostPadMeshes = [];
+function generateBoostPads(sc) {
+  boostPads = [];
+  boostPadMeshes = [];
 
-    // Place boost pads at specific track positions (every ~25 points, avoiding item boxes)
-    var padPositions = [15, 40, 65, 88];
+  var padPositions = [15, 40, 65, 88];
 
-    for (var p = 0; p < padPositions.length; p++) {
-        var idx = padPositions[p];
-        var trackPoint = getTrackPoint(idx);
-        var trackAngle = getTrackAngle(idx);
+  for (var p = 0; p < padPositions.length; p++) {
+    var idx = padPositions[p];
+    var trackPoint = getTrackPoint(idx);
+    var trackAngle = getTrackAngle(idx);
 
-        var pad = {
-            x: trackPoint.x,
-            y: trackPoint.y + 0.05,
-            z: trackPoint.z,
-            ang: trackAngle,
-            active: true
-        };
-        boostPads.push(pad);
+    var pad = {
+      x: trackPoint.x,
+      y: trackPoint.y + 0.05,
+      z: trackPoint.z,
+      ang: trackAngle,
+      active: true
+    };
+    boostPads.push(pad);
 
-        // Visual: glowing arrow panel on the road
-        var group = new THREE.Group();
+    var group = new BABYLON.TransformNode('bpad' + (++_itn), scene);
 
-        // Base plate
-        var plateGeo = new THREE.BoxGeometry(6, 0.15, 8);
-        var plateMat = new THREE.MeshLambertMaterial({
-            color: 0xFF6600,
-            emissive: 0xFF4400,
-            emissiveIntensity: 0.5,
-            transparent: true,
-            opacity: 0.85
-        });
-        var plate = new THREE.Mesh(plateGeo, plateMat);
-        group.add(plate);
+    // Base plate
+    var plateMat = imat(0xFF6600, 0xFF4400, 0.5, 0.85);
+    var plate = BABYLON.MeshBuilder.CreateBox('bp' + (++_itn), { width: 6, height: 0.15, depth: 8 }, scene);
+    plate.material = plateMat;
+    plate.parent = group;
 
-        // Arrow chevrons (3 arrows pointing forward)
-        var arrowMat = new THREE.MeshLambertMaterial({
-            color: 0xFFDD00,
-            emissive: 0xFFAA00,
-            emissiveIntensity: 0.8
-        });
+    // Arrow chevrons
+    var arrowMat = imat(0xFFDD00, 0xFFAA00, 0.8);
+    for (var a = 0; a < 3; a++) {
+      var leftChev = BABYLON.MeshBuilder.CreateBox('bc' + (++_itn), { width: 2.0, height: 0.2, depth: 0.3 }, scene);
+      leftChev.material = arrowMat;
+      leftChev.position.copyFromFloats(-0.8, 0.1, -2 + a * 2.5);
+      leftChev.rotation.y = 0.4;
+      leftChev.parent = group;
 
-        for (var a = 0; a < 3; a++) {
-            // Each arrow is two angled planes forming a V/chevron
-            var chevGeo = new THREE.BoxGeometry(2.0, 0.2, 0.3);
-            var leftChev = new THREE.Mesh(chevGeo, arrowMat);
-            leftChev.position.set(-0.8, 0.1, -2 + a * 2.5);
-            leftChev.rotation.y = 0.4;
-            group.add(leftChev);
-
-            var rightChev = new THREE.Mesh(chevGeo, arrowMat);
-            rightChev.position.set(0.8, 0.1, -2 + a * 2.5);
-            rightChev.rotation.y = -0.4;
-            group.add(rightChev);
-        }
-
-        // Side glow strips
-        var stripMat = new THREE.MeshLambertMaterial({
-            color: 0xFF8800,
-            emissive: 0xFF6600,
-            emissiveIntensity: 0.6
-        });
-        var stripGeo = new THREE.BoxGeometry(0.3, 0.2, 8);
-        group.add(new THREE.Mesh(stripGeo, stripMat).translateX(-3));
-        group.add(new THREE.Mesh(stripGeo, stripMat).translateX(3));
-
-        group.position.set(pad.x, pad.y, pad.z);
-        group.rotation.y = -trackAngle - Math.PI / 2;
-        scene.add(group);
-        boostPadMeshes.push(group);
+      var rightChev = BABYLON.MeshBuilder.CreateBox('bc' + (++_itn), { width: 2.0, height: 0.2, depth: 0.3 }, scene);
+      rightChev.material = arrowMat;
+      rightChev.position.copyFromFloats(0.8, 0.1, -2 + a * 2.5);
+      rightChev.rotation.y = -0.4;
+      rightChev.parent = group;
     }
+
+    // Side glow strips
+    var stripMat = imat(0xFF8800, 0xFF6600, 0.6);
+    var stripL = BABYLON.MeshBuilder.CreateBox('bs' + (++_itn), { width: 0.3, height: 0.2, depth: 8 }, scene);
+    stripL.material = stripMat;
+    stripL.position.x = -3;
+    stripL.parent = group;
+    var stripR = BABYLON.MeshBuilder.CreateBox('bs' + (++_itn), { width: 0.3, height: 0.2, depth: 8 }, scene);
+    stripR.material = stripMat;
+    stripR.position.x = 3;
+    stripR.parent = group;
+
+    group.position.copyFromFloats(pad.x, pad.y, pad.z);
+    group.rotation.y = -trackAngle - Math.PI / 2;
+    boostPadMeshes.push(group);
+  }
 }
 
 function updateBoostPads(dt) {
-    var time = Date.now() * 0.003;
-    for (var i = 0; i < boostPadMeshes.length; i++) {
-        var mesh = boostPadMeshes[i];
-        // Pulse the glow
-        if (mesh.children[0] && mesh.children[0].material) {
-            mesh.children[0].material.emissiveIntensity = 0.4 + Math.sin(time + i) * 0.2;
-        }
-        // Animate arrows (scroll effect via emissive pulse)
-        for (var c = 1; c < mesh.children.length - 2; c++) {
-            var child = mesh.children[c];
-            if (child.material && child.material.emissive) {
-                var phase = (time * 2 + c * 0.5) % 2;
-                child.material.emissiveIntensity = phase < 1 ? 0.5 + phase * 0.5 : 1.5 - phase * 0.5;
-            }
-        }
+  var time = Date.now() * 0.003;
+  for (var i = 0; i < boostPadMeshes.length; i++) {
+    var mesh = boostPadMeshes[i];
+    var childMeshes = mesh.getChildMeshes();
+
+    // Pulse the base plate glow
+    if (childMeshes.length > 0 && childMeshes[0].material && childMeshes[0].material.emissiveColor) {
+      childMeshes[0].material.emissiveColor = c3(0xFF4400).scale(0.4 + Math.sin(time + i) * 0.2);
     }
+
+    // Animate arrows
+    for (var c = 1; c < childMeshes.length - 2; c++) {
+      var child = childMeshes[c];
+      if (child.material && child.material.emissiveColor) {
+        var phase = (time * 2 + c * 0.5) % 2;
+        var emInt = phase < 1 ? 0.5 + phase * 0.5 : 1.5 - phase * 0.5;
+        child.material.emissiveColor = c3(0xFFAA00).scale(emInt);
+      }
+    }
+  }
 }

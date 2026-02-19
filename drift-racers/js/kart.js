@@ -1,94 +1,158 @@
 // kart.js - Racer/Kart module for drift racing game
-// Uses Three.js r128 (globally loaded)
+// Babylon.js engine (migrated from Three.js r128)
 
 var racers = [];
 var player = null;
 
 // GLB Model loading system
-var glbModelCache = {};  // bodyType -> THREE.Group (template)
+var glbModelCache = {};  // bodyType -> BABYLON.TransformNode (template)
 var glbModelsLoaded = false;
-var glbLoader = null;
 
 // Combined character+kart model cache
-var kartModelCache = {};  // bodyType -> THREE.Group (template)
+var kartModelCache = {};  // bodyType -> BABYLON.TransformNode (template)
 var kartModelsLoaded = false;
 
 // Environment model cache
-var envModelCache = {};  // envType -> THREE.Group (template)
+var envModelCache = {};  // envType -> BABYLON.TransformNode (template)
 var envModelsLoaded = false;
 
-function initGLBLoader() {
-  if (!glbLoader && THREE.GLTFLoader) {
-    glbLoader = new THREE.GLTFLoader();
+// --- GLB Material Enhancement Helpers ---
+
+function enhanceGLBMaterials(meshes, opts) {
+  // opts: { metalness, roughness, satBoost, lumBoost, emissiveBlend, emissiveInt }
+  var o = opts || {};
+  for (var i = 0; i < meshes.length; i++) {
+    var mesh = meshes[i];
+    if (!mesh.material) continue;
+    var mats = mesh.material instanceof BABYLON.MultiMaterial ? mesh.material.subMaterials : [mesh.material];
+    for (var mi = 0; mi < mats.length; mi++) {
+      var mat = mats[mi];
+      if (!mat) continue;
+      if (mat instanceof BABYLON.PBRMaterial) {
+        mat.metallic = o.metalness !== undefined ? o.metalness : 0;
+        mat.roughness = o.roughness !== undefined ? o.roughness : 0.55;
+      }
+      // Boost saturation/luminance on diffuse/albedo
+      var col = mat.diffuseColor || mat.albedoColor;
+      if (col) {
+        var hsl = { h: 0, s: 0, l: 0 };
+        colToHSL(col, hsl);
+        if (hsl.l > 0.01) {
+          var ns = Math.min(1.0, hsl.s * (o.satBoost || 1.2) + 0.05);
+          var nl = Math.min(o.lumMax || 0.8, hsl.l * (o.lumBoost || 1.15) + 0.1);
+          hslToCol(hsl.h, ns, nl, col);
+        }
+      }
+      // Emissive tint
+      if (o.emissiveInt && col) {
+        var hsl2 = { h: 0, s: 0, l: 0 };
+        colToHSL(col, hsl2);
+        var eH = o.emissiveBlend !== undefined ? (hsl2.h * (1 - o.emissiveBlend) + 0.6 * o.emissiveBlend) : hsl2.h;
+        var ec = new BABYLON.Color3();
+        hslToCol(eH, Math.min(1.0, hsl2.s * 0.4), 0.1, ec);
+        if (mat.emissiveColor) mat.emissiveColor = ec.scale(o.emissiveInt);
+        else if (mat instanceof BABYLON.PBRMaterial) mat.emissiveColor = ec.scale(o.emissiveInt);
+      }
+    }
+    // Shadow
+    if (shadowGen) shadowGen.addShadowCaster(mesh);
+    mesh.receiveShadows = true;
   }
+}
+
+// Color conversion helpers
+function colToHSL(c3, out) {
+  var r = c3.r, g = c3.g, b = c3.b;
+  var max = Math.max(r, g, b), min = Math.min(r, g, b);
+  var h = 0, s = 0, l = (max + min) / 2;
+  if (max !== min) {
+    var d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / d + 2) / 6;
+    else h = ((r - g) / d + 4) / 6;
+  }
+  out.h = h; out.s = s; out.l = l;
+}
+
+function hslToCol(h, s, l, out) {
+  if (s === 0) { out.r = out.g = out.b = l; return; }
+  function hue2rgb(p, q, t) {
+    if (t < 0) t += 1; if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  }
+  var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  var p = 2 * l - q;
+  out.r = hue2rgb(p, q, h + 1 / 3);
+  out.g = hue2rgb(p, q, h);
+  out.b = hue2rgb(p, q, h - 1 / 3);
+}
+
+// --- GLB Bounding Box Helper ---
+function getGLBBounds(root) {
+  var min = new BABYLON.Vector3(1e9, 1e9, 1e9);
+  var max = new BABYLON.Vector3(-1e9, -1e9, -1e9);
+  var meshes = root.getChildMeshes ? root.getChildMeshes() : [];
+  if (root.getBoundingInfo && root.getTotalVertices && root.getTotalVertices() > 0) {
+    meshes.push(root);
+  }
+  for (var i = 0; i < meshes.length; i++) {
+    var m = meshes[i];
+    if (!m.getBoundingInfo || !m.getTotalVertices || m.getTotalVertices() === 0) continue;
+    m.computeWorldMatrix(true);
+    var bi = m.getBoundingInfo();
+    var bmin = bi.boundingBox.minimumWorld;
+    var bmax = bi.boundingBox.maximumWorld;
+    min.minimizeInPlace(bmin);
+    max.maximizeInPlace(bmax);
+  }
+  return { min: min, max: max, size: max.subtract(min) };
 }
 
 // Preload all character GLB models
 function preloadModels(callback) {
-  initGLBLoader();
-  if (!glbLoader) {
-    console.warn('GLTFLoader not available, using procedural meshes');
-    glbModelsLoaded = true;
-    if (callback) callback();
-    return;
-  }
-
   var bodyTypes = Object.keys(MODEL_FILES);
   var loaded = 0;
   var total = bodyTypes.length;
+  if (total === 0) { glbModelsLoaded = true; if (callback) callback(); return; }
 
   bodyTypes.forEach(function (bodyType) {
     var url = MODEL_FILES[bodyType];
-    glbLoader.load(url,
-      function (gltf) {
-        var model = gltf.scene;
-        // Compute bounding box to normalize size
-        var box = new THREE.Box3().setFromObject(model);
-        var size = new THREE.Vector3();
-        box.getSize(size);
-        var maxDim = Math.max(size.x, size.y, size.z);
-        // Target: character model roughly 1.1 units tall (compact above kart)
+    BABYLON.SceneLoader.ImportMesh('', '', url, scene,
+      function (meshes) {
+        // Create a root TransformNode
+        var root = new BABYLON.TransformNode('glb_' + bodyType, scene);
+        for (var i = 0; i < meshes.length; i++) {
+          if (!meshes[i].parent || meshes[i].parent === scene) meshes[i].parent = root;
+        }
+
+        // Normalize size
+        var bounds = getGLBBounds(root);
+        var sz = bounds.size;
+        var maxDim = Math.max(sz.x, sz.y, sz.z);
+        if (maxDim === 0) maxDim = 1;
         var targetSize = 1.1;
-        var scale = targetSize / maxDim;
-        model.scale.set(scale, scale, scale);
+        var sc = targetSize / maxDim;
+        root.scaling.copyFromFloats(sc, sc, sc);
 
-        // Center the model
-        var center = new THREE.Vector3();
-        box.getCenter(center);
-        model.position.set(
-          -center.x * scale,
-          -box.min.y * scale, // sit on ground
-          -center.z * scale
-        );
+        // Center horizontally, sit on ground
+        root.computeWorldMatrix(true);
+        var b2 = getGLBBounds(root);
+        var cx = (b2.min.x + b2.max.x) / 2;
+        var cz = (b2.min.z + b2.max.z) / 2;
+        root.position.copyFromFloats(-cx, -b2.min.y, -cz);
 
-        // シャドウ有効化 + PBR調整でファンタジー風に
-        model.traverse(function (child) {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-            var mats = Array.isArray(child.material) ? child.material : [child.material];
-            for (var mi = 0; mi < mats.length; mi++) {
-              var mat = mats[mi];
-              if (!mat) continue;
-              if (mat.isMeshStandardMaterial) { mat.metalness = 0; mat.roughness = 0.55; }
-              if (mat.color) {
-                var hsl = {};
-                mat.color.getHSL(hsl);
-                if (hsl.l > 0.01) {
-                  mat.color.setHSL(hsl.h, Math.min(1.0, hsl.s * 1.2 + 0.05), Math.min(0.8, hsl.l * 1.15 + 0.1));
-                }
-              }
-              if (mat.emissive !== undefined && mat.color) {
-                var hsl2 = {};
-                mat.color.getHSL(hsl2);
-                mat.emissive.setHSL(hsl2.h, Math.min(1.0, hsl2.s * 0.4), 0.1);
-                mat.emissiveIntensity = 0.2;
-              }
-            }
-          }
+        // Enhance materials
+        enhanceGLBMaterials(root.getChildMeshes(), {
+          metalness: 0, roughness: 0.55, satBoost: 1.2, lumBoost: 1.15, lumMax: 0.8, emissiveInt: 0.2
         });
 
-        glbModelCache[bodyType] = model;
+        // Disable for now (template - will be cloned)
+        root.setEnabled(false);
+        glbModelCache[bodyType] = root;
         loaded++;
         console.log('Loaded model: ' + bodyType + ' (' + loaded + '/' + total + ')');
         if (loaded === total) {
@@ -97,14 +161,11 @@ function preloadModels(callback) {
           if (callback) callback();
         }
       },
-      undefined,
-      function (err) {
-        console.warn('Failed to load model ' + bodyType + ': ' + err.message);
+      null,
+      function (sc, msg, err) {
+        console.warn('Failed to load model ' + bodyType + ': ' + (msg || err));
         loaded++;
-        if (loaded === total) {
-          glbModelsLoaded = true;
-          if (callback) callback();
-        }
+        if (loaded === total) { glbModelsLoaded = true; if (callback) callback(); }
       }
     );
   });
@@ -112,8 +173,7 @@ function preloadModels(callback) {
 
 // Preload all combined character+kart GLB models
 function preloadKartModels(callback) {
-  initGLBLoader();
-  if (!glbLoader || typeof KART_MODEL_FILES === 'undefined') {
+  if (typeof KART_MODEL_FILES === 'undefined') {
     kartModelsLoaded = true;
     if (callback) callback();
     return;
@@ -122,66 +182,48 @@ function preloadKartModels(callback) {
   var bodyTypes = Object.keys(KART_MODEL_FILES);
   var loaded = 0;
   var total = bodyTypes.length;
+  if (total === 0) { kartModelsLoaded = true; if (callback) callback(); return; }
 
   bodyTypes.forEach(function (bodyType) {
     var url = KART_MODEL_FILES[bodyType];
-    glbLoader.load(url,
-      function (gltf) {
-        var model = gltf.scene;
-        // Compute bounding box to normalize size
-        var box = new THREE.Box3().setFromObject(model);
-        var size = new THREE.Vector3();
-        box.getSize(size);
-        var maxDim = Math.max(size.x, size.y, size.z);
-        // Target: combined kart+character roughly 2.2 units tall
+    BABYLON.SceneLoader.ImportMesh('', '', url, scene,
+      function (meshes) {
+        var root = new BABYLON.TransformNode('kart_' + bodyType, scene);
+        for (var i = 0; i < meshes.length; i++) {
+          if (!meshes[i].parent || meshes[i].parent === scene) meshes[i].parent = root;
+        }
+
+        // Normalize size
+        var bounds = getGLBBounds(root);
+        var sz = bounds.size;
+        var maxDim = Math.max(sz.x, sz.y, sz.z);
+        if (maxDim === 0) maxDim = 1;
         var targetSize = 2.2;
-        var scale = targetSize / maxDim;
-        model.scale.set(scale, scale, scale);
+        var sc = targetSize / maxDim;
+        root.scaling.copyFromFloats(sc, sc, sc);
 
         // Center horizontally, sit on ground
-        var center = new THREE.Vector3();
-        box.getCenter(center);
-        model.position.set(
-          -center.x * scale,
-          -box.min.y * scale,
-          -center.z * scale
-        );
+        root.computeWorldMatrix(true);
+        var b2 = getGLBBounds(root);
+        var cx = (b2.min.x + b2.max.x) / 2;
+        var cz = (b2.min.z + b2.max.z) / 2;
+        root.position.copyFromFloats(-cx, -b2.min.y, -cz);
 
         // Auto-detect inverted models from Trellis
-        var scaledBox = new THREE.Box3().setFromObject(model);
-        if (scaledBox.max.y <= 0.001 && scaledBox.min.y < -0.1) {
-          model.rotation.x = Math.PI;
+        root.computeWorldMatrix(true);
+        var b3 = getGLBBounds(root);
+        if (b3.max.y <= 0.001 && b3.min.y < -0.1) {
+          root.rotation.x = Math.PI;
           console.log('Flipped inverted kart model: ' + bodyType);
         }
 
-        // PBR adjustments for vibrant fantasy look
-        model.traverse(function (child) {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-            var mats = Array.isArray(child.material) ? child.material : [child.material];
-            for (var mi = 0; mi < mats.length; mi++) {
-              var mat = mats[mi];
-              if (!mat) continue;
-              if (mat.isMeshStandardMaterial) { mat.metalness = 0; mat.roughness = 0.5; }
-              if (mat.color) {
-                var hsl = {};
-                mat.color.getHSL(hsl);
-                if (hsl.l > 0.01) {
-                  mat.color.setHSL(hsl.h, Math.min(1.0, hsl.s * 1.2 + 0.05), Math.min(0.8, hsl.l * 1.15 + 0.1));
-                }
-              }
-              if (mat.emissive !== undefined && mat.color) {
-                var hsl2 = {};
-                mat.color.getHSL(hsl2);
-                mat.emissive.setHSL(hsl2.h, Math.min(1.0, hsl2.s * 0.4), 0.1);
-                mat.emissiveIntensity = 0.2;
-              }
-            }
-          }
+        // Enhance materials
+        enhanceGLBMaterials(root.getChildMeshes(), {
+          metalness: 0, roughness: 0.5, satBoost: 1.2, lumBoost: 1.15, lumMax: 0.8, emissiveInt: 0.2
         });
 
-        kartModelCache[bodyType] = model;
+        root.setEnabled(false);
+        kartModelCache[bodyType] = root;
         loaded++;
         console.log('Loaded kart model: ' + bodyType + ' (' + loaded + '/' + total + ')');
         if (loaded === total) {
@@ -190,14 +232,11 @@ function preloadKartModels(callback) {
           if (callback) callback();
         }
       },
-      undefined,
-      function (err) {
-        console.warn('Failed to load kart model ' + bodyType + ': ' + err.message);
+      null,
+      function (sc, msg, err) {
+        console.warn('Failed to load kart model ' + bodyType + ': ' + (msg || err));
         loaded++;
-        if (loaded === total) {
-          kartModelsLoaded = true;
-          if (callback) callback();
-        }
+        if (loaded === total) { kartModelsLoaded = true; if (callback) callback(); }
       }
     );
   });
@@ -205,76 +244,44 @@ function preloadKartModels(callback) {
 
 // Preload all environment GLB models
 function preloadEnvModels(callback) {
-  initGLBLoader();
-  if (!glbLoader) {
-    console.warn('GLTFLoader not available for env models');
-    envModelsLoaded = true;
-    if (callback) callback();
-    return;
-  }
-
   var envTypes = Object.keys(ENV_MODEL_FILES);
   var loaded = 0;
   var total = envTypes.length;
+  if (total === 0) { envModelsLoaded = true; if (callback) callback(); return; }
 
   envTypes.forEach(function (envType) {
     var url = ENV_MODEL_FILES[envType];
-    glbLoader.load(url,
-      function (gltf) {
-        var model = gltf.scene;
-        // マテリアルのPBRプロパティを調整 → ファンタジー風の明るく鮮やかな見た目に
-        model.traverse(function (child) {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-            var mats = Array.isArray(child.material) ? child.material : [child.material];
-            for (var mi = 0; mi < mats.length; mi++) {
-              var mat = mats[mi];
-              if (!mat) continue;
-              // PBR調整: メタリック感を消して明るくする (StandardMaterialのみ)
-              if (mat.isMeshStandardMaterial) { mat.metalness = 0; mat.roughness = 0.6; }
-              // 色の彩度・明度を上げる
-              if (mat.color) {
-                var hsl = {};
-                mat.color.getHSL(hsl);
-                if (hsl.l > 0.01) { // 黒でなければ調整
-                  mat.color.setHSL(hsl.h, Math.min(1.0, hsl.s * 1.3 + 0.1), Math.min(0.85, hsl.l * 1.2 + 0.15));
-                }
-              }
-              // ほんのり発光
-              if (mat.emissive !== undefined && mat.color) {
-                var hsl2 = {};
-                mat.color.getHSL(hsl2);
-                // Shift emissive towards blue for Crystal Kingdom theme
-                var eHue = hsl2.h * 0.7 + 0.6 * 0.3; // blend towards blue (0.6)
-                mat.emissive.setHSL(eHue, Math.min(1.0, hsl2.s * 0.45), 0.12);
-                mat.emissiveIntensity = 0.25;
-              }
-            }
-          }
+    BABYLON.SceneLoader.ImportMesh('', '', url, scene,
+      function (meshes) {
+        var root = new BABYLON.TransformNode('env_' + envType, scene);
+        for (var i = 0; i < meshes.length; i++) {
+          if (!meshes[i].parent || meshes[i].parent === scene) meshes[i].parent = root;
+        }
+
+        // Enhance materials
+        enhanceGLBMaterials(root.getChildMeshes(), {
+          metalness: 0, roughness: 0.6, satBoost: 1.3, lumBoost: 1.2, lumMax: 0.85,
+          emissiveInt: 0.25, emissiveBlend: 0.3
         });
-        // Auto-detect inverted models from Trellis
-        var autoBox = new THREE.Box3().setFromObject(model);
+
+        // Auto-detect inverted models
+        root.computeWorldMatrix(true);
+        var autoBox = getGLBBounds(root);
         var belowOrigin = Math.abs(autoBox.min.y);
         var aboveOrigin = Math.max(autoBox.max.y, 0.001);
         var needsFlip = false;
-        // If model extends much more below origin than above, it's inverted
-        if (belowOrigin > aboveOrigin * 2) {
-          needsFlip = true;
-        }
-        // All geometry at or below origin = definitely inverted
-        if (autoBox.max.y <= 0.001 && autoBox.min.y < -0.1) {
-          needsFlip = true;
-        }
-        // Manual override from ENV_MODEL_FLIP_Y
+        if (belowOrigin > aboveOrigin * 2) needsFlip = true;
+        if (autoBox.max.y <= 0.001 && autoBox.min.y < -0.1) needsFlip = true;
         if (typeof ENV_MODEL_FLIP_Y !== 'undefined' && ENV_MODEL_FLIP_Y[envType] !== undefined) {
           needsFlip = ENV_MODEL_FLIP_Y[envType];
         }
         if (needsFlip) {
-          model.rotation.x = Math.PI;
+          root.rotation.x = Math.PI;
           console.log('Flipped inverted model: ' + envType);
         }
-        envModelCache[envType] = model;
+
+        root.setEnabled(false);
+        envModelCache[envType] = root;
         loaded++;
         console.log('Loaded env model: ' + envType + ' (' + loaded + '/' + total + ')');
         if (loaded === total) {
@@ -283,53 +290,60 @@ function preloadEnvModels(callback) {
           if (callback) callback();
         }
       },
-      undefined,
-      function (err) {
-        console.warn('Failed to load env model ' + envType + ': ' + err.message);
+      null,
+      function (sc, msg, err) {
+        console.warn('Failed to load env model ' + envType + ': ' + (msg || err));
         loaded++;
-        if (loaded === total) {
-          envModelsLoaded = true;
-          if (callback) callback();
-        }
+        if (loaded === total) { envModelsLoaded = true; if (callback) callback(); }
       }
     );
   });
 }
 
 // Clone and place an environment model at given position, scale, rotation
-function placeEnvModel(scene, envType, x, y, z, scale, rotY) {
+function placeEnvModel(sc, envType, x, y, z, scale, rotY) {
   var template = envModelCache[envType];
   if (!template) return null;
-  var clone = template.clone();
+
+  var clone = template.clone(envType + '_c' + (++_ktn), null);
+  clone.setEnabled(true);
+  // Enable all child meshes
+  var cms = clone.getChildMeshes();
+  for (var ci = 0; ci < cms.length; ci++) cms[ci].setEnabled(true);
 
   // Reset position and apply rotY FIRST so bbox includes rotation
-  clone.position.set(0, 0, 0);
+  clone.position.copyFromFloats(0, 0, 0);
+  clone.rotation.copyFrom(template.rotation); // preserve flip
   if (rotY !== undefined) clone.rotation.y = rotY;
 
   // Compute bounding box at origin (includes rotation)
-  var box = new THREE.Box3().setFromObject(clone);
-  var size = new THREE.Vector3();
-  box.getSize(size);
-  var maxDim = Math.max(size.x, size.y, size.z);
+  clone.computeWorldMatrix(true);
+  var box = getGLBBounds(clone);
+  var sz = box.size;
+  var maxDim = Math.max(sz.x, sz.y, sz.z);
   if (maxDim === 0) maxDim = 1;
 
   // Apply normalized scale (target size in world units)
   var s = (typeof scale === 'number') ? scale : 1;
   var normalizedScale = s / maxDim;
-  clone.scale.set(normalizedScale, normalizedScale, normalizedScale);
+  clone.scaling.copyFromFloats(normalizedScale, normalizedScale, normalizedScale);
 
-  // Recompute box after scaling (still at origin)
-  box.setFromObject(clone);
-  var center = new THREE.Vector3();
-  box.getCenter(center);
+  // Recompute box after scaling
+  clone.computeWorldMatrix(true);
+  box = getGLBBounds(clone);
+  var cx = (box.min.x + box.max.x) / 2;
+  var cz = (box.min.z + box.max.z) / 2;
 
   // Place: center horizontally at (x, z), bottom at y
-  clone.position.set(x - center.x, y - box.min.y, z - center.z);
+  clone.position.copyFromFloats(x - cx, y - box.min.y, z - cz);
 
-  scene.add(clone);
   trackMeshes.push(clone);
   return clone;
 }
+
+var _ktn = 0; // unique name counter
+
+// --- Racer Constructor (no Three.js dependencies) ---
 
 function Racer(charIdx, isPlayer, kartIdx, equipType) {
   this.charIdx = charIdx;
@@ -356,9 +370,9 @@ function Racer(charIdx, isPlayer, kartIdx, equipType) {
   this.lap = 0;
   this.totalIdx = 0;
   this.progress = 0;
-  this.progressAccum = 0; // cumulative forward progress (handles start-line wraparound)
+  this.progressAccum = 0;
   this.lastCP = 0;
-  this.crossedStartOnce = false; // Prevents false lap on first start-line crossing
+  this.crossedStartOnce = false;
 
   // Items and state
   this.item = null;
@@ -368,7 +382,7 @@ function Racer(charIdx, isPlayer, kartIdx, equipType) {
   this.shieldTimer = 0;
   this.stunTimer = 0;
 
-  // Energy rings (speed boost collectible)
+  // Energy rings
   this.rings = 0;
 
   // Skill system
@@ -398,18 +412,17 @@ function Racer(charIdx, isPlayer, kartIdx, equipType) {
   if (!isPlayer) {
     this.aiTargetIdx = 0;
     this.aiInner = Math.random() > 0.5;
-    // Difficulty-based AI skill
     var diff = (typeof DIFFICULTY !== 'undefined' && typeof cpuDifficulty !== 'undefined') ? DIFFICULTY[cpuDifficulty] : DIFFICULTY.normal;
     this.aiSkill = diff.aiSkillMin + Math.random() * (diff.aiSkillMax - diff.aiSkillMin);
     this.aiDiffItemFreq = diff.itemFreq || 1.0;
     this.aiDiffSkillFreq = diff.skillFreq || 1.0;
     this.aiDiffRubberBehind = diff.rubberBehind || 0.08;
     this.aiDiffRubberAhead = diff.rubberAhead || -0.08;
-    this.aiLateral = (Math.random() - 0.5) * 5; // lane offset for variety (reduced to avoid walls)
+    this.aiLateral = (Math.random() - 0.5) * 5;
     this.aiDrifting = false;
     this.aiDriftCharge = 0;
-    this.aiItemDelay = 0; // cooldown between item uses
-    this.aiStuckTimer = 0; // frames stuck at low speed near wall
+    this.aiItemDelay = 0;
+    this.aiStuckTimer = 0;
   }
 }
 
@@ -421,14 +434,73 @@ Racer.prototype.placeAt = function (idx) {
   this.ang = getTrackAngle(idx);
   this.totalIdx = idx;
   this.aiTargetIdx = (idx + 3) % TRACK_POINTS;
-  // Initialize progress relative to start line (node 0)
-  // Racers behind the line (e.g. node 95-99) get negative progress
   this.progressAccum = (idx > TRACK_POINTS / 2) ? idx - TRACK_POINTS : idx;
   this.progress = this.progressAccum;
 };
 
-Racer.prototype.createMesh = function (scene) {
-  this.mesh = new THREE.Group();
+// --- Babylon.js material helpers for procedural kart ---
+function kartPBR(hex, metalness, roughness) {
+  var mat = new BABYLON.StandardMaterial('kpbr' + (++_ktn), scene);
+  mat.diffuseColor = c3(hex);
+  // Approximate PBR metallic/roughness with specular
+  var met = metalness !== undefined ? metalness : 0.5;
+  var rou = roughness !== undefined ? roughness : 0.2;
+  mat.specularColor = c3(hex).scale(met);
+  mat.specularPower = 4 + (1 - rou) * 60;
+  mat.backFaceCulling = true;
+  return mat;
+}
+
+function kartStd(hex, emHex, emInt) {
+  var mat = new BABYLON.StandardMaterial('kstd' + (++_ktn), scene);
+  mat.diffuseColor = c3(hex);
+  if (emHex !== undefined) {
+    mat.emissiveColor = c3(emHex).scale(emInt || 1);
+  }
+  mat.backFaceCulling = true;
+  return mat;
+}
+
+function kartStdDS(hex, emHex, emInt) {
+  var mat = kartStd(hex, emHex, emInt);
+  mat.backFaceCulling = false;
+  return mat;
+}
+
+// Babylon.js mesh builder shortcuts for kart parts
+function kCyl(opts, mat) {
+  var m = BABYLON.MeshBuilder.CreateCylinder('kc' + (++_ktn), opts, scene);
+  m.material = mat;
+  return m;
+}
+function kBox(opts, mat) {
+  var m = BABYLON.MeshBuilder.CreateBox('kb' + (++_ktn), opts, scene);
+  m.material = mat;
+  return m;
+}
+function kSph(opts, mat) {
+  var m = BABYLON.MeshBuilder.CreateSphere('ks' + (++_ktn), opts, scene);
+  m.material = mat;
+  return m;
+}
+function kTorus(opts, mat) {
+  var m = BABYLON.MeshBuilder.CreateTorus('kt' + (++_ktn), opts, scene);
+  m.material = mat;
+  return m;
+}
+function kGnd(opts, mat) {
+  var m = BABYLON.MeshBuilder.CreateGround('kg' + (++_ktn), opts, scene);
+  m.material = mat;
+  return m;
+}
+function kPoly(opts, mat) {
+  var m = BABYLON.MeshBuilder.CreatePolyhedron('kp' + (++_ktn), opts, scene);
+  m.material = mat;
+  return m;
+}
+
+Racer.prototype.createMesh = function (sc) {
+  this.mesh = new BABYLON.TransformNode('racer' + (++_ktn), scene);
 
   var char = this.char;
   var mainColor = char.col;
@@ -440,16 +512,17 @@ Racer.prototype.createMesh = function (scene) {
   // === CHECK FOR COMBINED KART MODEL (character+kart in one GLB) ===
   var hasKartModel = kartModelCache[bodyType] !== undefined;
   if (hasKartModel) {
-    var kartClone = kartModelCache[bodyType].clone();
+    var kartClone = kartModelCache[bodyType].clone('kartClone_' + bodyType + (++_ktn), this.mesh);
+    kartClone.setEnabled(true);
+    var cms = kartClone.getChildMeshes();
+    for (var ci = 0; ci < cms.length; ci++) cms[ci].setEnabled(true);
     kartClone.rotation.y = Math.PI; // Face forward (nose at -Z)
-    this.mesh.add(kartClone);
     this.kartGLB = kartClone;
     this.bodyMesh = kartClone;
     this.wheelMeshes = [];
     this.steeringWheel = null;
     this.driverGroup = kartClone;
 
-    scene.add(this.mesh);
     this.updateMesh();
     return;
   }
@@ -457,364 +530,417 @@ Racer.prototype.createMesh = function (scene) {
   // === FALLBACK: Procedural kart + separate character model ===
 
   // Materials
-  var bodyMat = new THREE.MeshStandardMaterial({
-    color: mainColor, metalness: 0.55, roughness: 0.18
-  });
-  var darkMat = new THREE.MeshStandardMaterial({
-    color: 0x222228, metalness: 0.5, roughness: 0.25
-  });
-  var chromeMat = new THREE.MeshStandardMaterial({
-    color: 0xeeeeee, metalness: 0.9, roughness: 0.08
-  });
-  var accentMat = new THREE.MeshStandardMaterial({
-    color: darkColor, metalness: 0.5, roughness: 0.2
-  });
+  var bodyMat = kartPBR(mainColor, 0.55, 0.18);
+  var darkMat = kartPBR(0x222228, 0.5, 0.25);
+  var chromeMat = kartPBR(0xeeeeee, 0.9, 0.08);
+  var accentMat = kartPBR(darkColor, 0.5, 0.2);
 
-  var bodyGroup = new THREE.Group();
+  var bodyGroup = new BABYLON.TransformNode('body' + (++_ktn), scene);
+  bodyGroup.parent = this.mesh;
 
-  // === MAIN BODY - shape varies by kart style ===
+  // === MAIN BODY ===
   var kartStyle = KARTS[this.kartIdx] ? KARTS[this.kartIdx].style : 'medium';
 
-  // Style-specific dimensions - dramatically different silhouettes
   var baseW, baseD, shellW, shellH, shellD, noseLen, spoilerW;
   if (kartStyle === 'long') {
-    // Stardust: sleek F1-style, very long nose, narrow body
     baseW = 1.1; baseD = 3.2; shellW = 0.9; shellH = 0.25; shellD = 2.5; noseLen = 1.8; spoilerW = 1.0;
   } else if (kartStyle === 'wide') {
-    // Titan: chunky tank-like, wide body, short nose, high shell
     baseW = 1.9; baseD = 2.2; shellW = 1.7; shellH = 0.40; shellD = 1.8; noseLen = 0.8; spoilerW = 1.8;
   } else {
-    // Thunderbolt: balanced sporty, medium proportions
     baseW = 1.5; baseD = 2.5; shellW = 1.3; shellH = 0.30; shellD = 2.1; noseLen = 1.25; spoilerW = 1.4;
   }
 
   // Lower chassis - tapered (wider at rear)
-  var chassisGeo = new THREE.BufferGeometry();
   var cw = baseW * 0.5, cd = baseD * 0.5, ch = 0.12;
-  var cwf = cw * 0.75; // front is narrower
+  var cwf = cw * 0.75;
   var chassisVerts = [
-    // Top face
     -cwf, ch, -cd, cwf, ch, -cd, cw, ch, cd, -cw, ch, cd,
-    // Bottom face
     -cwf, -ch, -cd, cwf, -ch, -cd, cw, -ch, cd, -cw, -ch, cd
   ];
   var chassisIdx = [0, 1, 2, 0, 2, 3, 4, 6, 5, 4, 7, 6, 0, 4, 5, 0, 5, 1, 2, 6, 7, 2, 7, 3, 1, 5, 6, 1, 6, 2, 0, 3, 7, 0, 7, 4];
-  chassisGeo.setAttribute('position', new THREE.Float32BufferAttribute(chassisVerts, 3));
-  chassisGeo.setIndex(chassisIdx);
-  chassisGeo.computeVertexNormals();
-  var chassis = new THREE.Mesh(chassisGeo, darkMat);
+  var chassis = createCustomMesh('chassis' + _ktn, chassisVerts, chassisIdx, null, null, scene);
+  chassis.material = darkMat;
   chassis.position.y = 0.14;
-  chassis.castShadow = true;
-  bodyGroup.add(chassis);
+  chassis.parent = bodyGroup;
+  if (shadowGen) shadowGen.addShadowCaster(chassis);
 
   // Upper body shell
-  var shell = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), bodyMat);
-  shell.position.set(0, 0.30, -0.05);
-  shell.scale.set(shellW * 0.52, shellH * 0.6, shellD * 0.48);
-  shell.castShadow = true;
-  bodyGroup.add(shell);
+  var shell = kSph({ diameter: 2, segments: 12 }, bodyMat);
+  shell.position.copyFromFloats(0, 0.30, -0.05);
+  shell.scaling.copyFromFloats(shellW * 0.52, shellH * 0.6, shellD * 0.48);
+  shell.parent = bodyGroup;
+  if (shadowGen) shadowGen.addShadowCaster(shell);
 
-  // Front nose - elongated aerodynamic shape
-  var nose = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 8), bodyMat);
-  nose.position.set(0, 0.25, -noseLen);
-  nose.scale.set(baseW * 0.55, 0.35, 0.8);
-  nose.castShadow = true;
-  bodyGroup.add(nose);
+  // Front nose
+  var nose = kSph({ diameter: 1, segments: 12 }, bodyMat);
+  nose.position.copyFromFloats(0, 0.25, -noseLen);
+  nose.scaling.copyFromFloats(baseW * 0.55, 0.35, 0.8);
+  nose.parent = bodyGroup;
+  if (shadowGen) shadowGen.addShadowCaster(nose);
 
-  // Front splitter (chin)
-  var splitter = new THREE.Mesh(new THREE.BoxGeometry(baseW * 0.9, 0.04, 0.35), darkMat);
-  splitter.position.set(0, 0.06, -noseLen - 0.1);
-  bodyGroup.add(splitter);
+  // Front splitter
+  var splitter = kBox({ width: baseW * 0.9, height: 0.04, depth: 0.35 }, darkMat);
+  splitter.position.copyFromFloats(0, 0.06, -noseLen - 0.1);
+  splitter.parent = bodyGroup;
 
   // Chrome bumper
-  var bumper = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, baseW * 0.85, 8), chromeMat);
-  bumper.position.set(0, 0.12, -noseLen - 0.15);
+  var bumper = kCyl({ diameterTop: 0.1, diameterBottom: 0.1, height: baseW * 0.85, tessellation: 8 }, chromeMat);
+  bumper.position.copyFromFloats(0, 0.12, -noseLen - 0.15);
   bumper.rotation.z = Math.PI / 2;
-  bodyGroup.add(bumper);
+  bumper.parent = bodyGroup;
 
-  // Side pods / skirts - sculpted with spheres
+  // Side pods
   for (var s = -1; s <= 1; s += 2) {
-    var pod = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 6), accentMat);
-    pod.position.set(s * (baseW * 0.42), 0.20, 0.15);
-    pod.scale.set(0.5, 0.42, 2.2);
-    pod.castShadow = true;
-    bodyGroup.add(pod);
+    var pod = kSph({ diameter: 0.8, segments: 8 }, accentMat);
+    pod.position.copyFromFloats(s * (baseW * 0.42), 0.20, 0.15);
+    pod.scaling.copyFromFloats(0.5, 0.42, 2.2);
+    pod.parent = bodyGroup;
+    if (shadowGen) shadowGen.addShadowCaster(pod);
   }
 
   // Side air intakes
-  var intakeMat = new THREE.MeshLambertMaterial({ color: 0x111115 });
+  var intakeMat = kartStd(0x111115);
   for (var s = -1; s <= 1; s += 2) {
-    var intake = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.10, 0.45), intakeMat);
-    intake.position.set(s * (shellW * 0.52), 0.22, -0.4);
-    bodyGroup.add(intake);
+    var intake = kBox({ width: 0.04, height: 0.10, depth: 0.45 }, intakeMat);
+    intake.position.copyFromFloats(s * (shellW * 0.52), 0.22, -0.4);
+    intake.parent = bodyGroup;
   }
 
-  // Engine cowl (rear) - kept low so character is visible from behind
-  var cowl = new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 8), accentMat);
-  cowl.position.set(0, 0.24, 0.9);
-  cowl.scale.set(1.15, 0.35, 0.85);
-  cowl.castShadow = true;
-  bodyGroup.add(cowl);
+  // Engine cowl (rear)
+  var cowl = kSph({ diameter: 0.9, segments: 10 }, accentMat);
+  cowl.position.copyFromFloats(0, 0.24, 0.9);
+  cowl.scaling.copyFromFloats(1.15, 0.35, 0.85);
+  cowl.parent = bodyGroup;
+  if (shadowGen) shadowGen.addShadowCaster(cowl);
 
   // Wheel arches / fenders
-  var fenderMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+  var fenderMat = kartStd(0x1a1a1a);
   var fenderPositions = [
     { x: -0.72, z: -0.85, front: true }, { x: 0.72, z: -0.85, front: true },
     { x: -0.72, z: 0.9, front: false }, { x: 0.72, z: 0.9, front: false }
   ];
   for (var fi = 0; fi < fenderPositions.length; fi++) {
     var fp = fenderPositions[fi];
-    var fr = fp.front ? 0.32 : 0.37;
-    var fender = new THREE.Mesh(
-      new THREE.TorusGeometry(fr, 0.06, 6, 12, Math.PI),
-      fenderMat
-    );
-    fender.position.set(fp.x, 0.22, fp.z);
+    var fR = fp.front ? 0.32 : 0.37;
+    var fender = kTorus({ diameter: fR * 2, thickness: 0.06, tessellation: 12 }, fenderMat);
+    // Only show top half - we approximate by positioning and parent
+    fender.position.copyFromFloats(fp.x, 0.22, fp.z);
     fender.rotation.y = Math.PI / 2;
     fender.rotation.x = -Math.PI / 2;
-    bodyGroup.add(fender);
+    fender.parent = bodyGroup;
   }
 
-  // Spoiler - style-specific
-  var spoilerMat = new THREE.MeshLambertMaterial({ color: mainColor });
+  // Spoiler
+  var spoilerMat = kartStd(mainColor);
   var spoilerH = kartStyle === 'wide' ? 0.65 : 0.58;
-  var spoiler = new THREE.Mesh(new THREE.BoxGeometry(spoilerW, 0.06, 0.25), spoilerMat);
-  spoiler.position.set(0, spoilerH, 1.15);
+  var spoiler = kBox({ width: spoilerW, height: 0.06, depth: 0.25 }, spoilerMat);
+  spoiler.position.copyFromFloats(0, spoilerH, 1.15);
   spoiler.rotation.x = -0.18;
-  bodyGroup.add(spoiler);
+  spoiler.parent = bodyGroup;
+
   // Spoiler end plates
-  var epMat = new THREE.MeshLambertMaterial({ color: mainColor });
+  var epMat = kartStd(mainColor);
   var epW = spoilerW * 0.48;
-  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.28), epMat).translateX(-epW).translateY(spoilerH - 0.02).translateZ(1.15));
-  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.28), epMat).translateX(epW).translateY(spoilerH - 0.02).translateZ(1.15));
-  // Spoiler supports (chrome)
-  var sGeom = new THREE.CylinderGeometry(0.025, 0.025, 0.32, 6);
-  bodyGroup.add(new THREE.Mesh(sGeom, chromeMat).translateX(-epW * 0.7).translateY(spoilerH - 0.2).translateZ(1.05));
-  bodyGroup.add(new THREE.Mesh(sGeom, chromeMat).translateX(epW * 0.7).translateY(spoilerH - 0.2).translateZ(1.05));
+  var ep1 = kBox({ width: 0.04, height: 0.14, depth: 0.28 }, epMat);
+  ep1.position.copyFromFloats(-epW, spoilerH - 0.02, 1.15);
+  ep1.parent = bodyGroup;
+  var ep2 = kBox({ width: 0.04, height: 0.14, depth: 0.28 }, epMat);
+  ep2.position.copyFromFloats(epW, spoilerH - 0.02, 1.15);
+  ep2.parent = bodyGroup;
 
-  // Exhaust pipes (chrome)
-  var exhMat = new THREE.MeshStandardMaterial({ color: 0xBBBBBB, metalness: 0.7, roughness: 0.2 });
-  var exhGeom = new THREE.CylinderGeometry(0.06, 0.08, 0.4, 8);
-  var lExh = new THREE.Mesh(exhGeom, exhMat);
-  lExh.position.set(-0.3, 0.14, 1.4); lExh.rotation.x = Math.PI / 2.3;
-  bodyGroup.add(lExh);
-  var rExh = new THREE.Mesh(exhGeom, exhMat);
-  rExh.position.set(0.3, 0.14, 1.4); rExh.rotation.x = Math.PI / 2.3;
-  bodyGroup.add(rExh);
-  // Exhaust tips (glowing orange inside)
-  var exhTipMat = new THREE.MeshLambertMaterial({ color: 0xFF6600, emissive: 0xFF4400, emissiveIntensity: 0.4 });
-  var exhTipGeo = new THREE.CylinderGeometry(0.04, 0.05, 0.08, 8);
-  bodyGroup.add(new THREE.Mesh(exhTipGeo, exhTipMat).translateX(-0.3).translateY(0.12).translateZ(1.55).rotateX(Math.PI / 2.3));
-  bodyGroup.add(new THREE.Mesh(exhTipGeo, exhTipMat).translateX(0.3).translateY(0.12).translateZ(1.55).rotateX(Math.PI / 2.3));
+  // Spoiler supports
+  var spoilerSup = kCyl({ diameterTop: 0.05, diameterBottom: 0.05, height: 0.32, tessellation: 6 }, chromeMat);
+  spoilerSup.position.copyFromFloats(-epW * 0.7, spoilerH - 0.2, 1.05);
+  spoilerSup.parent = bodyGroup;
+  var spoilerSup2 = kCyl({ diameterTop: 0.05, diameterBottom: 0.05, height: 0.32, tessellation: 6 }, chromeMat);
+  spoilerSup2.position.copyFromFloats(epW * 0.7, spoilerH - 0.2, 1.05);
+  spoilerSup2.parent = bodyGroup;
 
-  // Headlights - larger, LED-style
-  var hlMat = new THREE.MeshLambertMaterial({
-    color: 0xffffdd, emissive: 0xffffaa, emissiveIntensity: 0.6
-  });
-  var hlGeo = new THREE.SphereGeometry(0.09, 8, 8);
-  bodyGroup.add(new THREE.Mesh(hlGeo, hlMat).translateX(-0.38).translateY(0.18).translateZ(-noseLen - 0.05));
-  bodyGroup.add(new THREE.Mesh(hlGeo, hlMat).translateX(0.38).translateY(0.18).translateZ(-noseLen - 0.05));
+  // Exhaust pipes
+  var exhMat = kartPBR(0xBBBBBB, 0.7, 0.2);
+  var lExh = kCyl({ diameterTop: 0.12, diameterBottom: 0.16, height: 0.4, tessellation: 8 }, exhMat);
+  lExh.position.copyFromFloats(-0.3, 0.14, 1.4); lExh.rotation.x = Math.PI / 2.3;
+  lExh.parent = bodyGroup;
+  var rExh = kCyl({ diameterTop: 0.12, diameterBottom: 0.16, height: 0.4, tessellation: 8 }, exhMat);
+  rExh.position.copyFromFloats(0.3, 0.14, 1.4); rExh.rotation.x = Math.PI / 2.3;
+  rExh.parent = bodyGroup;
+
+  // Exhaust tips
+  var exhTipMat = kartStd(0xFF6600, 0xFF4400, 0.4);
+  var et1 = kCyl({ diameterTop: 0.08, diameterBottom: 0.10, height: 0.08, tessellation: 8 }, exhTipMat);
+  et1.position.copyFromFloats(-0.3, 0.12, 1.55); et1.rotation.x = Math.PI / 2.3;
+  et1.parent = bodyGroup;
+  var et2 = kCyl({ diameterTop: 0.08, diameterBottom: 0.10, height: 0.08, tessellation: 8 }, exhTipMat);
+  et2.position.copyFromFloats(0.3, 0.12, 1.55); et2.rotation.x = Math.PI / 2.3;
+  et2.parent = bodyGroup;
+
+  // Headlights
+  var hlMat = kartStd(0xffffdd, 0xffffaa, 0.6);
+  var hl1 = kSph({ diameter: 0.18, segments: 8 }, hlMat);
+  hl1.position.copyFromFloats(-0.38, 0.18, -noseLen - 0.05);
+  hl1.parent = bodyGroup;
+  var hl2 = kSph({ diameter: 0.18, segments: 8 }, hlMat);
+  hl2.position.copyFromFloats(0.38, 0.18, -noseLen - 0.05);
+  hl2.parent = bodyGroup;
+
   // Headlight housing
-  var hlHouseMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
-  var hlHouseGeo = new THREE.SphereGeometry(0.12, 8, 8);
-  hlHouseGeo.scale(1, 1, 0.5);
-  bodyGroup.add(new THREE.Mesh(hlHouseGeo, hlHouseMat).translateX(-0.38).translateY(0.18).translateZ(-noseLen + 0.01));
-  bodyGroup.add(new THREE.Mesh(hlHouseGeo, hlHouseMat).translateX(0.38).translateY(0.18).translateZ(-noseLen + 0.01));
+  var hlHouseMat = kartStd(0x333333);
+  var hlh1 = kSph({ diameter: 0.24, segments: 8 }, hlHouseMat);
+  hlh1.position.copyFromFloats(-0.38, 0.18, -noseLen + 0.01);
+  hlh1.scaling.z = 0.5;
+  hlh1.parent = bodyGroup;
+  var hlh2 = kSph({ diameter: 0.24, segments: 8 }, hlHouseMat);
+  hlh2.position.copyFromFloats(0.38, 0.18, -noseLen + 0.01);
+  hlh2.scaling.z = 0.5;
+  hlh2.parent = bodyGroup;
 
-  // Tail lights - LED strip style
-  var tlMat = new THREE.MeshLambertMaterial({ color: 0xff2222, emissive: 0xff0000, emissiveIntensity: 0.5 });
-  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.03), tlMat).translateX(-0.42).translateY(0.22).translateZ(1.25));
-  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.03), tlMat).translateX(0.42).translateY(0.22).translateZ(1.25));
+  // Tail lights
+  var tlMat = kartStd(0xff2222, 0xff0000, 0.5);
+  var tl1 = kBox({ width: 0.18, height: 0.06, depth: 0.03 }, tlMat);
+  tl1.position.copyFromFloats(-0.42, 0.22, 1.25);
+  tl1.parent = bodyGroup;
+  var tl2 = kBox({ width: 0.18, height: 0.06, depth: 0.03 }, tlMat);
+  tl2.position.copyFromFloats(0.42, 0.22, 1.25);
+  tl2.parent = bodyGroup;
   // Center brake light
-  bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.04, 0.03), tlMat).translateY(spoilerH - 0.12).translateZ(1.22));
+  var cbl = kBox({ width: 0.5, height: 0.04, depth: 0.03 }, tlMat);
+  cbl.position.copyFromFloats(0, spoilerH - 0.12, 1.22);
+  cbl.parent = bodyGroup;
 
-  // === CHARACTER-SPECIFIC DECORATIONS based on body type (low kart style) ===
+  // === CHARACTER-SPECIFIC DECORATIONS ===
   if (bodyType === 'dragon') {
-    var flameMat = new THREE.MeshLambertMaterial({
-      color: 0xFF6600, emissive: 0xFF4400, emissiveIntensity: 0.5, side: THREE.DoubleSide
-    });
-    bodyGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.18), flameMat).translateX(-0.67).translateY(0.22).translateZ(-0.2).rotateY(Math.PI / 2));
-    bodyGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.18), flameMat).translateX(0.67).translateY(0.22).translateZ(-0.2).rotateY(Math.PI / 2));
-    bodyGroup.add(new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.4, 6), flameMat).translateY(0.28).translateZ(-1.5).rotateX(Math.PI / 2));
+    var flameMat = kartStdDS(0xFF6600, 0xFF4400, 0.5);
+    var fg1 = kGnd({ width: 1.5, height: 0.18 }, flameMat);
+    fg1.position.copyFromFloats(-0.67, 0.22, -0.2); fg1.rotation.z = Math.PI / 2;
+    fg1.parent = bodyGroup;
+    var fg2 = kGnd({ width: 1.5, height: 0.18 }, flameMat);
+    fg2.position.copyFromFloats(0.67, 0.22, -0.2); fg2.rotation.z = Math.PI / 2;
+    fg2.parent = bodyGroup;
+    var fc = kCyl({ diameterTop: 0, diameterBottom: 0.3, height: 0.4, tessellation: 6 }, flameMat);
+    fc.position.copyFromFloats(0, 0.28, -1.5); fc.rotation.x = Math.PI / 2;
+    fc.parent = bodyGroup;
   } else if (bodyType === 'mermaid') {
-    var finMat = new THREE.MeshLambertMaterial({ color: mainColor });
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.25, 0.6), finMat).translateY(0.35).translateZ(0.3));
-    var ventMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.10, 0.4), ventMat).translateX(-0.66).translateY(0.24).translateZ(-0.5));
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.10, 0.4), ventMat).translateX(0.66).translateY(0.24).translateZ(-0.5));
+    var finMat = kartStd(mainColor);
+    var fin = kBox({ width: 0.04, height: 0.25, depth: 0.6 }, finMat);
+    fin.position.copyFromFloats(0, 0.35, 0.3);
+    fin.parent = bodyGroup;
+    var ventMat = kartStd(0x333333);
+    var v1 = kBox({ width: 0.02, height: 0.10, depth: 0.4 }, ventMat);
+    v1.position.copyFromFloats(-0.66, 0.24, -0.5); v1.parent = bodyGroup;
+    var v2 = kBox({ width: 0.02, height: 0.10, depth: 0.4 }, ventMat);
+    v2.position.copyFromFloats(0.66, 0.24, -0.5); v2.parent = bodyGroup;
   } else if (bodyType === 'golem') {
-    var leafMat = new THREE.MeshLambertMaterial({ color: 0x44DD44, emissive: 0x22AA22, emissiveIntensity: 0.3 });
-    var leaf = new THREE.Mesh(new THREE.SphereGeometry(0.2, 6, 4), leafMat);
-    leaf.position.set(0, 0.30, -0.6); leaf.scale.set(1, 0.3, 1.5);
-    bodyGroup.add(leaf);
-    var vineMat = new THREE.MeshLambertMaterial({ color: 0x33AA33 });
-    var vine = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.03, 4, 12, Math.PI), vineMat);
-    vine.position.set(-0.7, 0.20, 0); vine.rotation.y = Math.PI / 2;
-    bodyGroup.add(vine);
+    var leafMat = kartStd(0x44DD44, 0x22AA22, 0.3);
+    var leaf = kSph({ diameter: 0.4, segments: 6 }, leafMat);
+    leaf.position.copyFromFloats(0, 0.30, -0.6); leaf.scaling.copyFromFloats(1, 0.3, 1.5);
+    leaf.parent = bodyGroup;
+    var vineMat = kartStd(0x33AA33);
+    var vine = kTorus({ diameter: 1.6, thickness: 0.03, tessellation: 12 }, vineMat);
+    vine.position.copyFromFloats(-0.7, 0.20, 0); vine.rotation.y = Math.PI / 2;
+    vine.parent = bodyGroup;
   } else if (bodyType === 'phantom') {
-    var wingMat = new THREE.MeshLambertMaterial({ color: 0x6633AA });
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.02), wingMat).translateX(-0.85).translateY(0.35).translateZ(0.9).rotateZ(0.4));
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.02), wingMat).translateX(0.85).translateY(0.35).translateZ(0.9).rotateZ(-0.4));
-    var glowMat = new THREE.MeshLambertMaterial({ color: 0xBB77FF, emissive: 0x8844CC, emissiveIntensity: 0.8 });
-    bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), glowMat).translateX(-0.5).translateY(0.18).translateZ(-1.3));
-    bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), glowMat).translateX(0.5).translateY(0.18).translateZ(-1.3));
+    var wingMat = kartStd(0x6633AA);
+    var pw1 = kBox({ width: 0.5, height: 0.25, depth: 0.02 }, wingMat);
+    pw1.position.copyFromFloats(-0.85, 0.35, 0.9); pw1.rotation.z = 0.4;
+    pw1.parent = bodyGroup;
+    var pw2 = kBox({ width: 0.5, height: 0.25, depth: 0.02 }, wingMat);
+    pw2.position.copyFromFloats(0.85, 0.35, 0.9); pw2.rotation.z = -0.4;
+    pw2.parent = bodyGroup;
+    var glowMat = kartStd(0xBB77FF, 0x8844CC, 0.8);
+    var pg1 = kSph({ diameter: 0.12, segments: 6 }, glowMat);
+    pg1.position.copyFromFloats(-0.5, 0.18, -1.3); pg1.parent = bodyGroup;
+    var pg2 = kSph({ diameter: 0.12, segments: 6 }, glowMat);
+    pg2.position.copyFromFloats(0.5, 0.18, -1.3); pg2.parent = bodyGroup;
   } else if (bodyType === 'angel') {
-    var starMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00, emissive: 0xFFAA00, emissiveIntensity: 0.6 });
-    var star = new THREE.Mesh(new THREE.OctahedronGeometry(0.2, 0), starMat);
-    star.position.set(0, 0.30, -0.7); star.scale.set(1.2, 0.4, 1.2);
-    bodyGroup.add(star);
-    var rayMat = new THREE.MeshLambertMaterial({ color: 0xFFDD44, emissive: 0xFFAA00, emissiveIntensity: 0.3 });
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.08, 1.2), rayMat).translateX(-0.67).translateY(0.26).translateZ(-0.1));
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.08, 1.2), rayMat).translateX(0.67).translateY(0.26).translateZ(-0.1));
+    var starMat = kartStd(0xFFDD00, 0xFFAA00, 0.6);
+    var star = kPoly({ type: 1, size: 0.2 }, starMat);
+    star.position.copyFromFloats(0, 0.30, -0.7); star.scaling.copyFromFloats(1.2, 0.4, 1.2);
+    star.parent = bodyGroup;
+    var rayMat = kartStd(0xFFDD44, 0xFFAA00, 0.3);
+    var ray1 = kBox({ width: 0.02, height: 0.08, depth: 1.2 }, rayMat);
+    ray1.position.copyFromFloats(-0.67, 0.26, -0.1); ray1.parent = bodyGroup;
+    var ray2 = kBox({ width: 0.02, height: 0.08, depth: 1.2 }, rayMat);
+    ray2.position.copyFromFloats(0.67, 0.26, -0.1); ray2.parent = bodyGroup;
   } else if (bodyType === 'robot') {
-    var antMat = new THREE.MeshLambertMaterial({ color: 0x44DDDD, emissive: 0x00AAAA, emissiveIntensity: 0.5 });
-    bodyGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.015, 0.4, 4), antMat).translateY(0.50).translateZ(0.5));
-    bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), antMat).translateY(0.70).translateZ(0.5));
-    var circMat = new THREE.MeshLambertMaterial({ color: 0x00FFFF, emissive: 0x00CCCC, emissiveIntensity: 0.4, side: THREE.DoubleSide });
-    bodyGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.06), circMat).translateX(-0.67).translateY(0.22).translateZ(0).rotateY(Math.PI / 2));
-    bodyGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.06), circMat).translateX(0.67).translateY(0.22).translateZ(0).rotateY(Math.PI / 2));
+    var antMat = kartStd(0x44DDDD, 0x00AAAA, 0.5);
+    var ant = kCyl({ diameterTop: 0.04, diameterBottom: 0.03, height: 0.4, tessellation: 4 }, antMat);
+    ant.position.copyFromFloats(0, 0.50, 0.5); ant.parent = bodyGroup;
+    var antTip = kSph({ diameter: 0.10, segments: 6 }, antMat);
+    antTip.position.copyFromFloats(0, 0.70, 0.5); antTip.parent = bodyGroup;
+    var circMat = kartStdDS(0x00FFFF, 0x00CCCC, 0.4);
+    var circ1 = kGnd({ width: 1.6, height: 0.06 }, circMat);
+    circ1.position.copyFromFloats(-0.67, 0.22, 0); circ1.rotation.z = Math.PI / 2;
+    circ1.parent = bodyGroup;
+    var circ2 = kGnd({ width: 1.6, height: 0.06 }, circMat);
+    circ2.position.copyFromFloats(0.67, 0.22, 0); circ2.rotation.z = Math.PI / 2;
+    circ2.parent = bodyGroup;
   } else if (bodyType === 'ninja') {
-    var shurikenMat = new THREE.MeshLambertMaterial({ color: 0xFFAACC, emissive: 0xFF77AA, emissiveIntensity: 0.4 });
-    var shuriken = new THREE.Mesh(new THREE.OctahedronGeometry(0.15, 0), shurikenMat);
-    shuriken.position.set(0, 0.30, -0.8); shuriken.scale.set(1.5, 0.3, 1.5);
-    bodyGroup.add(shuriken);
-    var petalMat = new THREE.MeshLambertMaterial({ color: 0xFF88BB, emissive: 0xFF5599, emissiveIntensity: 0.2 });
+    var shurikenMat = kartStd(0xFFAACC, 0xFF77AA, 0.4);
+    var shuriken = kPoly({ type: 1, size: 0.15 }, shurikenMat);
+    shuriken.position.copyFromFloats(0, 0.30, -0.8); shuriken.scaling.copyFromFloats(1.5, 0.3, 1.5);
+    shuriken.parent = bodyGroup;
+    var petalMat = kartStd(0xFF88BB, 0xFF5599, 0.2);
     for (var p = 0; p < 3; p++) {
-      bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 4, 4), petalMat).translateX(-0.68).translateY(0.22).translateZ(-0.5 + p * 0.4));
-      bodyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 4, 4), petalMat).translateX(0.68).translateY(0.22).translateZ(-0.5 + p * 0.4));
+      var pt1 = kSph({ diameter: 0.12, segments: 4 }, petalMat);
+      pt1.position.copyFromFloats(-0.68, 0.22, -0.5 + p * 0.4); pt1.parent = bodyGroup;
+      var pt2 = kSph({ diameter: 0.12, segments: 4 }, petalMat);
+      pt2.position.copyFromFloats(0.68, 0.22, -0.5 + p * 0.4); pt2.parent = bodyGroup;
     }
   } else if (bodyType === 'king') {
-    var crownMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00, emissive: 0xFFAA00, emissiveIntensity: 0.3 });
-    var crown = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.04, 4, 8), crownMat);
-    crown.position.set(0, 0.30, -0.6); crown.rotation.x = Math.PI / 2;
-    bodyGroup.add(crown);
-    var goldMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00 });
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 1.6), goldMat).translateX(-0.68).translateY(0.26).translateZ(0));
-    bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 1.6), goldMat).translateX(0.68).translateY(0.26).translateZ(0));
+    var crownMat = kartStd(0xFFDD00, 0xFFAA00, 0.3);
+    var crown = kTorus({ diameter: 0.4, thickness: 0.04, tessellation: 8 }, crownMat);
+    crown.position.copyFromFloats(0, 0.30, -0.6); crown.rotation.x = Math.PI / 2;
+    crown.parent = bodyGroup;
+    var goldMat = kartStd(0xFFDD00);
+    var gs1 = kBox({ width: 0.03, height: 0.06, depth: 1.6 }, goldMat);
+    gs1.position.copyFromFloats(-0.68, 0.26, 0); gs1.parent = bodyGroup;
+    var gs2 = kBox({ width: 0.03, height: 0.06, depth: 1.6 }, goldMat);
+    gs2.position.copyFromFloats(0.68, 0.26, 0); gs2.parent = bodyGroup;
   }
 
   this.bodyMesh = bodyGroup;
-  bodyGroup.scale.set(0.50, 0.18, 0.50); // Ultra-flat go-kart platform
-  bodyGroup.position.y = -0.30; // Push kart body way down
-  this.mesh.add(bodyGroup);
+  bodyGroup.scaling.copyFromFloats(0.50, 0.18, 0.50);
+  bodyGroup.position.y = -0.30;
 
-  // === DRIVER (full body above kart, Mario Kart style) ===
-  var driverGroup = new THREE.Group();
-  driverGroup.position.set(0, 0.55, 0.0); // High above kart - full body visible
+  // === DRIVER ===
+  var driverGroup = new BABYLON.TransformNode('driver' + (++_ktn), scene);
+  driverGroup.parent = this.mesh;
+  driverGroup.position.copyFromFloats(0, 0.55, 0.0);
 
-  // Check if GLB model is available for this character
   var hasGLBModel = glbModelCache[bodyType] !== undefined;
 
   if (hasGLBModel) {
-    // Use GLB model as driver
-    var glbClone = glbModelCache[bodyType].clone();
-    // Position the GLB model to sit above the kart, full body visible
-    glbClone.position.set(0, 0.0, 0);
-    glbClone.scale.multiplyScalar(2.2); // Large character - full body clearly visible above kart
+    var glbClone = glbModelCache[bodyType].clone('driverClone_' + bodyType + (++_ktn), driverGroup);
+    glbClone.setEnabled(true);
+    var cms = glbClone.getChildMeshes();
+    for (var ci = 0; ci < cms.length; ci++) cms[ci].setEnabled(true);
+    glbClone.position.copyFromFloats(0, 0, 0);
+    glbClone.scaling.scaleInPlace(2.2);
     glbClone.rotation.y = Math.PI;
-    driverGroup.add(glbClone);
     this.glbDriver = glbClone;
+
     // Steering wheel for GLB driver
-    var swGroupGLB = new THREE.Group();
-    swGroupGLB.position.set(0, -0.1, -0.4);
+    var swGroupGLB = new BABYLON.TransformNode('sw_glb' + (++_ktn), scene);
+    swGroupGLB.parent = driverGroup;
+    swGroupGLB.position.copyFromFloats(0, -0.1, -0.4);
     swGroupGLB.rotation.x = -0.3;
-    var swMatGLB = new THREE.MeshLambertMaterial({ color: 0x333333 });
-    swGroupGLB.add(new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.025, 6, 12), swMatGLB));
-    driverGroup.add(swGroupGLB);
+    var swMatGLB = kartStd(0x333333);
+    var swTorus = kTorus({ diameter: 0.28, thickness: 0.025, tessellation: 12 }, swMatGLB);
+    swTorus.parent = swGroupGLB;
     this.steeringWheel = swGroupGLB;
   } else {
-    // Fallback: procedural driver mesh
-    // Head
-    var headMat = new THREE.MeshLambertMaterial({ color: skinColor });
-    var head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 14, 12), headMat);
+    // Fallback: procedural driver
+    var headMat = kartStd(skinColor);
+    var head = kSph({ diameter: 0.6, segments: 14 }, headMat);
     head.position.y = 0.58;
-    head.castShadow = true;
-    driverGroup.add(head);
+    head.parent = driverGroup;
+    if (shadowGen) shadowGen.addShadowCaster(head);
     this.headMesh = head;
 
     // Helmet
-    var helmetMat = new THREE.MeshLambertMaterial({ color: helmetColor });
-    var helmet = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 12), helmetMat);
+    var helmetMat = kartStd(helmetColor);
+    var helmet = kSph({ diameter: 0.68, segments: 14 }, helmetMat);
     helmet.position.y = 0.62;
-    helmet.scale.set(1, 0.9, 1);
-    driverGroup.add(helmet);
+    helmet.scaling.copyFromFloats(1, 0.9, 1);
+    helmet.parent = driverGroup;
 
     // Visor
     var visorTint = bodyType === 'phantom' ? 0x220044 : bodyType === 'dragon' ? 0x331100 : 0x111133;
-    var visorMat = new THREE.MeshLambertMaterial({
-      color: visorTint, transparent: true, opacity: 0.85
-    });
-    var visor = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 6, -Math.PI * 0.4, Math.PI * 0.8, 0.3, 0.5), visorMat);
-    visor.position.set(0, 0.6, -0.12);
-    driverGroup.add(visor);
+    var visorMat = kartStd(visorTint);
+    visorMat.alpha = 0.85;
+    var visor = kSph({ diameter: 0.56, segments: 10, slice: 0.4 }, visorMat);
+    visor.position.copyFromFloats(0, 0.6, -0.12);
+    visor.parent = driverGroup;
 
     // Character-specific helmet decorations
     if (bodyType === 'dragon') {
-      var crestMat = new THREE.MeshLambertMaterial({ color: 0xFF2200, emissive: 0xFF4400, emissiveIntensity: 0.4 });
-      bodyGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.15, 0.5), crestMat).translateY(0.82 + 0.55).translateZ(0.05 + 0.15));
+      var crestMat = kartStd(0xFF2200, 0xFF4400, 0.4);
+      var crest = kBox({ width: 0.04, height: 0.15, depth: 0.5 }, crestMat);
+      crest.position.copyFromFloats(0, 0.82 + 0.55, 0.05 + 0.15);
+      crest.parent = bodyGroup;
     } else if (bodyType === 'mermaid') {
-      var antMat2 = new THREE.MeshLambertMaterial({ color: 0x66BBFF });
-      driverGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.01, 0.3, 4), antMat2).translateX(0.15).translateY(0.85));
-      var tipMat = new THREE.MeshLambertMaterial({ color: 0x00AAFF, emissive: 0x0088FF, emissiveIntensity: 0.6 });
-      driverGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 6), tipMat).translateX(0.15).translateY(1.0));
+      var antMat2 = kartStd(0x66BBFF);
+      var mAnt = kCyl({ diameterTop: 0.03, diameterBottom: 0.02, height: 0.3, tessellation: 4 }, antMat2);
+      mAnt.position.copyFromFloats(0.15, 0.85, 0); mAnt.parent = driverGroup;
+      var tipMat = kartStd(0x00AAFF, 0x0088FF, 0.6);
+      var mTip = kSph({ diameter: 0.08, segments: 6 }, tipMat);
+      mTip.position.copyFromFloats(0.15, 1.0, 0); mTip.parent = driverGroup;
     } else if (bodyType === 'golem') {
-      var gogMat = new THREE.MeshLambertMaterial({ color: 0xFFDD44 });
-      driverGroup.add(new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.025, 6, 12), gogMat).translateX(-0.12).translateY(0.78).translateZ(-0.18).rotateX(0.4));
-      driverGroup.add(new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.025, 6, 12), gogMat).translateX(0.12).translateY(0.78).translateZ(-0.18).rotateX(0.4));
+      var gogMat = kartStd(0xFFDD44);
+      var gog1 = kTorus({ diameter: 0.2, thickness: 0.025, tessellation: 12 }, gogMat);
+      gog1.position.copyFromFloats(-0.12, 0.78, -0.18); gog1.rotation.x = 0.4;
+      gog1.parent = driverGroup;
+      var gog2 = kTorus({ diameter: 0.2, thickness: 0.025, tessellation: 12 }, gogMat);
+      gog2.position.copyFromFloats(0.12, 0.78, -0.18); gog2.rotation.x = 0.4;
+      gog2.parent = driverGroup;
     } else if (bodyType === 'phantom') {
-      var hornMat = new THREE.MeshLambertMaterial({ color: 0x6633AA });
-      driverGroup.add(new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.2, 6), hornMat).translateX(-0.2).translateY(0.82).translateZ(-0.05).rotateZ(0.4));
-      driverGroup.add(new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.2, 6), hornMat).translateX(0.2).translateY(0.82).translateZ(-0.05).rotateZ(-0.4));
+      var hornMat = kartStd(0x6633AA);
+      var horn1 = kCyl({ diameterTop: 0, diameterBottom: 0.08, height: 0.2, tessellation: 6 }, hornMat);
+      horn1.position.copyFromFloats(-0.2, 0.82, -0.05); horn1.rotation.z = 0.4;
+      horn1.parent = driverGroup;
+      var horn2 = kCyl({ diameterTop: 0, diameterBottom: 0.08, height: 0.2, tessellation: 6 }, hornMat);
+      horn2.position.copyFromFloats(0.2, 0.82, -0.05); horn2.rotation.z = -0.4;
+      horn2.parent = driverGroup;
     } else if (bodyType === 'angel') {
-      var haloMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00, emissive: 0xFFAA00, emissiveIntensity: 0.6 });
-      driverGroup.add(new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.02, 6, 16), haloMat).translateY(0.95).rotateX(Math.PI / 2));
+      var haloMat = kartStd(0xFFDD00, 0xFFAA00, 0.6);
+      var halo = kTorus({ diameter: 0.44, thickness: 0.02, tessellation: 16 }, haloMat);
+      halo.position.y = 0.95; halo.rotation.x = Math.PI / 2;
+      halo.parent = driverGroup;
     } else if (bodyType === 'robot') {
-      var ledMat = new THREE.MeshLambertMaterial({ color: 0x00FF00, emissive: 0x00FF00, emissiveIntensity: 1.0 });
-      driverGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.03, 0.02), ledMat).translateX(-0.1).translateY(0.6).translateZ(-0.28));
-      driverGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.03, 0.02), ledMat).translateX(0.1).translateY(0.6).translateZ(-0.28));
+      var ledMat = kartStd(0x00FF00, 0x00FF00, 1.0);
+      var led1 = kBox({ width: 0.06, height: 0.03, depth: 0.02 }, ledMat);
+      led1.position.copyFromFloats(-0.1, 0.6, -0.28); led1.parent = driverGroup;
+      var led2 = kBox({ width: 0.06, height: 0.03, depth: 0.02 }, ledMat);
+      led2.position.copyFromFloats(0.1, 0.6, -0.28); led2.parent = driverGroup;
     } else if (bodyType === 'ninja') {
-      var scarfMat = new THREE.MeshLambertMaterial({ color: 0xFF77AA, side: THREE.DoubleSide });
-      driverGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.5), scarfMat).translateY(0.5).translateZ(0.2).rotateX(-0.3));
+      var scarfMat = kartStdDS(0xFF77AA);
+      var scarf = kGnd({ width: 0.3, height: 0.5 }, scarfMat);
+      scarf.position.copyFromFloats(0, 0.5, 0.2); scarf.rotation.x = -0.3;
+      scarf.parent = driverGroup;
     } else if (bodyType === 'king') {
-      var crMat = new THREE.MeshLambertMaterial({ color: 0xFFDD00, emissive: 0xFFAA00, emissiveIntensity: 0.3 });
-      driverGroup.add(new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.025, 4, 8), crMat).translateY(0.78).rotateX(Math.PI / 2));
-      var gemMat = new THREE.MeshLambertMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 0.5 });
-      driverGroup.add(new THREE.Mesh(new THREE.OctahedronGeometry(0.04, 0), gemMat).translateY(0.85).translateZ(-0.15));
+      var crMat = kartStd(0xFFDD00, 0xFFAA00, 0.3);
+      var cr = kTorus({ diameter: 0.5, thickness: 0.025, tessellation: 8 }, crMat);
+      cr.position.y = 0.78; cr.rotation.x = Math.PI / 2;
+      cr.parent = driverGroup;
+      var gemMat = kartStd(0xFF0000, 0xFF0000, 0.5);
+      var gem = kPoly({ type: 1, size: 0.04 }, gemMat);
+      gem.position.copyFromFloats(0, 0.85, -0.15); gem.parent = driverGroup;
     }
 
     // Torso
-    var torsoMat = new THREE.MeshLambertMaterial({ color: mainColor });
-    var torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.45, 8), torsoMat);
+    var torsoMat = kartStd(mainColor);
+    var torso = kCyl({ diameterTop: 0.44, diameterBottom: 0.36, height: 0.45, tessellation: 8 }, torsoMat);
     torso.position.y = 0.22;
-    driverGroup.add(torso);
+    torso.parent = driverGroup;
 
     // Arms
-    var armMat = new THREE.MeshLambertMaterial({ color: mainColor });
-    var armGeom = new THREE.CylinderGeometry(0.06, 0.05, 0.35, 6);
-    driverGroup.add(new THREE.Mesh(armGeom, armMat).translateX(-0.28).translateY(0.15).translateZ(-0.15).rotateZ(0.5).rotateX(-0.6));
-    driverGroup.add(new THREE.Mesh(armGeom, armMat).translateX(0.28).translateY(0.15).translateZ(-0.15).rotateZ(-0.5).rotateX(-0.6));
+    var armMat = kartStd(mainColor);
+    var armL = kCyl({ diameterTop: 0.12, diameterBottom: 0.10, height: 0.35, tessellation: 6 }, armMat);
+    armL.position.copyFromFloats(-0.28, 0.15, -0.15); armL.rotation.z = 0.5; armL.rotation.x = -0.6;
+    armL.parent = driverGroup;
+    var armR = kCyl({ diameterTop: 0.12, diameterBottom: 0.10, height: 0.35, tessellation: 6 }, armMat);
+    armR.position.copyFromFloats(0.28, 0.15, -0.15); armR.rotation.z = -0.5; armR.rotation.x = -0.6;
+    armR.parent = driverGroup;
 
-    // Steering wheel (tracked for animation)
-    var swGroup = new THREE.Group();
-    swGroup.position.set(0, 0.1, -0.38);
+    // Steering wheel
+    var swGroup = new BABYLON.TransformNode('sw' + (++_ktn), scene);
+    swGroup.parent = driverGroup;
+    swGroup.position.copyFromFloats(0, 0.1, -0.38);
     swGroup.rotation.x = -0.3;
-    var swRing = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.025, 6, 12), darkMat);
-    swGroup.add(swRing);
-    // Spokes
-    var spokeMat = new THREE.MeshLambertMaterial({ color: 0x888888 });
+    var swRing = kTorus({ diameter: 0.28, thickness: 0.025, tessellation: 12 }, darkMat);
+    swRing.parent = swGroup;
+    var spokeMat2 = kartStd(0x888888);
     for (var sp = 0; sp < 3; sp++) {
-      var spoke = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.24, 4), spokeMat);
+      var spoke = kCyl({ diameterTop: 0.02, diameterBottom: 0.02, height: 0.24, tessellation: 4 }, spokeMat2);
       spoke.rotation.z = sp * Math.PI / 3;
-      swGroup.add(spoke);
+      spoke.parent = swGroup;
     }
-    driverGroup.add(swGroup);
     this.steeringWheel = swGroup;
   }
 
-  this.mesh.add(driverGroup);
   this.driverGroup = driverGroup;
 
-  // === WHEELS - improved with better rims and detail ===
+  // === WHEELS ===
   this.wheelMeshes = [];
   var wheelPositions = [
     { x: -0.72, z: -0.85 }, { x: 0.72, z: -0.85 },
@@ -822,55 +948,53 @@ Racer.prototype.createMesh = function (scene) {
   ];
 
   for (var i = 0; i < 4; i++) {
-    var wheelGroup = new THREE.Group();
+    var wheelGroup = new BABYLON.TransformNode('wheel' + i + '_' + (++_ktn), scene);
+    wheelGroup.parent = bodyGroup;
     var isFront = i < 2;
     var wR = isFront ? 0.28 : 0.33;
     var wW = isFront ? 0.14 : 0.17;
 
-    // Tire (dark rubber)
-    var tireMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
-    var tire = new THREE.Mesh(new THREE.TorusGeometry(wR, wW, 10, 20), tireMat);
+    // Tire
+    var tireMat = kartStd(0x1a1a1a);
+    var tire = kTorus({ diameter: wR * 2, thickness: wW, tessellation: 20 }, tireMat);
     tire.rotation.y = Math.PI / 2;
-    tire.castShadow = true;
-    wheelGroup.add(tire);
+    tire.parent = wheelGroup;
+    if (shadowGen) shadowGen.addShadowCaster(tire);
 
-    // Rim disc (metallic)
-    var rimMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.8, roughness: 0.15 });
-    var rim = new THREE.Mesh(new THREE.CylinderGeometry(wR * 0.7, wR * 0.7, wW * 1.3, 14), rimMat);
+    // Rim disc
+    var rimMat = kartPBR(0xdddddd, 0.8, 0.15);
+    var rim = kCyl({ diameterTop: wR * 1.4, diameterBottom: wR * 1.4, height: wW * 1.3, tessellation: 14 }, rimMat);
     rim.rotation.z = Math.PI / 2;
-    wheelGroup.add(rim);
+    rim.parent = wheelGroup;
 
-    // Rim spokes (5 spoke design)
-    var spokeMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.7, roughness: 0.2 });
+    // Rim spokes
+    var spokeMat3 = kartPBR(0xcccccc, 0.7, 0.2);
     for (var sp = 0; sp < 5; sp++) {
       var spokeAng = (sp / 5) * Math.PI * 2;
-      var spoke = new THREE.Mesh(new THREE.BoxGeometry(0.04, wW * 1.1, wR * 0.55), spokeMat);
-      spoke.position.set(
+      var rSpoke = kBox({ width: 0.04, height: wW * 1.1, depth: wR * 0.55 }, spokeMat3);
+      rSpoke.position.copyFromFloats(
         Math.cos(spokeAng) * wR * 0.35,
         0,
         Math.sin(spokeAng) * wR * 0.35
       );
-      spoke.rotation.y = spokeAng;
-      wheelGroup.add(spoke);
+      rSpoke.rotation.y = spokeAng;
+      rSpoke.parent = wheelGroup;
     }
 
-    // Center cap (character color)
-    var capMat = new THREE.MeshStandardMaterial({ color: mainColor, metalness: 0.6, roughness: 0.2 });
-    var cap = new THREE.Mesh(new THREE.CylinderGeometry(wR * 0.22, wR * 0.22, wW * 1.6, 10), capMat);
+    // Center cap
+    var capMat = kartPBR(mainColor, 0.6, 0.2);
+    var cap = kCyl({ diameterTop: wR * 0.44, diameterBottom: wR * 0.44, height: wW * 1.6, tessellation: 10 }, capMat);
     cap.rotation.z = Math.PI / 2;
-    wheelGroup.add(cap);
+    cap.parent = wheelGroup;
 
-    wheelGroup.position.set(wheelPositions[i].x, 0.28, wheelPositions[i].z);
-    bodyGroup.add(wheelGroup);
+    wheelGroup.position.copyFromFloats(wheelPositions[i].x, 0.28, wheelPositions[i].z);
     this.wheelMeshes.push(wheelGroup);
   }
 
-  scene.add(this.mesh);
-
-  // Position mesh at racer coordinates immediately (needed for countdown visibility)
   this.updateMesh();
 };
 
+// === SKILL ACTIVATION (pure logic, no Three.js) ===
 Racer.prototype.activateSkill = function (racers) {
   if (!this.skillReady || this.skillActive) return;
   this.skillActive = true;
@@ -885,7 +1009,6 @@ Racer.prototype.activateSkill = function (racers) {
   } else if (skill === 'aqua_shield') {
     this.shieldTimer = Math.max(this.shieldTimer, this.char.skillDur);
   } else if (skill === 'quake') {
-    // Slow down nearby racers
     for (var r = 0; r < racers.length; r++) {
       var other = racers[r];
       if (other !== this) {
@@ -898,28 +1021,18 @@ Racer.prototype.activateSkill = function (racers) {
         }
       }
     }
-  } else if (skill === 'shadow_phase') {
-    // Phase through walls and racers - handled in update
-  } else if (skill === 'solar_boost') {
-    // Max speed boost - handled in update
-  } else if (skill === 'overclock') {
-    // All stats up - handled in update
-  } else if (skill === 'sakura_drift') {
-    // Drift boost - handled in update
-  } else if (skill === 'golden_aura') {
-    // Ring magnet + boost conversion - handled in update
   }
+  // shadow_phase, solar_boost, overclock, sakura_drift, golden_aura handled in update
 
   if (SND && SND.boost) SND.boost();
 };
 
-Racer.prototype.update = function (input, racers, scene, dt) {
-  // Delta time scaling (base 60FPS)
+// === UPDATE (physics, AI, collisions - pure logic, no Three.js) ===
+Racer.prototype.update = function (input, racers, sc, dt) {
   var timeScale = (dt || 0.016) * 60;
 
-  // Handle finished state - gradually slow down and stop
+  // Handle finished state
   if (this.finished) {
-    // Decelerate to a stop over ~2 seconds
     this.spd *= Math.pow(0.96, timeScale);
     if (this.spd < 0.05) this.spd = 0;
 
@@ -927,7 +1040,6 @@ Racer.prototype.update = function (input, racers, scene, dt) {
     var lookahead = 4 + Math.floor(this.spd * 6);
     this.aiTargetIdx = (nearIdx + lookahead) % TRACK_POINTS;
 
-    // Only steer if still moving
     if (this.spd > 0.05) {
       var targetPt = getTrackPoint(this.aiTargetIdx);
       var dx = targetPt.x - this.x;
@@ -937,14 +1049,11 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       while (angDiff > Math.PI) angDiff -= Math.PI * 2;
       while (angDiff < -Math.PI) angDiff += Math.PI * 2;
       this.ang += angDiff * Math.min(0.15 * timeScale, 1.0);
-
-      // Apply movement
       this.x += Math.cos(this.ang) * this.spd * timeScale;
       this.z += Math.sin(this.ang) * this.spd * timeScale;
     }
     this.tilt *= Math.pow(0.9, timeScale);
 
-    // Keep on track
     var nearNode = trackNodes[nearIdx];
     if (nearNode) {
       var offDx = this.x - nearNode.x;
@@ -958,7 +1067,6 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       this.y += (nearNode.y - this.y) * 0.08 * timeScale;
     }
     this.totalIdx = nearIdx;
-
     this.updateMesh();
     return;
   }
@@ -979,9 +1087,7 @@ Racer.prototype.update = function (input, racers, scene, dt) {
   // Skill cooldown
   if (this.skillCooldown > 0) {
     this.skillCooldown -= timeScale;
-    if (this.skillCooldown <= 0) {
-      this.skillReady = true;
-    }
+    if (this.skillCooldown <= 0) this.skillReady = true;
   }
 
   // Skill active timer
@@ -989,7 +1095,6 @@ Racer.prototype.update = function (input, racers, scene, dt) {
     this.skillTimer -= timeScale;
     if (this.skillTimer <= 0) {
       this.skillActive = false;
-      // Start cooldown
       var cd = this.char.skillCD;
       if (this.equip === 'reactor') cd = Math.floor(cd * 0.75);
       this.skillCooldown = cd;
@@ -999,13 +1104,13 @@ Racer.prototype.update = function (input, racers, scene, dt) {
   // Auto-shield recharge
   if (this.equip === 'auto_shield' && !this.autoShieldReady) {
     this.autoShieldTimer += timeScale;
-    if (this.autoShieldTimer >= 3600) { // 60 seconds
+    if (this.autoShieldTimer >= 3600) {
       this.autoShieldReady = true;
       this.autoShieldTimer = 0;
     }
   }
 
-  // Calculate current max speed with skill effects and ring bonus
+  // Speed calculations
   var curMax = this.maxSpd;
   var ringBoost = this.rings * RING_BOOST_PER;
   curMax += ringBoost;
@@ -1013,7 +1118,6 @@ Racer.prototype.update = function (input, racers, scene, dt) {
   if (this.skillActive && this.char.skill === 'solar_boost') curMax *= 1.3;
   if (this.skillActive && this.char.skill === 'overclock') curMax *= 1.15;
 
-  // Effective handling/accel
   var curAccel = this.accel;
   var curHandling = this.handling;
   if (this.skillActive && this.char.skill === 'overclock') {
@@ -1023,13 +1127,11 @@ Racer.prototype.update = function (input, racers, scene, dt) {
 
   // Player controls
   if (this.isPlayer && input) {
-    // Skill activation
     if (input.skill && this.skillReady && !this.skillActive) {
       this.activateSkill(racers);
       input.skill = false;
     }
 
-    // Acceleration
     if (input.up) {
       if (this.spd < curMax) {
         this.spd += curAccel * timeScale;
@@ -1043,11 +1145,9 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       this.spd *= Math.pow(0.985, timeScale);
     }
 
-    // Drifting
     var wasDrifting = this.drifting;
     this.drifting = input.drift && this.spd > 0.3;
 
-    // Drift charge with equipment bonus
     var driftChargeRate = 1;
     if (this.equip === 'drift_up') driftChargeRate = 2;
     if (this.skillActive && this.char.skill === 'sakura_drift') driftChargeRate = 4;
@@ -1057,12 +1157,8 @@ Racer.prototype.update = function (input, racers, scene, dt) {
     }
     if (wasDrifting && !this.drifting && this.driftCharge > 0) {
       var boostAmount = 0;
-      if (this.driftCharge >= 90) {
-        boostAmount = 50;
-      } else if (this.driftCharge >= 45) {
-        boostAmount = 30;
-      }
-      // Equipment bonus
+      if (this.driftCharge >= 90) boostAmount = 50;
+      else if (this.driftCharge >= 45) boostAmount = 30;
       if (this.equip === 'nitro') boostAmount = Math.floor(boostAmount * 1.5);
       if (boostAmount > 0) {
         this.boostTimer = Math.max(this.boostTimer, boostAmount);
@@ -1072,13 +1168,11 @@ Racer.prototype.update = function (input, racers, scene, dt) {
     }
     if (!this.drifting) this.driftCharge = 0;
 
-    // Turning
-    var turnRate = curHandling * timeScale; // Scale turn rate by time
+    var turnRate = curHandling * timeScale;
     if (this.drifting) turnRate *= 1.6;
     if (this.skillActive && this.char.skill === 'sakura_drift') turnRate *= 1.4;
     turnRate *= Math.min(1, Math.abs(this.spd) / 0.8);
 
-    // Analog stick steering (proportional) or digital
     var steerAmt = 0;
     if (input.stickX && Math.abs(input.stickX) > 0.1) {
       steerAmt = input.stickX;
@@ -1101,20 +1195,41 @@ Racer.prototype.update = function (input, racers, scene, dt) {
     }
 
   } else if (!this.isPlayer) {
-    // === IMPROVED AI ===
-
-    // --- Sync waypoint with actual position using nearest track index ---
+    // === AI ===
     var nearIdx = nearestTrackIndex(this.x, this.z);
-    // Keep aiTargetIdx ahead of current position (longer lookahead for better cornering)
-    var lookahead = 4 + Math.floor(this.spd * 7);
+    var nearNode = trackNodes[nearIdx];
+
+    // Distance from track center
+    var offDx = nearNode ? this.x - nearNode.x : 0;
+    var offDz = nearNode ? this.z - nearNode.z : 0;
+    var offDist = Math.sqrt(offDx * offDx + offDz * offDz);
+    var halfW = TRACK_WIDTH * 0.5;
+    var centerRatio = offDist / halfW; // 0=center, 1=edge
+
+    // Measure track curvature ahead (sum of angle changes over next 10 nodes)
+    var curvatureSum = 0;
+    for (var ci = 0; ci < 10; ci++) {
+      var ca = getTrackAngle((nearIdx + ci) % TRACK_POINTS);
+      var cb = getTrackAngle((nearIdx + ci + 1) % TRACK_POINTS);
+      var cd = cb - ca;
+      while (cd > Math.PI) cd -= Math.PI * 2;
+      while (cd < -Math.PI) cd += Math.PI * 2;
+      curvatureSum += cd;
+    }
+    var absCurve = Math.abs(curvatureSum);
+
+    // Lookahead: much shorter on curves
+    var lookahead = absCurve > 0.8 ? 3 : absCurve > 0.4 ? 4 : 6;
+    lookahead += Math.floor(this.spd * 3);
     this.aiTargetIdx = (nearIdx + lookahead) % TRACK_POINTS;
 
     var targetPt = getTrackPoint(this.aiTargetIdx);
     var tAng = getTrackAngle(this.aiTargetIdx);
     var perpAng = tAng + Math.PI / 2;
-    // Add lateral offset for racing line variety
-    var tx = targetPt.x + Math.cos(perpAng) * this.aiLateral;
-    var tz = targetPt.z + Math.sin(perpAng) * this.aiLateral;
+
+    // Always aim at track center (no lateral offset)
+    var tx = targetPt.x;
+    var tz = targetPt.z;
 
     var dx = tx - this.x;
     var dz = tz - this.z;
@@ -1124,36 +1239,16 @@ Racer.prototype.update = function (input, racers, scene, dt) {
     while (angDiff > Math.PI) angDiff -= Math.PI * 2;
     while (angDiff < -Math.PI) angDiff += Math.PI * 2;
 
-    // --- Track correction: pull AI back toward track center when off-road ---
-    var nearNode = trackNodes[nearIdx];
-    if (nearNode) {
-      var offDx = this.x - nearNode.x;
-      var offDz = this.z - nearNode.z;
-      var offDist = Math.sqrt(offDx * offDx + offDz * offDz);
-      var halfTrack = TRACK_WIDTH * 0.35;
-      if (offDist > halfTrack) {
-        // Pull back toward track center - stronger the further off
-        var excess = offDist - halfTrack;
-        var pullStr = Math.min(0.6, excess * 0.05) * timeScale;
-        this.x -= offDx / offDist * pullStr;
-        this.z -= offDz / offDist * pullStr;
-        // Emergency: if very far off, aggressively teleport back
-        if (offDist > TRACK_WIDTH * 0.6) {
-          this.x += (nearNode.x - this.x) * 0.1 * timeScale;
-          this.z += (nearNode.z - this.z) * 0.1 * timeScale;
-        }
-      }
-    }
+    // Pre-movement centering is now handled in post-movement section
 
-    // --- General progress-based stuck detection ---
+    // Progress-based stuck detection
     if (typeof this._lastProgressCheck === 'undefined') {
       this._lastProgressCheck = this.progress;
       this._progressCheckTimer = 0;
     }
     this._progressCheckTimer += timeScale;
-    if (this._progressCheckTimer > 180) { // check every ~3 seconds
+    if (this._progressCheckTimer > 180) {
       if (Math.abs(this.progress - this._lastProgressCheck) < 3) {
-        // Barely moved in 3 seconds - teleport to track
         var recIdx = nearestTrackIndex(this.x, this.z);
         var recNode = trackNodes[(recIdx + 5) % TRACK_POINTS];
         this.x = recNode.x;
@@ -1167,24 +1262,24 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       this._progressCheckTimer = 0;
     }
 
-    // --- AI Drift logic: drift on sharp turns ---
+    // AI Drift logic
     var absAngDiff = Math.abs(angDiff);
     var wasDriftingAI = this.aiDrifting;
 
-    // Start drifting when turn is sharp and speed is decent
-    if (absAngDiff > 0.25 && this.spd > 0.5) {
-      this.aiDrifting = true;
-    }
-    // Stop drifting when turn straightens
-    if (absAngDiff < 0.08) {
-      this.aiDrifting = false;
+    if (absAngDiff > 0.25 && this.spd > 0.5) this.aiDrifting = true;
+    if (absAngDiff < 0.08) this.aiDrifting = false;
+
+    // AI brakes on sharp curves
+    if (absCurve > 0.6 && this.spd > 0.7) {
+      this.spd *= (1 - 0.015 * timeScale);
     }
 
-    var turnRate = curHandling * 1.3 * timeScale;
-    if (this.aiDrifting) turnRate *= 1.5;
-    // Minimum turn rate so AI can always steer
-    turnRate = Math.max(turnRate, 0.02 * timeScale);
-    turnRate *= Math.max(0.5, Math.min(1, Math.abs(this.spd) / 0.6));
+    var turnRate = curHandling * 2.2 * timeScale;
+    if (this.aiDrifting) turnRate *= 1.8;
+    turnRate = Math.max(turnRate, 0.035 * timeScale);
+    // No speed penalty for turning - AI should always steer well
+    // Extra turn boost when far from track center
+    if (offDist > halfW * 0.5) turnRate *= 1.5;
 
     if (absAngDiff > turnRate) {
       this.ang += turnRate * (angDiff > 0 ? 1 : -1);
@@ -1192,7 +1287,6 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       this.ang += angDiff;
     }
 
-    // Drift charge
     var driftChargeRate = 1;
     if (this.equip === 'drift_up') driftChargeRate = 2;
     if (this.skillActive && this.char.skill === 'sakura_drift') driftChargeRate = 4;
@@ -1202,15 +1296,12 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       this.tilt = angDiff > 0 ? 0.2 : -0.2;
     }
 
-    // Release drift for mini-turbo boost
     if (wasDriftingAI && !this.aiDrifting && this.aiDriftCharge > 0) {
       var boostAmount = 0;
       if (this.aiDriftCharge >= 90) boostAmount = 50;
       else if (this.aiDriftCharge >= 45) boostAmount = 30;
       if (this.equip === 'nitro') boostAmount = Math.floor(boostAmount * 1.5);
-      if (boostAmount > 0) {
-        this.boostTimer = Math.max(this.boostTimer, boostAmount);
-      }
+      if (boostAmount > 0) this.boostTimer = Math.max(this.boostTimer, boostAmount);
       this.aiDriftCharge = 0;
     }
     if (!this.aiDrifting) {
@@ -1218,39 +1309,30 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       this.tilt *= Math.pow(0.9, timeScale);
     }
 
-    // --- Rubber banding: AI adapts speed based on position relative to player ---
+    // Rubber banding
     var rubberFactor = 1.0;
     var rbBehind = this.aiDiffRubberBehind || 0.08;
     var rbAhead = this.aiDiffRubberAhead || -0.08;
     if (player) {
       var playerProgress = player.progress || 0;
       var myProgress = this.progress || 0;
-      var progressDiff = playerProgress - myProgress; // positive = AI is behind
+      var progressDiff = playerProgress - myProgress;
 
       if (progressDiff > 30) {
-        // AI far behind player: speed up based on difficulty
         rubberFactor = 1.0 + rbBehind + Math.min(progressDiff - 30, 80) * 0.002;
       } else if (progressDiff > 10) {
-        // AI somewhat behind: slight speed boost
         rubberFactor = 1.0 + (progressDiff - 10) * (rbBehind / 20);
       } else if (progressDiff < -30) {
-        // AI far ahead: slow down based on difficulty
         rubberFactor = 1.0 + rbAhead;
       } else if (progressDiff < -10) {
-        // AI somewhat ahead: slight slow down
         rubberFactor = 1.0 + rbAhead * 0.4;
       }
     }
 
     var aiMaxSpd = curMax * this.aiSkill * rubberFactor;
-    // Slow down in sharp curves (progressive)
-    if (absAngDiff > 0.5) {
-      aiMaxSpd *= 0.7;
-    } else if (absAngDiff > 0.3) {
-      aiMaxSpd *= 0.82;
-    } else if (absAngDiff > 0.15) {
-      aiMaxSpd *= 0.92;
-    }
+    if (absAngDiff > 0.5) aiMaxSpd *= 0.7;
+    else if (absAngDiff > 0.3) aiMaxSpd *= 0.82;
+    else if (absAngDiff > 0.15) aiMaxSpd *= 0.92;
 
     if (this.spd < aiMaxSpd) {
       this.spd += curAccel * timeScale;
@@ -1259,17 +1341,15 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       this.spd *= Math.pow(0.995, timeScale);
     }
 
-    // --- Smart skill use: use when it makes sense ---
+    // Smart skill use
     var skFreq = this.aiDiffSkillFreq || 1.0;
     if (this.skillReady && !this.skillActive) {
       var useSkill = false;
       var skill = this.char.skill;
       if (skill === 'flame_burst' || skill === 'solar_boost' || skill === 'overclock') {
-        // Speed skills: use on straightaways or when behind
         if (absAngDiff < 0.15 && this.spd > this.maxSpd * 0.7) useSkill = Math.random() < 0.01 * skFreq;
         if (player && (player.progress - this.progress) > 20) useSkill = Math.random() < 0.02 * skFreq;
       } else if (skill === 'aqua_shield') {
-        // Shield: use when near enemies or projectiles
         for (var sr = 0; sr < racers.length; sr++) {
           if (racers[sr] !== this) {
             var sdx = racers[sr].x - this.x;
@@ -1278,7 +1358,6 @@ Racer.prototype.update = function (input, racers, scene, dt) {
           }
         }
       } else if (skill === 'quake') {
-        // Quake: use when many racers nearby
         var nearCount = 0;
         for (var sr = 0; sr < racers.length; sr++) {
           if (racers[sr] !== this) {
@@ -1289,27 +1368,22 @@ Racer.prototype.update = function (input, racers, scene, dt) {
         }
         if (nearCount >= 2) useSkill = Math.random() < 0.008 * skFreq;
       } else if (skill === 'sakura_drift') {
-        // Drift skill: use when approaching curves
         if (absAngDiff > 0.2) useSkill = Math.random() < 0.012 * skFreq;
       } else {
-        // Other skills: moderate random use
         useSkill = Math.random() < 0.005 * skFreq;
       }
       if (useSkill) this.activateSkill(racers);
     }
 
-    // --- Smart item use ---
+    // Smart item use
     var itFreq = this.aiDiffItemFreq || 1.0;
     if (this.aiItemDelay > 0) this.aiItemDelay -= timeScale;
     if (this.item && this.aiItemDelay <= 0) {
       var useItem = false;
       if (this.item === 'boost') {
-        // Use boost on straightaways
         if (absAngDiff < 0.15) useItem = Math.random() < 0.02 * itFreq;
-        // Or when behind
         if (player && (player.progress - this.progress) > 15) useItem = Math.random() < 0.04 * itFreq;
       } else if (this.item === 'trap') {
-        // Drop trap when enemy is close behind
         for (var ir = 0; ir < racers.length; ir++) {
           if (racers[ir] !== this && racers[ir].progress < this.progress &&
             (this.progress - racers[ir].progress) < 15) {
@@ -1318,7 +1392,6 @@ Racer.prototype.update = function (input, racers, scene, dt) {
           }
         }
       } else if (this.item === 'homing') {
-        // Fire homing when enemy ahead
         for (var ir = 0; ir < racers.length; ir++) {
           if (racers[ir] !== this && racers[ir].progress > this.progress &&
             (racers[ir].progress - this.progress) < 40) {
@@ -1327,10 +1400,8 @@ Racer.prototype.update = function (input, racers, scene, dt) {
           }
         }
       } else if (this.item === 'shield') {
-        // Shield when enemies nearby
         useItem = Math.random() < 0.01 * itFreq;
       } else if (this.item === 'thunder') {
-        // Thunder when in last places
         var myRank = 1;
         for (var ir = 0; ir < racers.length; ir++) {
           if (racers[ir].progress > this.progress) myRank++;
@@ -1339,7 +1410,7 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       }
       if (useItem) {
         this.useItem(racers, scene);
-        this.aiItemDelay = 120; // 2-second cooldown between items
+        this.aiItemDelay = 120;
       }
     }
   }
@@ -1348,6 +1419,31 @@ Racer.prototype.update = function (input, racers, scene, dt) {
   this.x += Math.cos(this.ang) * this.spd * timeScale;
   this.z += Math.sin(this.ang) * this.spd * timeScale;
 
+  // AI post-movement track centering (counteracts curve drift)
+  if (!this.isPlayer) {
+    var pmIdx = nearestTrackIndex(this.x, this.z);
+    var pmNode = trackNodes[pmIdx];
+    if (pmNode) {
+      var pmDx = this.x - pmNode.x;
+      var pmDz = this.z - pmNode.z;
+      var pmDist = Math.sqrt(pmDx * pmDx + pmDz * pmDz);
+      var pmHW = TRACK_WIDTH * 0.5;
+      // Progressively pull toward center starting at 40% of half-width
+      if (pmDist > pmHW * 0.4) {
+        var pmRatio = (pmDist - pmHW * 0.4) / (pmHW * 0.6);
+        var pmPull = pmRatio * pmRatio * 0.6 * timeScale;
+        this.x -= pmDx / pmDist * pmPull;
+        this.z -= pmDz / pmDist * pmPull;
+      }
+      // Hard limit at 65% of half-width
+      if (pmDist > pmHW * 0.65) {
+        var maxD = pmHW * 0.55;
+        this.x = pmNode.x + pmDx / pmDist * maxD;
+        this.z = pmNode.z + pmDz / pmDist * maxD;
+      }
+    }
+  }
+
   // Track Y position
   var nearIdx = nearestTrackIndex(this.x, this.z);
   var nearNode = trackNodes[nearIdx];
@@ -1355,41 +1451,35 @@ Racer.prototype.update = function (input, racers, scene, dt) {
     this.y += (nearNode.y - this.y) * 0.15 * timeScale;
   }
 
-  // Off-track handling - wall slide (Mario Kart style)
-  // trackDist now uses accurate perpendicular-to-segment distance
+  // Off-track handling
   var distToTrack = trackDist(this.x, this.z);
-  var halfW = TRACK_WIDTH / 2;       // 14 = actual track edge
-  var grassEdge = halfW + 0.5;       // 14.5 = just past road edge
-  var wallLimit = halfW + 1.5;       // 15.5 = hard wall at guardrail, cannot pass
+  var halfW = TRACK_WIDTH / 2;
+  var grassEdge = halfW + 0.5;
+  var wallLimit = halfW + 1.5;
 
   var phasing = this.skillActive && this.char.skill === 'shadow_phase';
 
   if (!phasing && distToTrack > wallLimit) {
-    // Hard wall: push back firmly, slide along edge
     var centerNode = trackNodes[nearIdx];
     var pushAng = Math.atan2(centerNode.z - this.z, centerNode.x - this.x);
     var overshoot = distToTrack - wallLimit;
-    // Strong push proportional to overshoot - prevents escaping
     var pushStr = Math.min(overshoot * 0.6, 3.0) * timeScale;
     this.x += Math.cos(pushAng) * pushStr;
     this.z += Math.sin(pushAng) * pushStr;
-    // Speed reduction (less harsh so AI doesn't get stuck)
     this.spd *= Math.pow(0.95, timeScale);
-    // Steer toward track to slide along wall (stronger for AI)
     var toTrackAng = Math.atan2(centerNode.z - this.z, centerNode.x - this.x);
     var angDiffToTrack = toTrackAng - this.ang;
     while (angDiffToTrack > Math.PI) angDiffToTrack -= Math.PI * 2;
     while (angDiffToTrack < -Math.PI) angDiffToTrack += Math.PI * 2;
     var steerStr = this.isPlayer ? 0.06 : 0.15;
     this.ang += angDiffToTrack * steerStr * timeScale;
-    // AI stuck detection: if speed is very low near wall, teleport back
     if (!this.isPlayer) {
       if (this.spd < 0.15) {
         this.aiStuckTimer = (this.aiStuckTimer || 0) + timeScale;
       } else {
         this.aiStuckTimer = 0;
       }
-      if (this.aiStuckTimer > 60) { // ~1 second stuck
+      if (this.aiStuckTimer > 60) {
         var recoverNode = trackNodes[nearIdx];
         this.x = recoverNode.x;
         this.z = recoverNode.z;
@@ -1400,7 +1490,6 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       }
     }
   } else if (!phasing && distToTrack > grassEdge) {
-    // Grass slowdown - gradually stronger the further you go
     var grassDepth = (distToTrack - grassEdge) / (wallLimit - grassEdge);
     this.spd *= Math.pow((0.98 - grassDepth * 0.04), timeScale);
     if (!this.isPlayer) this.aiStuckTimer = 0;
@@ -1408,20 +1497,19 @@ Racer.prototype.update = function (input, racers, scene, dt) {
     if (!this.isPlayer) this.aiStuckTimer = 0;
   }
 
-  // Progress tracking (cumulative delta to handle start-line wraparound)
+  // Progress tracking
   var prevIdx = this.totalIdx;
   this.totalIdx = nearIdx;
 
   var idxDelta = nearIdx - prevIdx;
-  if (idxDelta < -TRACK_POINTS / 2) idxDelta += TRACK_POINTS;  // forward wrap (99→0)
-  if (idxDelta > TRACK_POINTS / 2) idxDelta -= TRACK_POINTS;   // backward wrap (rare)
+  if (idxDelta < -TRACK_POINTS / 2) idxDelta += TRACK_POINTS;
+  if (idxDelta > TRACK_POINTS / 2) idxDelta -= TRACK_POINTS;
   this.progressAccum += idxDelta;
   this.progress = this.progressAccum;
 
   // Lap detection
   if (prevIdx > TRACK_POINTS - 50 && this.totalIdx < 50) {
     if (!this.crossedStartOnce) {
-      // First crossing from behind start line - don't count as lap
       this.crossedStartOnce = true;
     } else {
       this.lap++;
@@ -1446,7 +1534,6 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       var rdz = this.z - ring.z;
       var rdist = Math.sqrt(rdx * rdx + rdz * rdz);
 
-      // Magnet pull
       if (rdist < magnetRange && rdist > 3) {
         var pullStr = 0.3 * timeScale;
         ring.x += rdx / rdist * pullStr;
@@ -1456,10 +1543,9 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       if (rdist < 3) {
         ring.active = false;
         ring.respawn = 300;
-        if (typeof energyRingMeshes !== 'undefined' && energyRingMeshes[i]) energyRingMeshes[i].visible = false;
+        if (typeof energyRingMeshes !== 'undefined' && energyRingMeshes[i]) energyRingMeshes[i].setEnabled(false);
         if (this.rings < RING_MAX) {
           this.rings++;
-          // Golden aura: convert rings to boost
           if (this.skillActive && this.char.skill === 'golden_aura') {
             this.boostTimer = Math.max(this.boostTimer, 20);
           }
@@ -1480,8 +1566,8 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       var dist = dx * dx + dz * dz;
       if (dist < 9) {
         box.active = false;
-        box.respawn = 180; // Respawn frames (approx 3s) - keeping as frames for simplicity since it's an integer counter in updateItemBoxes
-        if (itemBoxMeshes[i]) itemBoxMeshes[i].visible = false;
+        box.respawn = 180;
+        if (itemBoxMeshes[i]) itemBoxMeshes[i].setEnabled(false);
         this.item = ITEMS[Math.floor(Math.random() * ITEMS.length)].type;
         if (this.isPlayer) SND.pickup();
       }
@@ -1496,7 +1582,7 @@ Racer.prototype.update = function (input, racers, scene, dt) {
       var bpdx = this.x - bpad.x;
       var bpdz = this.z - bpad.z;
       var bpdist = bpdx * bpdx + bpdz * bpdz;
-      if (bpdist < 16) { // ~4 unit radius (pad is 6x8)
+      if (bpdist < 16) {
         this.boostTimer = Math.max(this.boostTimer, 45);
         if (this.isPlayer && SND && SND.boostPad) SND.boostPad();
       }
@@ -1519,12 +1605,11 @@ Racer.prototype.update = function (input, racers, scene, dt) {
           if (!blocked) {
             this.stunTimer = 90;
             this.spd *= 0.3;
-            // Drop rings
             this.rings = Math.max(0, this.rings - RING_DROP_ON_HIT);
           }
           traps.splice(t, 1);
           if (trapMeshes && trapMeshes[t]) {
-            scene.remove(trapMeshes[t]);
+            trapMeshes[t].dispose();
             trapMeshes.splice(t, 1);
           }
           t--;
@@ -1554,7 +1639,7 @@ Racer.prototype.update = function (input, racers, scene, dt) {
           }
           projectiles.splice(p, 1);
           if (projMeshes && projMeshes[p]) {
-            scene.remove(projMeshes[p]);
+            projMeshes[p].dispose();
             projMeshes.splice(p, 1);
           }
           p--;
@@ -1564,7 +1649,7 @@ Racer.prototype.update = function (input, racers, scene, dt) {
     }
   }
 
-  // Collision with other racers - gentle bumping (Mario Kart style)
+  // Collision with other racers
   if (!phasing) {
     var minSep = 1.6;
     for (var r = 0; r < racers.length; r++) {
@@ -1580,7 +1665,6 @@ Racer.prototype.update = function (input, racers, scene, dt) {
           this.z += Math.sin(pushAng) * pushDist;
           other.x -= Math.cos(pushAng) * pushDist;
           other.z -= Math.sin(pushAng) * pushDist;
-          // Gentle speed exchange
           var spdDiff = this.spd - other.spd;
           this.spd -= spdDiff * 0.08 * timeScale;
           other.spd += spdDiff * 0.08 * timeScale;
@@ -1589,7 +1673,7 @@ Racer.prototype.update = function (input, racers, scene, dt) {
     }
   }
 
-  // Ghost recording: record player position every N frames
+  // Ghost recording
   if (this.isPlayer && typeof ghostRecording !== 'undefined' && ghostRecording && typeof ghostSamples !== 'undefined') {
     if (fr % GHOST_SAMPLE_INTERVAL === 0) {
       var flags = 0;
@@ -1608,22 +1692,20 @@ Racer.prototype.update = function (input, racers, scene, dt) {
   this.updateMesh();
 };
 
+// === UPDATE MESH (Babylon.js version) ===
 Racer.prototype.updateMesh = function () {
   if (!this.mesh) return;
 
-  this.mesh.position.set(this.x, this.y, this.z);
+  this.mesh.position.copyFromFloats(this.x, this.y, this.z);
   this.mesh.rotation.y = -this.ang - Math.PI / 2;
 
   if (this.bodyMesh) {
     this.bodyMesh.rotation.z = -this.tilt;
   }
   if (this.driverGroup) {
-    // Lean into turns (like Mario Kart) - gentle so character stays visible
     this.driverGroup.rotation.z = -this.tilt * 0.35;
-    // Lean forward when accelerating - minimal to keep character upright
     this.driverGroup.rotation.x = Math.min(this.spd * 0.05, 0.06);
   }
-  // Steering wheel rotation
   if (this.steeringWheel) {
     this.steeringWheel.rotation.z = this.tilt * 2.5;
   }
@@ -1636,43 +1718,39 @@ Racer.prototype.updateMesh = function () {
     if (i < 2) wheel.rotation.y = -this.tilt * 0.5;
   }
 
-  // Skill active visual - transparency for shadow phase
+  // Shadow phase transparency
   if (this.char.skill === 'shadow_phase') {
     var targetOpacity = this.skillActive ? (0.4 + Math.sin(fr * 0.2) * 0.2) : 1.0;
-    var shouldBeTransparent = this.skillActive;
-    this.mesh.traverse(function (child) {
-      if (child.material) {
-        child.material.transparent = shouldBeTransparent;
-        child.material.opacity = targetOpacity;
+    var childMeshes = this.mesh.getChildMeshes ? this.mesh.getChildMeshes() : [];
+    for (var ci = 0; ci < childMeshes.length; ci++) {
+      var cm = childMeshes[ci];
+      if (cm.material) {
+        cm.material.alpha = targetOpacity;
       }
-    });
+    }
   }
 
   // Emissive effects on body
   if (this.bodyMesh) {
-    var children = this.bodyMesh.children;
+    var children = this.bodyMesh.getChildMeshes ? this.bodyMesh.getChildMeshes() : [];
     for (var c = 0; c < children.length; c++) {
       var child = children[c];
-      if (child.material && child.material.emissive !== undefined) {
-        child.material.emissive = new THREE.Color(0x000000);
-        child.material.emissiveIntensity = 0;
+      if (!child.material || !child.material.emissiveColor) continue;
 
-        if (this.shieldTimer > 0) {
-          child.material.emissive = new THREE.Color(0x4488ff);
-          child.material.emissiveIntensity = 0.3;
-        }
-        if (this.boostTimer > 0) {
-          child.material.emissive = new THREE.Color(0xff8800);
-          child.material.emissiveIntensity = 0.4;
-        }
-        if (this.skillActive) {
-          child.material.emissive = new THREE.Color(this.char.col);
-          child.material.emissiveIntensity = 0.5 + Math.sin(fr * 0.15) * 0.2;
-        }
-        if (this.stunTimer > 0 && fr % 10 < 5) {
-          child.material.emissive = new THREE.Color(0xffff00);
-          child.material.emissiveIntensity = 0.5;
-        }
+      // Reset emissive
+      child.material.emissiveColor = new BABYLON.Color3(0, 0, 0);
+
+      if (this.shieldTimer > 0) {
+        child.material.emissiveColor = c3(0x4488ff).scale(0.3);
+      }
+      if (this.boostTimer > 0) {
+        child.material.emissiveColor = c3(0xff8800).scale(0.4);
+      }
+      if (this.skillActive) {
+        child.material.emissiveColor = c3(this.char.col).scale(0.5 + Math.sin(fr * 0.15) * 0.2);
+      }
+      if (this.stunTimer > 0 && fr % 10 < 5) {
+        child.material.emissiveColor = c3(0xffff00).scale(0.5);
       }
     }
   }
@@ -1680,17 +1758,25 @@ Racer.prototype.updateMesh = function () {
   // Drift charge visual
   if (this.drifting && this.driftCharge > 0) {
     var sparkColor;
-    if (this.driftCharge >= 90) sparkColor = new THREE.Color(0xff6600);
-    else if (this.driftCharge >= 45) sparkColor = new THREE.Color(0x4488ff);
-    else sparkColor = new THREE.Color(0xffffff);
+    if (this.driftCharge >= 90) sparkColor = c3(0xff6600);
+    else if (this.driftCharge >= 45) sparkColor = c3(0x4488ff);
+    else sparkColor = c3(0xffffff);
     for (var w = 2; w < 4; w++) {
       var wheel = this.wheelMeshes[w];
-      if (wheel && wheel.children) {
-        for (var wc = 0; wc < wheel.children.length; wc++) {
-          var part = wheel.children[wc];
-          if (part.material && part.material.color && part.material.color.getHex() === 0xcccccc) {
-            part.material.emissive = sparkColor;
-            part.material.emissiveIntensity = 0.6 + Math.sin(fr * 0.5) * 0.3;
+      if (!wheel) continue;
+      var wChildren = wheel.getChildMeshes ? wheel.getChildMeshes() : [];
+      for (var wc = 0; wc < wChildren.length; wc++) {
+        var part = wChildren[wc];
+        if (part.material && part.material.albedoColor) {
+          // Check if spoke (metallic silver part)
+          var ac = part.material.albedoColor;
+          if (ac.r > 0.7 && ac.g > 0.7 && ac.b > 0.7) {
+            part.material.emissiveColor = sparkColor.scale(0.6 + Math.sin(fr * 0.5) * 0.3);
+          }
+        } else if (part.material && part.material.diffuseColor) {
+          var dc = part.material.diffuseColor;
+          if (dc.r > 0.7 && dc.g > 0.7 && dc.b > 0.7) {
+            part.material.emissiveColor = sparkColor.scale(0.6 + Math.sin(fr * 0.5) * 0.3);
           }
         }
       }
@@ -1698,20 +1784,20 @@ Racer.prototype.updateMesh = function () {
   } else {
     for (var w = 2; w < 4; w++) {
       var wheel = this.wheelMeshes[w];
-      if (wheel && wheel.children) {
-        for (var wc = 0; wc < wheel.children.length; wc++) {
-          var part = wheel.children[wc];
-          if (part.material && part.material.emissive) {
-            part.material.emissive = new THREE.Color(0x000000);
-            part.material.emissiveIntensity = 0;
-          }
+      if (!wheel) continue;
+      var wChildren = wheel.getChildMeshes ? wheel.getChildMeshes() : [];
+      for (var wc = 0; wc < wChildren.length; wc++) {
+        var part = wChildren[wc];
+        if (part.material && part.material.emissiveColor) {
+          part.material.emissiveColor = new BABYLON.Color3(0, 0, 0);
         }
       }
     }
   }
 };
 
-Racer.prototype.useItem = function (racers, scene) {
+// === USE ITEM (no Three.js) ===
+Racer.prototype.useItem = function (racers, sc) {
   if (!this.item) return;
 
   var itemType = this.item;
@@ -1750,9 +1836,9 @@ Racer.prototype.useItem = function (racers, scene) {
 };
 
 // === Ghost Racer (replays recorded ghost data) ===
-var ghostRacers = []; // active ghost racer instances
+var ghostRacers = [];
 
-function GhostRacer(ghostData, scene) {
+function GhostRacer(ghostData, sc) {
   this.displayName = ghostData.displayName || 'Ghost';
   this.charIdx = ghostData.charIdx || 0;
   this.kartIdx = ghostData.kartIdx || 0;
@@ -1764,66 +1850,66 @@ function GhostRacer(ghostData, scene) {
   this.x = 0; this.y = 0; this.z = 0; this.ang = 0;
 
   // Create ghost mesh (semi-transparent clone)
-  this.mesh = new THREE.Group();
+  this.mesh = new BABYLON.TransformNode('ghost' + (++_ktn), scene);
   var bodyType = this.char.body || 'dragon';
   var hasKartModel = kartModelCache[bodyType] !== undefined;
   if (hasKartModel) {
-    var kartClone = kartModelCache[bodyType].clone();
+    var kartClone = kartModelCache[bodyType].clone('ghostKart_' + bodyType + (++_ktn), this.mesh);
+    kartClone.setEnabled(true);
+    var cms = kartClone.getChildMeshes();
+    for (var ci = 0; ci < cms.length; ci++) cms[ci].setEnabled(true);
     kartClone.rotation.y = Math.PI;
-    this.mesh.add(kartClone);
   } else if (glbModelCache[bodyType]) {
-    var glbClone = glbModelCache[bodyType].clone();
-    this.mesh.add(glbClone);
+    var glbClone = glbModelCache[bodyType].clone('ghostGlb_' + bodyType + (++_ktn), this.mesh);
+    glbClone.setEnabled(true);
+    var cms = glbClone.getChildMeshes();
+    for (var ci = 0; ci < cms.length; ci++) cms[ci].setEnabled(true);
   } else {
     // Simple placeholder
-    var geo = new THREE.BoxGeometry(1.5, 0.8, 2.5);
-    var mat = new THREE.MeshLambertMaterial({ color: this.char.col, transparent: true, opacity: 0.4 });
-    this.mesh.add(new THREE.Mesh(geo, mat));
+    var mat = kartStd(this.char.col);
+    mat.alpha = 0.4;
+    var box = kBox({ width: 1.5, height: 0.8, depth: 2.5 }, mat);
+    box.parent = this.mesh;
   }
 
-  // Make all materials semi-transparent
-  this.mesh.traverse(function(child) {
-    if (child.isMesh && child.material) {
-      var mats = Array.isArray(child.material) ? child.material : [child.material];
-      for (var i = 0; i < mats.length; i++) {
-        mats[i] = mats[i].clone();
-        mats[i].transparent = true;
-        mats[i].opacity = 0.35;
-        mats[i].depthWrite = false;
-      }
-      child.material = mats.length === 1 ? mats[0] : mats;
+  // Make all child materials semi-transparent
+  var allMeshes = this.mesh.getChildMeshes();
+  for (var i = 0; i < allMeshes.length; i++) {
+    var cm = allMeshes[i];
+    if (cm.material) {
+      // Clone material so we don't affect the template
+      cm.material = cm.material.clone('ghostMat' + (++_ktn));
+      cm.material.alpha = 0.35;
+      cm.material.disableDepthWrite = true;
     }
-  });
+  }
 
-  scene.add(this.mesh);
-
-  // Name label (CSS2D-like: rendered in DOM overlay)
+  // Name label
   this.nameDiv = document.createElement('div');
   this.nameDiv.className = 'ghost-name';
   this.nameDiv.textContent = this.displayName;
   this.nameDiv.style.display = 'none';
   document.body.appendChild(this.nameDiv);
 
-  // Set initial position from first sample
+  // Set initial position
   if (this.samples.length > 0) {
     var s = this.samples[0];
     this.x = s[0]; this.z = s[1]; this.y = s[2]; this.ang = s[3];
   }
 }
 
-GhostRacer.prototype.update = function(currentFrame) {
+GhostRacer.prototype.update = function (currentFrame) {
   if (this.finished || this.samples.length === 0) return;
 
-  // Calculate sample index from current frame
   var sIdx = Math.floor(currentFrame / GHOST_SAMPLE_INTERVAL);
   if (sIdx >= this.samples.length) {
     this.finished = true;
-    if (this.mesh) this.mesh.visible = false;
+    if (this.mesh) this.mesh.setEnabled(false);
     if (this.nameDiv) this.nameDiv.style.display = 'none';
     return;
   }
 
-  // Interpolate between samples for smooth motion
+  // Interpolate between samples
   var fracFrame = currentFrame / GHOST_SAMPLE_INTERVAL;
   var idx0 = Math.floor(fracFrame);
   var idx1 = Math.min(idx0 + 1, this.samples.length - 1);
@@ -1836,7 +1922,6 @@ GhostRacer.prototype.update = function(currentFrame) {
   this.z = s0[1] + (s1[1] - s0[1]) * t;
   this.y = s0[2] + (s1[2] - s0[2]) * t;
 
-  // Angle interpolation (handle wraparound)
   var angDiff = s1[3] - s0[3];
   if (angDiff > Math.PI) angDiff -= Math.PI * 2;
   if (angDiff < -Math.PI) angDiff += Math.PI * 2;
@@ -1844,19 +1929,22 @@ GhostRacer.prototype.update = function(currentFrame) {
 
   // Update mesh
   if (this.mesh) {
-    this.mesh.position.set(this.x, this.y, this.z);
+    this.mesh.position.copyFromFloats(this.x, this.y, this.z);
     this.mesh.rotation.y = -this.ang - Math.PI / 2;
   }
 
   // Update name label position (project 3D to 2D)
-  if (this.nameDiv && typeof camera !== 'undefined' && camera && typeof renderer !== 'undefined' && renderer) {
-    var pos3d = new THREE.Vector3(this.x, this.y + 2.5, this.z);
-    pos3d.project(camera);
-    if (pos3d.z < 1) {
-      var hw = renderer.domElement.width / 2;
-      var hh = renderer.domElement.height / 2;
-      this.nameDiv.style.left = ((pos3d.x * hw) + hw) + 'px';
-      this.nameDiv.style.top = ((-pos3d.y * hh) + hh) + 'px';
+  if (this.nameDiv && typeof camera !== 'undefined' && camera && typeof engine !== 'undefined' && engine) {
+    var pos3d = new BABYLON.Vector3(this.x, this.y + 2.5, this.z);
+    var projected = BABYLON.Vector3.Project(
+      pos3d,
+      BABYLON.Matrix.Identity(),
+      scene.getTransformMatrix(),
+      camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
+    );
+    if (projected.z < 1) {
+      this.nameDiv.style.left = projected.x + 'px';
+      this.nameDiv.style.top = projected.y + 'px';
       this.nameDiv.style.display = 'block';
     } else {
       this.nameDiv.style.display = 'none';
@@ -1864,7 +1952,7 @@ GhostRacer.prototype.update = function(currentFrame) {
   }
 };
 
-GhostRacer.prototype.cleanup = function(scene) {
-  if (this.mesh) scene.remove(this.mesh);
+GhostRacer.prototype.cleanup = function (sc) {
+  if (this.mesh) this.mesh.dispose();
   if (this.nameDiv && this.nameDiv.parentNode) this.nameDiv.parentNode.removeChild(this.nameDiv);
 };

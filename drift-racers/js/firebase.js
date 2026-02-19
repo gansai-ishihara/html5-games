@@ -2,7 +2,7 @@
 // Auth (Google + Email/Password) + Realtime Database (Rankings + Ghosts)
 
 var firebaseConfig = {
-  apiKey: "AIzaSyB-RecxXYzniXGxmBOFNdZB7aEnYPZTizc",
+  apiKey: "AIzaSyCFPomKWj0TZA-VXIXT36lpvDxsTzgNfEo",
   authDomain: "drift-racers-game.firebaseapp.com",
   databaseURL: "https://drift-racers-game-default-rtdb.firebaseio.com",
   projectId: "drift-racers-game",

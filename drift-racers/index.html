@@ -7,9 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=52">
+<link rel="stylesheet" href="css/style.css?v=64">
 </head>
 <body>
+
+<canvas id="renderCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;touch-action:none;outline:none;"></canvas>
 
 <div id="rotate-prompt"><div class="icon">📱</div><p>横向きにしてください</p></div>
 
@@ -133,30 +135,20 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-<!-- Three.js from CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-
-<!-- Post-processing -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/FXAAShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/pmrem/PMREMGenerator.js"></script>
+<!-- Babylon.js -->
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 
 <!-- Game modules -->
-<script src="js/audio.js?v=52"></script>
-<script src="js/config.js?v=52"></script>
-<script src="js/firebase.js?v=52"></script>
-<script src="js/track.js?v=52"></script>
-<script src="js/items.js?v=52"></script>
-<script src="js/kart.js?v=52"></script>
-<script src="js/input.js?v=52"></script>
-<script src="js/graphics.js?v=52"></script>
-<script src="js/hud.js?v=52"></script>
-<script src="js/main.js?v=52"></script>
+<script src="js/audio.js?v=64"></script>
+<script src="js/config.js?v=64"></script>
+<script src="js/firebase.js?v=64"></script>
+<script src="js/track.js?v=64"></script>
+<script src="js/items.js?v=64"></script>
+<script src="js/kart.js?v=64"></script>
+<script src="js/input.js?v=64"></script>
+<script src="js/graphics.js?v=64"></script>
+<script src="js/hud.js?v=64"></script>
+<script src="js/main.js?v=64"></script>
 </body>
 </html>
