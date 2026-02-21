@@ -16,6 +16,10 @@ var kartModelsLoaded = false;
 var envModelCache = {};  // envType -> BABYLON.TransformNode (template)
 var envModelsLoaded = false;
 
+// Course GLB model
+var courseModelRoot = null;
+var courseModelLoaded = false;
+
 // --- GLB Material Enhancement Helpers ---
 
 function enhanceGLBMaterials(meshes, opts) {
@@ -122,11 +126,17 @@ function preloadModels(callback) {
   bodyTypes.forEach(function (bodyType) {
     var url = MODEL_FILES[bodyType];
     BABYLON.SceneLoader.ImportMesh('', '', url, scene,
-      function (meshes) {
+      function (meshes, particleSystems, skeletons) {
         // Create a root TransformNode
         var root = new BABYLON.TransformNode('glb_' + bodyType, scene);
         for (var i = 0; i < meshes.length; i++) {
           if (!meshes[i].parent || meshes[i].parent === scene) meshes[i].parent = root;
+        }
+        // Hide skeleton debug display
+        if (skeletons) {
+          for (var si = 0; si < skeletons.length; si++) {
+            skeletons[si].overrideMesh = null;
+          }
         }
 
         // Normalize size
@@ -187,10 +197,16 @@ function preloadKartModels(callback) {
   bodyTypes.forEach(function (bodyType) {
     var url = KART_MODEL_FILES[bodyType];
     BABYLON.SceneLoader.ImportMesh('', '', url, scene,
-      function (meshes) {
+      function (meshes, particleSystems, skeletons) {
         var root = new BABYLON.TransformNode('kart_' + bodyType, scene);
         for (var i = 0; i < meshes.length; i++) {
           if (!meshes[i].parent || meshes[i].parent === scene) meshes[i].parent = root;
+        }
+        // Hide skeleton debug display
+        if (skeletons) {
+          for (var si = 0; si < skeletons.length; si++) {
+            skeletons[si].overrideMesh = null;
+          }
         }
 
         // Normalize size
@@ -300,6 +316,39 @@ function preloadEnvModels(callback) {
   });
 }
 
+// Load the Blender-generated course GLB
+function loadCourseModel(callback) {
+  if (!USE_COURSE_GLB || !COURSE_GLB_PATH) {
+    courseModelLoaded = true;
+    if (callback) callback();
+    return;
+  }
+  console.log('Loading course GLB: ' + COURSE_GLB_PATH);
+  BABYLON.SceneLoader.ImportMesh('', '', COURSE_GLB_PATH, scene,
+    function (meshes) {
+      courseModelRoot = new BABYLON.TransformNode('courseRoot', scene);
+      for (var i = 0; i < meshes.length; i++) {
+        var m = meshes[i];
+        if (!m.parent || m.parent === scene) m.parent = courseModelRoot;
+        // Enable shadows on course meshes (desktop only)
+        if (shadowGen && m.getTotalVertices && m.getTotalVertices() > 0) {
+          m.receiveShadows = true;
+        }
+      }
+      var allMeshes = courseModelRoot.getChildMeshes();
+      courseModelLoaded = true;
+      console.log('Course GLB loaded: ' + allMeshes.length + ' meshes');
+      if (callback) callback();
+    },
+    null,
+    function (sc, msg, err) {
+      console.warn('Failed to load course GLB: ' + (msg || err));
+      courseModelLoaded = true;
+      if (callback) callback();
+    }
+  );
+}
+
 // Clone and place an environment model at given position, scale, rotation
 function placeEnvModel(sc, envType, x, y, z, scale, rotY) {
   var template = envModelCache[envType];
@@ -337,6 +386,28 @@ function placeEnvModel(sc, envType, x, y, z, scale, rotY) {
   // Place: center horizontally at (x, z), bottom at y
   clone.position.copyFromFloats(x - cx, y - box.min.y, z - cz);
 
+  // Crystal Kingdom: add glow to vegetation and castle
+  if (CRYSTAL_KINGDOM) {
+    var needsGlow = envType.indexOf('tree') >= 0 || envType === 'flowerbed' || envType === 'castle' || envType === 'fountain' || envType === 'archgate';
+    if (needsGlow) {
+      var childMeshes = clone.getChildMeshes();
+      for (var ei = 0; ei < childMeshes.length; ei++) {
+        var eMat = childMeshes[ei].material;
+        if (eMat && eMat.emissiveColor) {
+          eMat = eMat.clone(eMat.name + '_glow');
+          if (envType === 'castle') {
+            eMat.emissiveColor = new BABYLON.Color3(0.12, 0.1, 0.2);
+          } else if (envType === 'fountain') {
+            eMat.emissiveColor = new BABYLON.Color3(0.08, 0.1, 0.18);
+          } else {
+            eMat.emissiveColor = new BABYLON.Color3(0.1, 0.06, 0.18);
+          }
+          childMeshes[ei].material = eMat;
+        }
+      }
+    }
+  }
+
   trackMeshes.push(clone);
   return clone;
 }
@@ -360,6 +431,8 @@ function Racer(charIdx, isPlayer, kartIdx, equipType) {
   this.z = 0;
   this.ang = 0;
   this.spd = 0;
+  this.vy = 0;
+  this.airborne = false;
 
   // Performance stats with kart bonuses
   this.maxSpd = 0.9 + this.char.s * 0.09 + (kart.sBonus || 0);
@@ -418,11 +491,14 @@ function Racer(charIdx, isPlayer, kartIdx, equipType) {
     this.aiDiffSkillFreq = diff.skillFreq || 1.0;
     this.aiDiffRubberBehind = diff.rubberBehind || 0.08;
     this.aiDiffRubberAhead = diff.rubberAhead || -0.08;
-    this.aiLateral = (Math.random() - 0.5) * 5;
+    // Spread AI karts across track width to avoid bunching
+    var laneSlots = [-5, -2.5, 0, 2.5, 5, -3.5, 3.5, -1];
+    this.aiLateral = laneSlots[charIdx % laneSlots.length] + (Math.random() - 0.5) * 1.5;
     this.aiDrifting = false;
     this.aiDriftCharge = 0;
     this.aiItemDelay = 0;
     this.aiStuckTimer = 0;
+    this._smoothAvoid = 0; // smoothed avoidance offset
   }
 }
 
@@ -1227,9 +1303,33 @@ Racer.prototype.update = function (input, racers, sc, dt) {
     var tAng = getTrackAngle(this.aiTargetIdx);
     var perpAng = tAng + Math.PI / 2;
 
-    // Always aim at track center (no lateral offset)
-    var tx = targetPt.x;
-    var tz = targetPt.z;
+    // Use lateral lane offset so AI karts don't all converge to same point
+    var laneOff = this.aiLateral || 0;
+
+    // Dynamic avoidance: shift target away from nearby karts (smoothed)
+    var avoidTarget = 0;
+    for (var av = 0; av < racers.length; av++) {
+      if (racers[av] === this || racers[av].finished) continue;
+      var avDx = this.x - racers[av].x;
+      var avDz = this.z - racers[av].z;
+      var avDist = Math.sqrt(avDx * avDx + avDz * avDz);
+      if (avDist < 8 && avDist > 0.01) {
+        // Gentle avoidance to prevent oscillation
+        var avoidStrength = (8 - avDist) / 8;
+        avoidStrength = avoidStrength * 2.5;
+        var avAng = Math.atan2(avDz, avDx);
+        var perpProj = Math.cos(avAng - perpAng);
+        avoidTarget += perpProj > 0 ? avoidStrength : -avoidStrength;
+      }
+    }
+    // Very smooth avoidance to prevent jerky steering
+    this._smoothAvoid += (avoidTarget - this._smoothAvoid) * 0.06 * timeScale;
+    laneOff += this._smoothAvoid;
+    // Clamp lane offset to stay on track
+    laneOff = Math.max(-halfW * 0.6, Math.min(halfW * 0.6, laneOff));
+
+    var tx = targetPt.x + Math.cos(perpAng) * laneOff;
+    var tz = targetPt.z + Math.sin(perpAng) * laneOff;
 
     var dx = tx - this.x;
     var dz = tz - this.z;
@@ -1241,25 +1341,37 @@ Racer.prototype.update = function (input, racers, sc, dt) {
 
     // Pre-movement centering is now handled in post-movement section
 
-    // Progress-based stuck detection
+    // Progress-based stuck detection (smooth recovery, no teleport)
     if (typeof this._lastProgressCheck === 'undefined') {
       this._lastProgressCheck = this.progress;
       this._progressCheckTimer = 0;
+      this._recovering = false;
     }
     this._progressCheckTimer += timeScale;
-    if (this._progressCheckTimer > 180) {
+    if (this._progressCheckTimer > 300) {
       if (Math.abs(this.progress - this._lastProgressCheck) < 3) {
-        var recIdx = nearestTrackIndex(this.x, this.z);
-        var recNode = trackNodes[(recIdx + 5) % TRACK_POINTS];
-        this.x = recNode.x;
-        this.z = recNode.z;
-        this.y = recNode.y;
-        this.ang = getTrackAngle((recIdx + 5) % TRACK_POINTS);
-        this.spd = 0.5;
-        this.aiStuckTimer = 0;
+        this._recovering = true;
+        this._recoverTarget = (nearestTrackIndex(this.x, this.z) + 3) % TRACK_POINTS;
       }
       this._lastProgressCheck = this.progress;
       this._progressCheckTimer = 0;
+    }
+    // Smooth recovery: lerp toward target node
+    if (this._recovering) {
+      var recNode = trackNodes[this._recoverTarget];
+      if (recNode) {
+        this.x += (recNode.x - this.x) * 0.05 * timeScale;
+        this.z += (recNode.z - this.z) * 0.05 * timeScale;
+        this.y += (recNode.y - this.y) * 0.05 * timeScale;
+        var recAng = getTrackAngle(this._recoverTarget);
+        var ra = recAng - this.ang;
+        while (ra > Math.PI) ra -= Math.PI * 2;
+        while (ra < -Math.PI) ra += Math.PI * 2;
+        this.ang += ra * 0.05 * timeScale;
+        this.spd = Math.max(this.spd, 0.3);
+        var rd = Math.sqrt(Math.pow(this.x - recNode.x, 2) + Math.pow(this.z - recNode.z, 2));
+        if (rd < 2) this._recovering = false;
+      }
     }
 
     // AI Drift logic
@@ -1419,7 +1531,7 @@ Racer.prototype.update = function (input, racers, sc, dt) {
   this.x += Math.cos(this.ang) * this.spd * timeScale;
   this.z += Math.sin(this.ang) * this.spd * timeScale;
 
-  // AI post-movement track centering (counteracts curve drift)
+  // AI post-movement track centering (counteracts curve drift - smooth only)
   if (!this.isPlayer) {
     var pmIdx = nearestTrackIndex(this.x, this.z);
     var pmNode = trackNodes[pmIdx];
@@ -1430,24 +1542,64 @@ Racer.prototype.update = function (input, racers, sc, dt) {
       var pmHW = TRACK_WIDTH * 0.5;
       // Progressively pull toward center starting at 40% of half-width
       if (pmDist > pmHW * 0.4) {
-        var pmRatio = (pmDist - pmHW * 0.4) / (pmHW * 0.6);
-        var pmPull = pmRatio * pmRatio * 0.6 * timeScale;
+        var pmRatio = Math.min(1, (pmDist - pmHW * 0.4) / (pmHW * 0.6));
+        var pmPull = pmRatio * pmRatio * 0.4 * timeScale;
         this.x -= pmDx / pmDist * pmPull;
         this.z -= pmDz / pmDist * pmPull;
       }
-      // Hard limit at 65% of half-width
-      if (pmDist > pmHW * 0.65) {
-        var maxD = pmHW * 0.55;
-        this.x = pmNode.x + pmDx / pmDist * maxD;
-        this.z = pmNode.z + pmDz / pmDist * maxD;
+      // Strong pull at 70% (no hard snap)
+      if (pmDist > pmHW * 0.7) {
+        var overRatio = (pmDist - pmHW * 0.7) / (pmHW * 0.3);
+        var strongPull = Math.min(overRatio * 1.5, 2.0) * timeScale;
+        this.x -= pmDx / pmDist * strongPull;
+        this.z -= pmDz / pmDist * strongPull;
       }
     }
   }
 
-  // Track Y position
+  // Track Y position + ramp jump physics
   var nearIdx = nearestTrackIndex(this.x, this.z);
   var nearNode = trackNodes[nearIdx];
-  if (nearNode) {
+
+  // Ramp detection (ramp spots at nodes 48, 92)
+  var rampSpots = [48, 92];
+  var onRamp = false;
+  for (var ri = 0; ri < rampSpots.length; ri++) {
+    var rampIdx = rampSpots[ri];
+    var idxDiff = Math.abs(nearIdx - rampIdx);
+    if (idxDiff > TRACK_POINTS / 2) idxDiff = TRACK_POINTS - idxDiff;
+    if (idxDiff <= 2) {
+      onRamp = true;
+      // On the ramp - raise kart along slope
+      var rampProgress = 1 - idxDiff / 2; // 0 at edge, 1 at center
+      var rampHeight = 2.5 * rampProgress;
+      if (nearNode) {
+        var rampY = nearNode.y + rampHeight;
+        this.y += (rampY - this.y) * 0.3 * timeScale;
+      }
+      // Launch at ramp peak
+      if (idxDiff <= 1 && !this.airborne && this.spd > 0.3) {
+        this.airborne = true;
+        this.vy = 0.15 + this.spd * 0.08;
+      }
+      break;
+    }
+  }
+
+  if (this.airborne) {
+    // Apply gravity
+    this.vy -= 0.008 * timeScale;
+    this.y += this.vy * timeScale;
+    // Landing check
+    var groundY = nearNode ? nearNode.y : 0;
+    if (this.y <= groundY && this.vy < 0) {
+      this.y = groundY;
+      this.vy = 0;
+      this.airborne = false;
+      // Landing boost
+      if (this.spd > 0.5) this.boostTimer = Math.max(this.boostTimer, 15);
+    }
+  } else if (!onRamp && nearNode) {
     this.y += (nearNode.y - this.y) * 0.15 * timeScale;
   }
 
@@ -1479,14 +1631,19 @@ Racer.prototype.update = function (input, racers, sc, dt) {
       } else {
         this.aiStuckTimer = 0;
       }
-      if (this.aiStuckTimer > 60) {
+      if (this.aiStuckTimer > 90) {
+        // Smooth recovery: lerp toward track center instead of teleporting
         var recoverNode = trackNodes[nearIdx];
-        this.x = recoverNode.x;
-        this.z = recoverNode.z;
-        this.y = recoverNode.y;
-        this.ang = getTrackAngle(nearIdx);
-        this.spd = 0.3;
-        this.aiStuckTimer = 0;
+        this.x += (recoverNode.x - this.x) * 0.1 * timeScale;
+        this.z += (recoverNode.z - this.z) * 0.1 * timeScale;
+        this.y += (recoverNode.y - this.y) * 0.1 * timeScale;
+        var recAng = getTrackAngle(nearIdx);
+        var raDiff = recAng - this.ang;
+        while (raDiff > Math.PI) raDiff -= Math.PI * 2;
+        while (raDiff < -Math.PI) raDiff += Math.PI * 2;
+        this.ang += raDiff * 0.1 * timeScale;
+        this.spd = Math.max(this.spd, 0.3);
+        if (this.aiStuckTimer > 150) this.aiStuckTimer = 0;
       }
     }
   } else if (!phasing && distToTrack > grassEdge) {
@@ -1649,26 +1806,30 @@ Racer.prototype.update = function (input, racers, sc, dt) {
     }
   }
 
-  // Collision with other racers
-  if (!phasing) {
-    var minSep = 1.6;
+  // Collision with other racers (only lower-index resolves each pair once)
+  // Grace period at race start to prevent shaking from tight starting positions
+  if (!phasing && fr > 180) {
+    var minSep = 3.0;
+    var myIdx = racers.indexOf(this);
     for (var r = 0; r < racers.length; r++) {
+      if (r <= myIdx) continue;
       var other = racers[r];
-      if (other !== this) {
-        var dx = this.x - other.x;
-        var dz = this.z - other.z;
-        var dist = Math.sqrt(dx * dx + dz * dz);
-        if (dist < minSep && dist > 0.01) {
-          var pushAng = Math.atan2(dz, dx);
-          var pushDist = (minSep - dist) * 0.25 * timeScale;
-          this.x += Math.cos(pushAng) * pushDist;
-          this.z += Math.sin(pushAng) * pushDist;
-          other.x -= Math.cos(pushAng) * pushDist;
-          other.z -= Math.sin(pushAng) * pushDist;
-          var spdDiff = this.spd - other.spd;
-          this.spd -= spdDiff * 0.08 * timeScale;
-          other.spd += spdDiff * 0.08 * timeScale;
-        }
+      if (other.finished) continue;
+      var dx = this.x - other.x;
+      var dz = this.z - other.z;
+      var dist = Math.sqrt(dx * dx + dz * dz);
+      if (dist < minSep && dist > 0.01) {
+        var pushAng = Math.atan2(dz, dx);
+        // Gentle push to prevent vibration
+        var pushDist = Math.min((minSep - dist) * 0.2, 0.3);
+        this.x += Math.cos(pushAng) * pushDist;
+        this.z += Math.sin(pushAng) * pushDist;
+        other.x -= Math.cos(pushAng) * pushDist;
+        other.z -= Math.sin(pushAng) * pushDist;
+        // Speed differentiation to separate naturally
+        var spdDiff = this.spd - other.spd;
+        this.spd -= spdDiff * 0.03;
+        other.spd += spdDiff * 0.03;
       }
     }
   }

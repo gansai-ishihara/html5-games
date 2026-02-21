@@ -24,12 +24,14 @@ function startRace() {
   kartModelCache = {};
   glbModelCache = {};
   envModelCache = {};
+  courseModelRoot = null;
   kartModelsLoaded = false;
   glbModelsLoaded = false;
   envModelsLoaded = false;
+  courseModelLoaded = false;
 
-  // Build track mesh first (no model dependency)
-  buildTrackMesh(scene);
+  // Build track mesh (skip if using course GLB which includes road surface)
+  if (!USE_COURSE_GLB) buildTrackMesh(scene);
 
   // Show loading indicator
   var cdEl = document.getElementById('countdown');
@@ -41,21 +43,22 @@ function startRace() {
   cdNum.style.fontSize = '48px';
 
   // Reload all models into the new scene, then continue
-  var charDone = false, kartDone = false, envDone = false;
+  var charDone = false, kartDone = false, envDone = false, courseDone = false;
   function onAllModelsReady() {
-    if (!charDone || !kartDone || !envDone) return;
+    if (!charDone || !kartDone || !envDone || !courseDone) return;
     cdNum.style.fontSize = '';
     continueRaceSetup();
   }
   preloadModels(function () { charDone = true; onAllModelsReady(); });
   preloadKartModels(function () { kartDone = true; onAllModelsReady(); });
   preloadEnvModels(function () { envDone = true; onAllModelsReady(); });
+  loadCourseModel(function () { courseDone = true; onAllModelsReady(); });
 }
 
 // Continue race setup after models are loaded into the race scene
 function continueRaceSetup() {
-  // Build decorations (needs env models)
-  buildTrackDecorations(scene);
+  // Build decorations (skip if course GLB includes all decorations)
+  if (!USE_COURSE_GLB) buildTrackDecorations(scene);
 
   // Start ghost recording
   ghostSamples = [];
@@ -521,9 +524,11 @@ document.getElementById('retry-btn').onclick = function () {
   kartModelCache = {};
   glbModelCache = {};
   envModelCache = {};
+  courseModelRoot = null;
   kartModelsLoaded = false;
   glbModelsLoaded = false;
   envModelsLoaded = false;
+  courseModelLoaded = false;
 
   // Reset scene and camera
   scene = null;

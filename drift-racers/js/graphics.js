@@ -7,6 +7,8 @@ var shadowGen = null;
 var particles = { driftLeft: null, driftRight: null, boostFlame: null };
 var cloudMeshes = [];
 var envParticleSystem = null;
+var skyMat = null;
+var reflectionTexture = null;
 
 // Compatibility shims for other files that still reference Three.js globals
 var renderer = null;
@@ -57,13 +59,20 @@ function initScene() {
 
   scene = new BABYLON.Scene(engine);
   scene.useRightHandedSystem = true;
-  scene.clearColor = new BABYLON.Color4(0.051, 0.102, 0.208, 1.0);
-  scene.ambientColor = new BABYLON.Color3(0.1, 0.1, 0.2);
-
-  // Fog
-  scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
-  scene.fogDensity = 0.002;
-  scene.fogColor = new BABYLON.Color3(0.051, 0.102, 0.208);
+  if (CRYSTAL_KINGDOM) {
+    // Crystal Kingdom twilight atmosphere
+    scene.clearColor = new BABYLON.Color4(0.024, 0.035, 0.09, 1.0);
+    scene.ambientColor = new BABYLON.Color3(0.22, 0.18, 0.38);
+    scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
+    scene.fogDensity = 0.0003;
+    scene.fogColor = new BABYLON.Color3(0.06, 0.05, 0.12);
+  } else {
+    scene.clearColor = new BABYLON.Color4(0.051, 0.102, 0.208, 1.0);
+    scene.ambientColor = new BABYLON.Color3(0.1, 0.1, 0.2);
+    scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
+    scene.fogDensity = 0.002;
+    scene.fogColor = new BABYLON.Color3(0.051, 0.102, 0.208);
+  }
 
   // Compatibility shims for scene.add/remove used by other files
   scene.add = function () { };
@@ -82,16 +91,28 @@ function initScene() {
 
   // Hemisphere (ambient + ground color)
   var hemiLight = new BABYLON.HemisphericLight('hemi', new BABYLON.Vector3(0, 1, 0), scene);
-  hemiLight.intensity = 0.85;
-  hemiLight.diffuse = new BABYLON.Color3(0.87, 0.93, 1.0);
-  hemiLight.groundColor = new BABYLON.Color3(0.2, 0.3, 0.2);
+  if (CRYSTAL_KINGDOM) {
+    hemiLight.intensity = 1.2;
+    hemiLight.diffuse = new BABYLON.Color3(0.72, 0.80, 1.0);
+    hemiLight.groundColor = new BABYLON.Color3(0.20, 0.16, 0.42);
+  } else {
+    hemiLight.intensity = 0.85;
+    hemiLight.diffuse = new BABYLON.Color3(0.87, 0.93, 1.0);
+    hemiLight.groundColor = new BABYLON.Color3(0.2, 0.3, 0.2);
+  }
 
   // Sun (main directional)
   var sunLight = new BABYLON.DirectionalLight('sun',
     new BABYLON.Vector3(-1, -1.5, 1).normalize(), scene);
-  sunLight.intensity = 2.5;
-  sunLight.diffuse = new BABYLON.Color3(1.0, 0.98, 0.93);
-  sunLight.position = new BABYLON.Vector3(100, 150, -100);
+  if (CRYSTAL_KINGDOM) {
+    sunLight.intensity = 1.3;
+    sunLight.diffuse = new BABYLON.Color3(0.75, 0.72, 0.82);
+    sunLight.position = new BABYLON.Vector3(100, 80, -100);
+  } else {
+    sunLight.intensity = 2.5;
+    sunLight.diffuse = new BABYLON.Color3(1.0, 0.98, 0.93);
+    sunLight.position = new BABYLON.Vector3(100, 150, -100);
+  }
 
   // Shadows (desktop only)
   if (!isMobile) {
@@ -112,16 +133,16 @@ function initScene() {
   // Rim light (cool blue artistic)
   var rimLight = new BABYLON.DirectionalLight('rim',
     new BABYLON.Vector3(0.5, -0.5, 1).normalize(), scene);
-  rimLight.intensity = 0.8;
+  rimLight.intensity = CRYSTAL_KINGDOM ? 1.2 : 0.8;
   rimLight.diffuse = new BABYLON.Color3(0.65, 0.70, 1.0);
 
   // Environment texture for PBR materials (IBL)
   scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
     'https://assets.babylonjs.com/environments/environmentSpecular.env', scene);
-  scene.environmentIntensity = 0.4;
+  scene.environmentIntensity = CRYSTAL_KINGDOM ? 0.4 : 0.4;
 
   // Build world
-  buildGround();
+  if (!USE_COURSE_GLB) buildGround();
   buildSky();
   buildClouds();
   buildStars();
@@ -166,11 +187,11 @@ function initPostProcessing() {
 
   pipeline = new BABYLON.DefaultRenderingPipeline('default', true, scene, [camera]);
 
-  // Bloom
+  // Bloom (enhanced for Crystal Kingdom glow)
   pipeline.bloomEnabled = true;
-  pipeline.bloomWeight = 0.45;
-  pipeline.bloomKernel = 64;
-  pipeline.bloomThreshold = 0.85;
+  pipeline.bloomWeight = CRYSTAL_KINGDOM ? 0.4 : 0.45;
+  pipeline.bloomKernel = CRYSTAL_KINGDOM ? 64 : 64;
+  pipeline.bloomThreshold = CRYSTAL_KINGDOM ? 0.7 : 0.85;
 
   // FXAA
   pipeline.fxaaEnabled = true;
@@ -179,8 +200,8 @@ function initPostProcessing() {
   pipeline.imageProcessingEnabled = true;
   pipeline.imageProcessing.toneMappingEnabled = true;
   pipeline.imageProcessing.toneMappingType = BABYLON.ImageProcessingConfiguration.TONEMAPPING_ACES;
-  pipeline.imageProcessing.exposure = 1.0;
-  pipeline.imageProcessing.contrast = 1.06;
+  pipeline.imageProcessing.exposure = CRYSTAL_KINGDOM ? 0.95 : 1.0;
+  pipeline.imageProcessing.contrast = CRYSTAL_KINGDOM ? 1.15 : 1.06;
 
   pipeline.imageProcessing.vignetteEnabled = true;
   pipeline.imageProcessing.vignetteWeight = 2.5;
@@ -201,15 +222,48 @@ function initPostProcessing() {
     'uniform sampler2D textureSampler;',
     'void main() {',
     '  vec4 c = texture2D(textureSampler, vUV);',
-    '  c.r += 0.04;',
-    '  c.b -= 0.02;',
+    CRYSTAL_KINGDOM ?
+      '  c.b += 0.01;' :  // subtle cool shift for Crystal Kingdom
+      '  c.r += 0.04; c.b -= 0.02;',   // warm shift for normal
     '  float grey = dot(c.rgb, vec3(0.299, 0.587, 0.114));',
-    '  c.rgb = mix(vec3(grey), c.rgb, 1.22);',
+    '  c.rgb = mix(vec3(grey), c.rgb, 1.25);',
     '  gl_FragColor = c;',
     '}'
   ].join('\n');
 
   new BABYLON.PostProcess('warmColor', 'warmColor', [], null, 1.0, camera);
+
+  // GlowLayer for crystal emission effects
+  if (CRYSTAL_KINGDOM) {
+    var glowLayer = new BABYLON.GlowLayer('glow', scene, {
+      mainTextureFixedSize: 512,
+      blurKernelSize: 64
+    });
+    glowLayer.intensity = 0.90;
+    window._glowLayer = glowLayer;
+
+    // Reflection texture for water - disabled to prevent _currentLOD crash
+    // TODO: re-enable with explicit renderList when meshes are stable
+    reflectionTexture = null;
+
+    // Volumetric Light Scattering (God Rays)
+    if (!isMobile) {
+      var vlsMesh = BABYLON.MeshBuilder.CreateSphere('vlsMesh', { diameter: 400, segments: 16 }, scene);
+      var vlsMat = new BABYLON.StandardMaterial('vlsMat', scene);
+      vlsMat.emissiveColor = new BABYLON.Color3(1, 1, 1);
+      vlsMat.disableLighting = true;
+      vlsMesh.material = vlsMat;
+      vlsMesh.position = new BABYLON.Vector3(0, 150, 400); // Background castle direction
+
+      var godrays = new BABYLON.VolumetricLightScatteringPostProcess('godrays', 1.0, camera, vlsMesh, 100, BABYLON.Texture.BILINEAR_SAMPLINGMODE, engine, false);
+      godrays.exposure = 0.3;
+      godrays.decay = 0.96;
+      godrays.weight = 0.5;
+      godrays.density = 0.9;
+      window._godrays = godrays;
+      window._vlsMesh = vlsMesh;
+    }
+  }
 }
 
 // Simple noise function for terrain generation
@@ -259,42 +313,94 @@ function buildGround() {
   var segments = 120;
   var segSize = terrainSize / segments;
 
-  // Create grass texture
+  // Create terrain texture
   var grassTex = new BABYLON.DynamicTexture('grassTex', { width: 512, height: 512 }, scene, true);
   var ctx = grassTex.getContext();
 
-  ctx.fillStyle = '#2E8B57';
-  ctx.fillRect(0, 0, 512, 512);
+  if (CRYSTAL_KINGDOM) {
+    // Crystal Kingdom ground - rich purple/indigo crystalline landscape
+    ctx.fillStyle = '#1E1840';
+    ctx.fillRect(0, 0, 512, 512);
 
-  for (var i = 0; i < 30; i++) {
-    var px = Math.random() * 512;
-    var py = Math.random() * 512;
-    var pr = 30 + Math.random() * 60;
-    var pg = ctx.createRadialGradient(px, py, 0, px, py, pr);
-    var hue = 100 + Math.random() * 40;
-    var light = 45 + Math.random() * 15;
-    pg.addColorStop(0, 'hsla(' + hue + ',55%,' + light + '%,0.5)');
-    pg.addColorStop(1, 'hsla(' + hue + ',55%,' + light + '%,0)');
-    ctx.fillStyle = pg;
-    ctx.fillRect(px - pr, py - pr, pr * 2, pr * 2);
-  }
+    // Purple/blue/teal terrain patches - vivid
+    for (var i = 0; i < 60; i++) {
+      var px = Math.random() * 512;
+      var py = Math.random() * 512;
+      var pr = 50 + Math.random() * 120;
+      var pg = ctx.createRadialGradient(px, py, 0, px, py, pr);
+      var hue = 220 + Math.random() * 60;
+      var sat = 50 + Math.random() * 20;
+      var light = 15 + Math.random() * 18;
+      pg.addColorStop(0, 'hsla(' + hue + ',' + sat + '%,' + light + '%,0.6)');
+      pg.addColorStop(1, 'hsla(' + hue + ',' + sat + '%,' + light + '%,0)');
+      ctx.fillStyle = pg;
+      ctx.fillRect(px - pr, py - pr, pr * 2, pr * 2);
+    }
 
-  for (var i = 0; i < 8000; i++) {
-    var gx = Math.random() * 512;
-    var gy = Math.random() * 512;
-    var gl = 40 + Math.random() * 25;
-    ctx.fillStyle = 'hsl(' + (100 + Math.random() * 40) + ',55%,' + gl + '%)';
-    ctx.fillRect(gx, gy, 0.8, 2 + Math.random() * 4);
-  }
+    // Crystal vein patterns - glowing blue/cyan network
+    ctx.lineWidth = 2;
+    for (var i = 0; i < 80; i++) {
+      var x1 = Math.random() * 512, y1 = Math.random() * 512;
+      var x2 = x1 + (Math.random() - 0.5) * 180;
+      var y2 = y1 + (Math.random() - 0.5) * 180;
+      var veinHue = 200 + Math.random() * 40;
+      ctx.strokeStyle = 'hsla(' + veinHue + ',70%,55%,' + (0.12 + Math.random() * 0.15) + ')';
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      if (Math.random() > 0.4) {
+        ctx.lineTo(x2 + (Math.random() - 0.5) * 80, y2 + (Math.random() - 0.5) * 80);
+      }
+      ctx.stroke();
+    }
 
-  var fColors = ['#9988CC', '#DDA0BB'];
-  for (var i = 0; i < 120; i++) {
-    var fx = Math.random() * 512;
-    var fy = Math.random() * 512;
-    ctx.fillStyle = fColors[Math.floor(Math.random() * fColors.length)];
-    ctx.beginPath();
-    ctx.arc(fx, fy, 1.5 + Math.random() * 1.5, 0, Math.PI * 2);
-    ctx.fill();
+    // Crystal glints - dense sparkling field
+    for (var i = 0; i < 800; i++) {
+      var brightness = Math.random();
+      if (brightness > 0.8) {
+        ctx.fillStyle = 'rgba(180, 210, 255, ' + (0.25 + Math.random() * 0.25) + ')';
+      } else if (brightness > 0.5) {
+        ctx.fillStyle = 'rgba(150, 120, 220, ' + (0.15 + Math.random() * 0.15) + ')';
+      } else {
+        ctx.fillStyle = 'rgba(100, 160, 200, ' + (0.10 + Math.random() * 0.10) + ')';
+      }
+      var gs = 1 + Math.random() * 2;
+      ctx.fillRect(Math.random() * 512, Math.random() * 512, gs, gs);
+    }
+  } else {
+    ctx.fillStyle = '#2E8B57';
+    ctx.fillRect(0, 0, 512, 512);
+
+    for (var i = 0; i < 30; i++) {
+      var px = Math.random() * 512;
+      var py = Math.random() * 512;
+      var pr = 30 + Math.random() * 60;
+      var pg = ctx.createRadialGradient(px, py, 0, px, py, pr);
+      var hue = 100 + Math.random() * 40;
+      var light = 45 + Math.random() * 15;
+      pg.addColorStop(0, 'hsla(' + hue + ',55%,' + light + '%,0.5)');
+      pg.addColorStop(1, 'hsla(' + hue + ',55%,' + light + '%,0)');
+      ctx.fillStyle = pg;
+      ctx.fillRect(px - pr, py - pr, pr * 2, pr * 2);
+    }
+
+    for (var i = 0; i < 8000; i++) {
+      var gx = Math.random() * 512;
+      var gy = Math.random() * 512;
+      var gl = 40 + Math.random() * 25;
+      ctx.fillStyle = 'hsl(' + (100 + Math.random() * 40) + ',55%,' + gl + '%)';
+      ctx.fillRect(gx, gy, 0.8, 2 + Math.random() * 4);
+    }
+
+    var fColors = ['#9988CC', '#DDA0BB'];
+    for (var i = 0; i < 120; i++) {
+      var fx = Math.random() * 512;
+      var fy = Math.random() * 512;
+      ctx.fillStyle = fColors[Math.floor(Math.random() * fColors.length)];
+      ctx.beginPath();
+      ctx.arc(fx, fy, 1.5 + Math.random() * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   grassTex.update();
@@ -321,9 +427,17 @@ function buildGround() {
       uvs.push(ix / segments, iz / segments);
 
       var hFactor = Math.max(0, Math.min(1, (wy + 4) / 20));
-      var r = 0.3 + hFactor * 0.25;
-      var g = 0.6 - hFactor * 0.15;
-      var b = 0.25 + hFactor * 0.1;
+      var r, g, b;
+      if (CRYSTAL_KINGDOM) {
+        // Vivid indigo/purple terrain with teal highlights at elevation
+        r = 0.12 + hFactor * 0.12;
+        g = 0.10 + hFactor * 0.14;
+        b = 0.22 + hFactor * 0.18;
+      } else {
+        r = 0.3 + hFactor * 0.25;
+        g = 0.6 - hFactor * 0.15;
+        b = 0.25 + hFactor * 0.1;
+      }
       colors.push(r, g, b, 1.0); // RGBA for Babylon.js
     }
   }
@@ -343,11 +457,19 @@ function buildGround() {
 
   var groundMat = new BABYLON.StandardMaterial('groundMat', scene);
   groundMat.diffuseTexture = grassTex;
-  groundMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+  if (CRYSTAL_KINGDOM) {
+    groundMat.specularColor = new BABYLON.Color3(0.15, 0.12, 0.2);
+    groundMat.specularPower = 24;
+    groundMat.emissiveColor = new BABYLON.Color3(0.10, 0.08, 0.18);
+  } else {
+    groundMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+  }
   ground.material = groundMat;
   ground.receiveShadows = true;
+  // Exclude ground from GlowLayer (it shouldn't glow)
+  if (window._glowLayer) window._glowLayer.addExcludedMesh(ground);
 
-  buildFlowerPatches();
+  if (!CRYSTAL_KINGDOM) buildFlowerPatches();
   buildTerrainCliffs();
 }
 
@@ -484,8 +606,10 @@ function buildTunnels(sc) {
 
       // Arch shape using half cylinder
       var arch = BABYLON.MeshBuilder.CreateCylinder('arch_' + t + '_' + i,
-        { height: 3, diameterTop: archW, diameterBottom: archW, tessellation: 16,
-          arc: 0.5 }, sc);
+        {
+          height: 3, diameterTop: archW, diameterBottom: archW, tessellation: 16,
+          arc: 0.5
+        }, sc);
       arch.position.set(node.x, node.y + archH / 2, node.z);
       arch.rotation.y = -angle;
       arch.rotation.z = Math.PI / 2;
@@ -560,7 +684,7 @@ function buildRamps(sc) {
 
     var ramp = createCustomMesh('ramp_' + r, rv, ri, null, null, sc);
     ramp.position.set(node.x, node.y, node.z);
-    ramp.rotation.y = -angle - Math.PI / 2;
+    ramp.rotation.y = -angle + Math.PI / 2;
     ramp.material = rampMat;
     trackMeshes.push(ramp);
 
@@ -607,6 +731,7 @@ function buildSky() {
 
   BABYLON.Effect.ShadersStore['skyFragmentShader'] = [
     'precision highp float;',
+    'uniform float uTime;',
     'uniform vec3 zenithColor;',
     'uniform vec3 upperColor;',
     'uniform vec3 midColor;',
@@ -628,16 +753,35 @@ function buildSky() {
     '  } else {',
     '    color = mix(belowColor, horizonColor, 1.0 + h * 2.5);',
     '  }',
-    '  if (h > 0.2 && h < 0.7) {',
-    '    float auroraH = (h - 0.2) / 0.5;',
-    '    float wave1 = sin(vUv.x * 12.0 + auroraH * 8.0) * 0.5 + 0.5;',
-    '    float wave2 = sin(vUv.x * 8.0 - auroraH * 5.0 + 2.0) * 0.5 + 0.5;',
-    '    float auroraStrength = sin(auroraH * 3.14159) * 0.12;',
-    '    vec3 aurora = mix(auroraColor1, auroraColor2, wave1);',
-    '    color += aurora * auroraStrength * wave2;',
+    '  if (h > 0.05 && h < 0.85) {',
+    '    float auroraH = (h - 0.05) / 0.80;',
+    '    float time = uTime * 0.10;',
+    // Height-based color gradient (concept art: vivid green bottom → blue → purple → pink top)
+    '    float t1 = smoothstep(0.0, 0.35, auroraH);',
+    '    float t2 = smoothstep(0.25, 0.55, auroraH);',
+    '    float t3 = smoothstep(0.50, 0.80, auroraH);',
+    '    vec3 auroraCol = mix(auroraColor1, vec3(0.15, 0.55, 1.0), t1);',
+    '    auroraCol = mix(auroraCol, auroraColor2, t2);',
+    '    auroraCol = mix(auroraCol, vec3(1.0, 0.3, 0.65), t3);',
+    // Vertical envelope - focused band
+    '    float envelope = sin(auroraH * 3.14159);',
+    '    envelope = pow(envelope, 0.7);',
+    // Sharp curtain bands - creates distinct bright/dark stripes like concept art
+    '    float band1 = pow(max(0.0, sin(auroraH * 4.0 + sin(vUv.x * 3.0 + time) * 1.5)), 1.5);',
+    '    float band2 = pow(max(0.0, sin(auroraH * 3.0 + 1.5 + sin(vUv.x * 2.0 - time * 0.6) * 1.2)), 1.3);',
+    '    float bandShape = band1 * 0.6 + band2 * 0.4;',
+    // Flowing curtain horizontal movement
+    '    float curtain = sin(vUv.x * 5.0 + time) * 0.3 + 0.7;',
+    // Aurora = color gradient * vertical envelope * distinct band shapes * curtain
+    '    color += auroraCol * envelope * bandShape * curtain * 2.2;',
     '  }',
-    '  float horizonGlow = exp(-abs(h) * 8.0) * 0.15;',
+    // Warm horizon glow - moderate sunset band
+    '  float horizonGlow = exp(-abs(h) * 6.0) * 0.30;',
     '  color += horizonColor * horizonGlow;',
+    '  float sunsetGlow = exp(-abs(h) * 8.0) * 0.18;',
+    '  color += vec3(1.0, 0.6, 0.3) * sunsetGlow;',
+    '  float goldGlow = exp(-abs(h) * 12.0) * 0.10;',
+    '  color += vec3(1.0, 0.85, 0.4) * goldGlow;',
     '  gl_FragColor = vec4(color, 1.0);',
     '}'
   ].join('\n');
@@ -647,28 +791,41 @@ function buildSky() {
     sideOrientation: BABYLON.Mesh.BACKSIDE
   }, scene);
 
-  var skyMat = new BABYLON.ShaderMaterial('skyShader', scene, {
+  skyMat = new BABYLON.ShaderMaterial('skyShader', scene, {
     vertex: 'sky',
     fragment: 'sky'
   }, {
     attributes: ['position', 'uv', 'normal'],
-    uniforms: ['world', 'worldViewProjection',
+    uniforms: ['world', 'worldViewProjection', 'uTime',
       'zenithColor', 'upperColor', 'midColor', 'horizonColor', 'belowColor',
       'auroraColor1', 'auroraColor2'],
     needAlphaBlending: false
   });
 
-  skyMat.setColor3('zenithColor', c3(0x0D1B33));
-  skyMat.setColor3('upperColor', c3(0x1A2E4A));
-  skyMat.setColor3('midColor', c3(0x6B5B95));
-  skyMat.setColor3('horizonColor', c3(0xC8D5E8));
-  skyMat.setColor3('belowColor', c3(0x8899CC));
-  skyMat.setColor3('auroraColor1', c3(0x6688CC));
-  skyMat.setColor3('auroraColor2', c3(0xAABBEE));
+  if (CRYSTAL_KINGDOM) {
+    // Crystal Kingdom twilight sky with vivid aurora
+    skyMat.setColor3('zenithColor', c3(0x030510));   // near-black space
+    skyMat.setColor3('upperColor', c3(0x080C20));    // very dark navy
+    skyMat.setColor3('midColor', c3(0x0E0A20));      // darker purple
+    skyMat.setColor3('horizonColor', c3(0x443020));   // warm sunset horizon
+    skyMat.setColor3('belowColor', c3(0x150C20));     // dark purple
+    skyMat.setColor3('auroraColor1', c3(0x33FF88));   // vivid green aurora
+    skyMat.setColor3('auroraColor2', c3(0x8844FF));   // vivid purple aurora
+  } else {
+    skyMat.setColor3('zenithColor', c3(0x0D1B33));
+    skyMat.setColor3('upperColor', c3(0x1A2E4A));
+    skyMat.setColor3('midColor', c3(0x6B5B95));
+    skyMat.setColor3('horizonColor', c3(0xC8D5E8));
+    skyMat.setColor3('belowColor', c3(0x8899CC));
+    skyMat.setColor3('auroraColor1', c3(0x6688CC));
+    skyMat.setColor3('auroraColor2', c3(0xAABBEE));
+  }
   skyMat.backFaceCulling = false;
 
   skyMesh.material = skyMat;
   skyMesh.infiniteDistance = true;
+  skyMesh.applyFog = false;
+  if (window._glowLayer) window._glowLayer.addExcludedMesh(skyMesh);
 }
 
 // Billboard clouds
@@ -711,8 +868,13 @@ function buildClouds() {
     var cloudMat = new BABYLON.StandardMaterial('cloudMat_' + i, scene);
     cloudMat.diffuseTexture = cloudTex;
     cloudMat.opacityTexture = cloudTex;
-    cloudMat.diffuseColor = c3([0xDDE8FF, 0xCCD5EE, 0xBBCCDD, 0xD5DDEE, 0xC8D5E8][i % 5]);
-    cloudMat.alpha = 0.55 + Math.random() * 0.25;
+    if (CRYSTAL_KINGDOM) {
+      cloudMat.diffuseColor = c3([0x8877CC, 0x6688BB, 0x9966AA, 0x7788CC, 0xAA88BB][i % 5]);
+      cloudMat.alpha = 0.3 + Math.random() * 0.15;
+    } else {
+      cloudMat.diffuseColor = c3([0xDDE8FF, 0xCCD5EE, 0xBBCCDD, 0xD5DDEE, 0xC8D5E8][i % 5]);
+      cloudMat.alpha = 0.55 + Math.random() * 0.25;
+    }
     cloudMat.backFaceCulling = false;
     cloudMat.disableLighting = true;
     cloudMat.emissiveColor = cloudMat.diffuseColor.scale(0.7);
@@ -727,6 +889,8 @@ function buildClouds() {
       driftSpeed: 0.015 + Math.random() * 0.03,
       startX: cloud.position.x
     };
+    // Exclude clouds from GlowLayer
+    if (window._glowLayer) window._glowLayer.addExcludedMesh(cloud);
 
     cloudMeshes.push(cloud);
   }
@@ -734,7 +898,7 @@ function buildClouds() {
 
 // Stars
 function buildStars() {
-  var starCount = 300;
+  var starCount = CRYSTAL_KINGDOM ? 1000 : 300;
   var positions = [];
   var colors = [];
   var indices = [];
@@ -760,43 +924,56 @@ function buildStars() {
   starMat.emissiveColor = new BABYLON.Color3(1, 1, 1);
   starMat.disableLighting = true;
   starMat.pointsCloud = true;
-  starMat.pointSize = 2.5;
+  starMat.pointSize = CRYSTAL_KINGDOM ? 4.0 : 2.5;
   starMesh.material = starMat;
 }
 
 // Sun decoration
 function buildSunDecor() {
+  // Crystal Kingdom: low sunset position with warm golden glow
+  var sunY = CRYSTAL_KINGDOM ? 25 : 80;
+  var sunColor = CRYSTAL_KINGDOM ? 0xFFCC66 : 0xFFEECC;
+  var flareAlpha1 = CRYSTAL_KINGDOM ? 0.2 : 0.12;
+  var flareAlpha2 = CRYSTAL_KINGDOM ? 0.1 : 0.06;
+
   var sunMat = new BABYLON.StandardMaterial('sunMat', scene);
-  sunMat.emissiveColor = c3(0xFFEECC);
+  sunMat.emissiveColor = c3(sunColor);
   sunMat.disableLighting = true;
 
   var sun = BABYLON.MeshBuilder.CreateSphere('sun', { diameter: 80, segments: 16 }, scene);
-  sun.position.set(300, 80, -400);
+  sun.position.set(300, sunY, -400);
   sun.material = sunMat;
 
   var flareMat = new BABYLON.StandardMaterial('flareMat', scene);
-  flareMat.emissiveColor = c3(0xFFEECC);
+  flareMat.emissiveColor = c3(sunColor);
   flareMat.disableLighting = true;
-  flareMat.alpha = 0.12;
+  flareMat.alpha = flareAlpha1;
+  // Exclude sun/flare from GlowLayer to prevent huge halo
+  if (window._glowLayer) window._glowLayer.addExcludedMesh(sun);
 
   var flare = BABYLON.MeshBuilder.CreateSphere('flare', { diameter: 120, segments: 16 }, scene);
-  flare.position.set(300, 80, -400);
+  flare.position.set(300, sunY, -400);
   flare.material = flareMat;
 
   var flare2Mat = new BABYLON.StandardMaterial('flare2Mat', scene);
-  flare2Mat.emissiveColor = c3(0xFFDDAA);
+  flare2Mat.emissiveColor = c3(CRYSTAL_KINGDOM ? 0xFFAA44 : 0xFFDDAA);
   flare2Mat.disableLighting = true;
-  flare2Mat.alpha = 0.06;
+  flare2Mat.alpha = flareAlpha2;
 
   var flare2 = BABYLON.MeshBuilder.CreateSphere('flare2', { diameter: 180, segments: 16 }, scene);
-  flare2.position.set(300, 80, -400);
+  flare2.position.set(300, sunY, -400);
   flare2.material = flare2Mat;
+  if (window._glowLayer) {
+    window._glowLayer.addExcludedMesh(flare);
+    window._glowLayer.addExcludedMesh(flare2);
+  }
 }
 
 // Distant mountains
 function buildDistantMountains() {
   var mtMat = new BABYLON.StandardMaterial('mtMat', scene);
-  mtMat.diffuseColor = c3(0x223355);
+  mtMat.diffuseColor = CRYSTAL_KINGDOM ? c3(0x110E22) : c3(0x223355);
+  if (CRYSTAL_KINGDOM) mtMat.emissiveColor = c3(0x0A0815);  // dark silhouette with slight glow
   mtMat.specularColor = BABYLON.Color3.Black();
 
   for (var i = 0; i < 8; i++) {
@@ -827,25 +1004,32 @@ function createEnvParticles() {
   particleTex.update();
   particleTex.hasAlpha = true;
 
-  var count = isMobile ? 300 : 500;
+  var count = isMobile ? 300 : (CRYSTAL_KINGDOM ? 1000 : 500);
   envParticleSystem = new BABYLON.ParticleSystem('envParticles', count, scene);
   envParticleSystem.particleTexture = particleTex;
   envParticleSystem.emitter = new BABYLON.Vector3(0, 40, 0);
   envParticleSystem.createBoxEmitter(
     new BABYLON.Vector3(-0.5, -1, -0.5),
     new BABYLON.Vector3(0.5, 0, 0.5),
-    new BABYLON.Vector3(-300, 20, -300),
-    new BABYLON.Vector3(300, 60, 300)
+    new BABYLON.Vector3(-400, 5, -400),
+    new BABYLON.Vector3(400, 80, 400)
   );
-  envParticleSystem.minLifeTime = 8;
-  envParticleSystem.maxLifeTime = 15;
-  envParticleSystem.emitRate = count / 10;
-  envParticleSystem.gravity = new BABYLON.Vector3(0, -1, 0);
-  envParticleSystem.minSize = 0.5;
-  envParticleSystem.maxSize = 2.5;
-  envParticleSystem.color1 = new BABYLON.Color4(0.5, 0.5, 1.0, 0.65);
-  envParticleSystem.color2 = new BABYLON.Color4(0.9, 0.8, 0.3, 0.65);
-  envParticleSystem.colorDead = new BABYLON.Color4(0.5, 0.5, 1.0, 0);
+  envParticleSystem.minLifeTime = 6;
+  envParticleSystem.maxLifeTime = 12;
+  envParticleSystem.emitRate = count / 6;
+  envParticleSystem.gravity = new BABYLON.Vector3(0, -0.5, 0);
+  envParticleSystem.minSize = CRYSTAL_KINGDOM ? 1.0 : 0.5;
+  envParticleSystem.maxSize = CRYSTAL_KINGDOM ? 5.0 : 2.5;
+  if (CRYSTAL_KINGDOM) {
+    // Crystal Kingdom sparkle particles - very vivid magical motes
+    envParticleSystem.color1 = new BABYLON.Color4(0.6, 0.9, 1.0, 1.0);
+    envParticleSystem.color2 = new BABYLON.Color4(1.0, 0.5, 1.0, 1.0);
+    envParticleSystem.colorDead = new BABYLON.Color4(0.4, 0.6, 1.0, 0);
+  } else {
+    envParticleSystem.color1 = new BABYLON.Color4(0.5, 0.5, 1.0, 0.65);
+    envParticleSystem.color2 = new BABYLON.Color4(0.9, 0.8, 0.3, 0.65);
+    envParticleSystem.colorDead = new BABYLON.Color4(0.5, 0.5, 1.0, 0);
+  }
   envParticleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
   envParticleSystem.start();
 }
@@ -860,8 +1044,10 @@ function updateCamera(pl) {
 
   var camDist = 5.0, camH = 2.8;
 
-  var idealX = pl.x - Math.cos(pl.ang) * camDist;
-  var idealZ = pl.z - Math.sin(pl.ang) * camDist;
+  var fwdX = Math.cos(pl.ang);
+  var fwdZ = Math.sin(pl.ang);
+  var idealX = pl.x - fwdX * camDist;
+  var idealZ = pl.z - fwdZ * camDist;
   var idealY = pl.y + camH;
 
   if (pl.boostTimer > 0) {
@@ -872,16 +1058,16 @@ function updateCamera(pl) {
     cameraShake.y *= 0.85;
   }
 
-  var lerpFactor = 0.18 + Math.min(pl.spd * 0.1, 0.22);
-  if (pl.boostTimer > 0) lerpFactor = Math.max(lerpFactor, 0.6);
+  // Fixed lerp factor - no speed-dependent camera lag
+  var lerpFactor = 0.22;
+  if (pl.boostTimer > 0) lerpFactor = 0.35;
   camera.position.x += (idealX - camera.position.x) * lerpFactor + cameraShake.x;
   camera.position.y += (idealY - camera.position.y) * lerpFactor + cameraShake.y;
   camera.position.z += (idealZ - camera.position.z) * lerpFactor;
 
+  // Look target: always forward
   var lookAhead = 2.0;
-  var lookX = pl.x + Math.cos(pl.ang) * lookAhead;
-  var lookZ = pl.z + Math.sin(pl.ang) * lookAhead;
-  camera.setTarget(new BABYLON.Vector3(lookX, pl.y + 1.4, lookZ));
+  camera.setTarget(new BABYLON.Vector3(pl.x + fwdX * lookAhead, pl.y + 1.4, pl.z + fwdZ * lookAhead));
 
   // Shadow light follows player
   if (window._sunLight && window._sunLight.getShadowGenerator && window._sunLight.getShadowGenerator()) {
@@ -1086,10 +1272,27 @@ function updateSpeedLines(pl) {
   }
 }
 
+var skyTime = 0;
+function updateSkyShader(dt) {
+  if (skyMat) {
+    skyTime += (dt || 0.016);
+    skyMat.setFloat('uTime', skyTime);
+  }
+}
+
 // Render scene
 function renderScene() {
   if (scene && engine) {
-    scene.render();
+    updateSkyShader(BABYLON.Engine.LastDeltaTime / 1000);
+    try {
+      scene.render();
+    } catch (e) {
+      // Disable mirror texture if it causes render errors
+      if (reflectionTexture && reflectionTexture.renderList !== undefined) {
+        reflectionTexture.refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
+        console.warn('Disabled mirror texture refresh due to render error');
+      }
+    }
   }
 }
 

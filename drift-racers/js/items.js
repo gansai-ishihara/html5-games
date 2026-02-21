@@ -59,8 +59,6 @@ function createQuestionMarkTexture() {
 
 // Generate item boxes along the track
 function generateItemBoxes(sc) {
-  var questionTexture = createQuestionMarkTexture();
-
   for (var i = 10; i < TRACK_POINTS - 5; i += 10) {
     var trackPoint = getTrackPoint(i);
     var trackAngle = getTrackAngle(i);
@@ -80,46 +78,70 @@ function generateItemBoxes(sc) {
       };
       itemBoxes.push(box);
 
-      // Create visual mesh
+      // Create visual mesh - Crystal Kingdom: glowing crystal cube
       var group = new BABYLON.TransformNode('itemBox' + (++_itn), scene);
 
-      // Main rainbow-tinted cube
       var rainbowHue = (i * 0.12 + j * 0.33) % 1.0;
       var cubeCol = new BABYLON.Color3();
       hslToCol(rainbowHue, 0.9, 0.55, cubeCol);
-      var cubeMat = new BABYLON.StandardMaterial('cube' + _itn, scene);
-      cubeMat.diffuseColor = cubeCol;
-      cubeMat.emissiveColor = cubeCol.scale(0.4);
-      cubeMat.alpha = 0.8;
-      var cubeMesh = BABYLON.MeshBuilder.CreateBox('ib' + (++_itn), { size: 2.2 }, scene);
-      cubeMesh.material = cubeMat;
-      cubeMesh.parent = group;
-      if (shadowGen) shadowGen.addShadowCaster(cubeMesh);
 
-      // Question marks on each face
-      var qMat = imatUnlit(0xffffff, 1);
-      qMat.diffuseTexture = questionTexture;
-      qMat.opacityTexture = questionTexture;
-      qMat.backFaceCulling = false;
-      qMat.useAlphaFromDiffuseTexture = true;
+      if (typeof CRYSTAL_KINGDOM !== 'undefined' && CRYSTAL_KINGDOM) {
+        // Floating crystal orb - original design (no question marks)
+        var crystalMat = new BABYLON.StandardMaterial('cbox' + _itn, scene);
+        crystalMat.diffuseColor = cubeCol;
+        crystalMat.emissiveColor = cubeCol.scale(0.6);
+        crystalMat.specularColor = new BABYLON.Color3(0.8, 0.8, 1.0);
+        crystalMat.specularPower = 8;
+        crystalMat.alpha = 0.7;
+        crystalMat.emissiveFresnelParameters = new BABYLON.FresnelParameters();
+        crystalMat.emissiveFresnelParameters.bias = 0.2;
+        crystalMat.emissiveFresnelParameters.power = 2.0;
+        crystalMat.emissiveFresnelParameters.leftColor = cubeCol;
+        crystalMat.emissiveFresnelParameters.rightColor = BABYLON.Color3.Black();
 
-      // 6 faces
-      var faceData = [
-        { x: 0, y: 0, z: 1.11, ry: 0 },           // front
-        { x: 0, y: 0, z: -1.11, ry: Math.PI },      // back
-        { x: 1.11, y: 0, z: 0, ry: Math.PI / 2 },   // right
-        { x: -1.11, y: 0, z: 0, ry: -Math.PI / 2 }, // left
-        { x: 0, y: 1.11, z: 0, rx: -Math.PI / 2 },  // top
-        { x: 0, y: -1.11, z: 0, rx: Math.PI / 2 }   // bottom
-      ];
-      for (var f = 0; f < faceData.length; f++) {
-        var fd = faceData[f];
-        var qm = BABYLON.MeshBuilder.CreatePlane('qm' + (++_itn), { width: 1.8, height: 1.8 }, scene);
-        qm.material = qMat;
-        qm.position.copyFromFloats(fd.x, fd.y, fd.z);
-        if (fd.ry) qm.rotation.y = fd.ry;
-        if (fd.rx) qm.rotation.x = fd.rx;
-        qm.parent = group;
+        // Central glowing orb
+        var orb = BABYLON.MeshBuilder.CreateSphere('ibo' + (++_itn), { diameter: 1.8, segments: 8 }, scene);
+        orb.material = crystalMat;
+        orb.parent = group;
+        // 3 orbiting crystal shards
+        for (var sh = 0; sh < 3; sh++) {
+          var shAng = (sh / 3) * Math.PI * 2;
+          var shard = BABYLON.MeshBuilder.CreateCylinder('ibs' + (++_itn), {
+            diameterTop: 0.1, diameterBottom: 0.6, height: 1.2, tessellation: 4
+          }, scene);
+          shard.material = crystalMat;
+          shard.position.x = Math.cos(shAng) * 1.4;
+          shard.position.z = Math.sin(shAng) * 1.4;
+          shard.rotation.z = 0.4;
+          shard.rotation.y = shAng;
+          shard.parent = group;
+        }
+        // Outer glow halo
+        var haloMat = new BABYLON.StandardMaterial('ibh' + _itn, scene);
+        haloMat.emissiveColor = cubeCol;
+        haloMat.disableLighting = true;
+        haloMat.alpha = 0.1;
+        var halo = BABYLON.MeshBuilder.CreateSphere('ibhalo' + (++_itn), { diameter: 4.0, segments: 6 }, scene);
+        halo.material = haloMat;
+        halo.parent = group;
+      } else {
+        // Standard floating orb style
+        var orbMat = new BABYLON.StandardMaterial('orb' + _itn, scene);
+        orbMat.diffuseColor = cubeCol;
+        orbMat.emissiveColor = cubeCol.scale(0.4);
+        orbMat.alpha = 0.8;
+        var orbMesh = BABYLON.MeshBuilder.CreateSphere('ib' + (++_itn), { diameter: 2.2, segments: 8 }, scene);
+        orbMesh.material = orbMat;
+        orbMesh.parent = group;
+        if (shadowGen) shadowGen.addShadowCaster(orbMesh);
+        // Ring around orb
+        var ringMat = new BABYLON.StandardMaterial('ibr' + _itn, scene);
+        ringMat.diffuseColor = cubeCol;
+        ringMat.emissiveColor = cubeCol.scale(0.5);
+        ringMat.alpha = 0.6;
+        var ring = BABYLON.MeshBuilder.CreateTorus('ibring' + (++_itn), { diameter: 3.0, thickness: 0.2, tessellation: 16 }, scene);
+        ring.material = ringMat;
+        ring.parent = group;
       }
 
       group.position.copyFromFloats(box.x, box.y, box.z);

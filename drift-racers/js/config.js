@@ -112,6 +112,13 @@ var ENV_MODEL_FLIP_Y = {
   'mountain': true
 };
 
+// Crystal Kingdom visual theme
+var CRYSTAL_KINGDOM = true;
+
+// Course GLB model (Blender-generated - disabled, using procedural + env GLBs)
+var USE_COURSE_GLB = false;
+var COURSE_GLB_PATH = 'models/course.glb';
+
 // Energy Ring settings (replaces coins - collect for speed boost)
 var RING_BOOST_PER = 0.015;   // speed bonus per ring collected
 var RING_MAX = 10;            // max rings held

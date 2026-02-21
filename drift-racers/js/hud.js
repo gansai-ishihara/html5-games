@@ -41,8 +41,8 @@ function initPreview3D() {
   previewScene.remove = function (obj) { if (obj && obj.dispose) obj.dispose(); };
 
   // Camera
-  previewCamera = new BABYLON.FreeCamera('previewCam', new BABYLON.Vector3(4, 2.5, 4), previewScene);
-  previewCamera.setTarget(new BABYLON.Vector3(0, 0.7, 0));
+  previewCamera = new BABYLON.FreeCamera('previewCam', new BABYLON.Vector3(2.5, 1.8, 2.5), previewScene);
+  previewCamera.setTarget(new BABYLON.Vector3(0, 0.5, 0));
   previewCamera.inputs.clear(); // No user control
 
   // Lighting (brighter for preview)
