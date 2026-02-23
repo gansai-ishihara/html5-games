@@ -1,0 +1,2 @@
+[   41805ms] [ERROR] User declined or dismissed prompt. API exponential cool down triggered. @ https://trellis3d.co/?model=trellis-v2#3d-generator:0
+[   41806ms] [ERROR] [GSI_LOGGER]: FedCM get() rejects with NetworkError: Error retrieving a token. @ https://trellis3d.co/_next/static/chunks/6770-d45fdf1970988b87.js?dpl=dpl_AC68jq4ewS1Vh5TfQDN4yHYjCyjc:0

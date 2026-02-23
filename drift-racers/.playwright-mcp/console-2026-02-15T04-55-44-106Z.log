@@ -1,0 +1,29 @@
+[     618ms] [WARNING] Unrecognized feature: 'ambient-light-sensor'. @ https://huggingface.co/spaces/VAST-AI/TripoSG:278
+[     618ms] [WARNING] Unrecognized feature: 'battery'. @ https://huggingface.co/spaces/VAST-AI/TripoSG:278
+[     618ms] [WARNING] Unrecognized feature: 'document-domain'. @ https://huggingface.co/spaces/VAST-AI/TripoSG:278
+[     618ms] [WARNING] Unrecognized feature: 'layout-animations'. @ https://huggingface.co/spaces/VAST-AI/TripoSG:278
+[     618ms] [WARNING] Unrecognized feature: 'legacy-image-formats'. @ https://huggingface.co/spaces/VAST-AI/TripoSG:278
+[     618ms] [WARNING] Unrecognized feature: 'oversized-images'. @ https://huggingface.co/spaces/VAST-AI/TripoSG:278
+[     618ms] [WARNING] Unrecognized feature: 'vr'. @ https://huggingface.co/spaces/VAST-AI/TripoSG:278
+[     618ms] [WARNING] Unrecognized feature: 'wake-lock'. @ https://huggingface.co/spaces/VAST-AI/TripoSG:278
+[    2760ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vast-ai-triposg.hf.space/static/fonts/ui-sans-serif/ui-sans-serif-Regular.woff2:0
+[    2848ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vast-ai-triposg.hf.space/static/fonts/ui-sans-serif/ui-sans-serif-Bold.woff2:0
+[    3034ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vast-ai-triposg.hf.space/static/fonts/system-ui/system-ui-Regular.woff2:0
+[    3100ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vast-ai-triposg.hf.space/static/fonts/system-ui/system-ui-Bold.woff2:0
+[   15258ms] [WARNING] Method not implemented. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:1487
+[   15295ms] [WARNING] Method not implemented. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:1487
+[   35507ms] [WARNING] Too many arguments provided for the endpoint. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:493
+[   39209ms] [WARNING] Too many arguments provided for the endpoint. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:493
+[   39724ms] [WARNING] Too many arguments provided for the endpoint. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:493
+[  204338ms] [WARNING] Too many arguments provided for the endpoint. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:493
+[  333310ms] [WARNING] Method not implemented. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:1487
+[  333353ms] [WARNING] Method not implemented. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:1487
+[  340204ms] [WARNING] Too many arguments provided for the endpoint. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:493
+[  344157ms] [WARNING] Too many arguments provided for the endpoint. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:493
+[  344690ms] [WARNING] Too many arguments provided for the endpoint. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:493
+[  386253ms] [WARNING] Too many arguments provided for the endpoint. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:493
+[  466212ms] [WARNING] Method not implemented. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:1487
+[  472552ms] [WARNING] Too many arguments provided for the endpoint. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:493
+[  477340ms] [WARNING] Too many arguments provided for the endpoint. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:493
+[  477838ms] [WARNING] Too many arguments provided for the endpoint. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:493
+[  518269ms] [WARNING] Too many arguments provided for the endpoint. @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:493

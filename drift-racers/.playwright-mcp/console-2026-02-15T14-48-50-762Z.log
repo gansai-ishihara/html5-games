@@ -1,0 +1,7 @@
+[    2904ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/ui-sans-serif/ui-sans-serif-Regular.woff2:0
+[    3130ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/system-ui/system-ui-Regular.woff2:0
+[    5737ms] [WARNING] Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://huggingface.co') does not match the recipient window's origin ('https://trellis-community-trellis.hf.space'). @ https://trellis-community-trellis.hf.space/_app/immutable/chunks/2.CWSJHAMp.js:63030
+[    6812ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/ui-sans-serif/ui-sans-serif-Bold.woff2:0
+[   41194ms] [WARNING] Method not implemented. @ https://trellis-community-trellis.hf.space/_app/immutable/chunks/2.CWSJHAMp.js:1486
+[   41224ms] [WARNING] Method not implemented. @ https://trellis-community-trellis.hf.space/_app/immutable/chunks/2.CWSJHAMp.js:1486
+[   50650ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/system-ui/system-ui-Bold.woff2:0

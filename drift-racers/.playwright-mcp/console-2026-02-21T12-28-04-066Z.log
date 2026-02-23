@@ -1,0 +1,10 @@
+[     794ms] [WARNING] Unrecognized feature: 'ambient-light-sensor'. @ https://huggingface.co/spaces/microsoft/TRELLIS.2:279
+[     794ms] [WARNING] Unrecognized feature: 'battery'. @ https://huggingface.co/spaces/microsoft/TRELLIS.2:279
+[     794ms] [WARNING] Unrecognized feature: 'document-domain'. @ https://huggingface.co/spaces/microsoft/TRELLIS.2:279
+[     794ms] [WARNING] Unrecognized feature: 'layout-animations'. @ https://huggingface.co/spaces/microsoft/TRELLIS.2:279
+[     794ms] [WARNING] Unrecognized feature: 'legacy-image-formats'. @ https://huggingface.co/spaces/microsoft/TRELLIS.2:279
+[     794ms] [WARNING] Unrecognized feature: 'oversized-images'. @ https://huggingface.co/spaces/microsoft/TRELLIS.2:279
+[     794ms] [WARNING] Unrecognized feature: 'vr'. @ https://huggingface.co/spaces/microsoft/TRELLIS.2:279
+[     794ms] [WARNING] Unrecognized feature: 'wake-lock'. @ https://huggingface.co/spaces/microsoft/TRELLIS.2:279
+[   91872ms] [WARNING] Method not implemented. @ https://microsoft-trellis-2.hf.space/_app/immutable/chunks/CcAeEuGw.js:3
+[   91883ms] [WARNING] Method not implemented. @ https://microsoft-trellis-2.hf.space/_app/immutable/chunks/CcAeEuGw.js:3

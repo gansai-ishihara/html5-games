@@ -1,0 +1,8 @@
+[  255978ms] Uncaught TypeError: r.getMaterialForRenderPass is not a function
+    at e.dispose (https://cdn.babylonjs.com/babylon.js:0:1476277)
+    at t.dispose (https://cdn.babylonjs.com/babylon.js:0:946310)
+    at t.dispose (https://cdn.babylonjs.com/babylon.js:0:4963034)
+    at t (https://cdn.babylonjs.com/babylon.js:0:2934461)
+    at e._disposeList (https://cdn.babylonjs.com/babylon.js:0:2934512)
+    at e.dispose (https://cdn.babylonjs.com/babylon.js:0:2931336)
+    at document.getElementById.onclick (http://localhost:8888/js/main.js?v=75:473:10)

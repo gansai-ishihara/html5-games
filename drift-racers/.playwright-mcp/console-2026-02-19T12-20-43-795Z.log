@@ -1,0 +1,2 @@
+[     357ms] ReferenceError: scene is not defined
+    at http://localhost:8080/js/track.js?v=52:901:17

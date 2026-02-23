@@ -1,0 +1,10 @@
+[     505ms] [ERROR] Error retrieving a token. @ https://trellis3d.co/online:0
+[     941ms] [ERROR] Unable to preload CSS for https://gradio.s3-us-west-2.amazonaws.com/assets/index-YT7-ZTht.css @ https://trellis3d.co/_next/static/chunks/6770-d45fdf1970988b87.js?dpl=dpl_AC68jq4ewS1Vh5TfQDN4yHYjCyjc:0
+[     957ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://huggingface.co/api/spaces/by-subdomain/trellis-community-trellis:0
+[    1170ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://huggingface.co/api/spaces/by-subdomain/trellis-community-trellis:0
+[    1757ms] [WARNING] Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://huggingface.co') does not match the recipient window's origin ('https://trellis3d.co'). @ https://gradio.s3-us-west-2.amazonaws.com/5.34.2/assets/Index-ByPQRsjP.js:1
+[    1782ms] [WARNING] Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://huggingface.co') does not match the recipient window's origin ('https://trellis3d.co'). @ https://gradio.s3-us-west-2.amazonaws.com/5.34.2/assets/Index-ByPQRsjP.js:1
+[    2087ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/ui-sans-serif/ui-sans-serif-Regular.woff2:0
+[    2087ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/ui-monospace/ui-monospace-Regular.woff2:0
+[    2356ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/Consolas/Consolas-Regular.woff2:0
+[    2356ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/system-ui/system-ui-Regular.woff2:0

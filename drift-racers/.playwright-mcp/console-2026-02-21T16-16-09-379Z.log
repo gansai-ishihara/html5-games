@@ -1,0 +1,33 @@
+[    1813ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8888/favicon.ico:0
+[ 9216993ms] Uncaught TypeError: r.getMaterialForRenderPass is not a function
+    at e.dispose (https://cdn.babylonjs.com/babylon.js:0:1476277)
+    at t.dispose (https://cdn.babylonjs.com/babylon.js:0:946310)
+    at t.dispose (https://cdn.babylonjs.com/babylon.js:0:4963034)
+    at t (https://cdn.babylonjs.com/babylon.js:0:2934461)
+    at e._disposeList (https://cdn.babylonjs.com/babylon.js:0:2934512)
+    at e.dispose (https://cdn.babylonjs.com/babylon.js:0:2931336)
+    at document.getElementById.onclick (http://localhost:8888/js/main.js?v=76:473:10)
+[ 9217001ms] Uncaught TypeError: r.getMaterialForRenderPass is not a function
+    at e.dispose (https://cdn.babylonjs.com/babylon.js:0:1476277)
+    at t.dispose (https://cdn.babylonjs.com/babylon.js:0:946310)
+    at t.dispose (https://cdn.babylonjs.com/babylon.js:0:4963034)
+    at t (https://cdn.babylonjs.com/babylon.js:0:2934461)
+    at e._disposeList (https://cdn.babylonjs.com/babylon.js:0:2934512)
+    at e.dispose (https://cdn.babylonjs.com/babylon.js:0:2931336)
+    at document.getElementById.onclick (http://localhost:8888/js/main.js?v=76:473:10)
+[ 9217001ms] Uncaught TypeError: r.getMaterialForRenderPass is not a function
+    at e.dispose (https://cdn.babylonjs.com/babylon.js:0:1476277)
+    at t.dispose (https://cdn.babylonjs.com/babylon.js:0:946310)
+    at t.dispose (https://cdn.babylonjs.com/babylon.js:0:4963034)
+    at t (https://cdn.babylonjs.com/babylon.js:0:2934461)
+    at e._disposeList (https://cdn.babylonjs.com/babylon.js:0:2934512)
+    at e.dispose (https://cdn.babylonjs.com/babylon.js:0:2931336)
+    at document.getElementById.onclick (http://localhost:8888/js/main.js?v=76:473:10)
+[ 9217003ms] Uncaught TypeError: r.getMaterialForRenderPass is not a function
+    at e.dispose (https://cdn.babylonjs.com/babylon.js:0:1476277)
+    at t.dispose (https://cdn.babylonjs.com/babylon.js:0:946310)
+    at t.dispose (https://cdn.babylonjs.com/babylon.js:0:4963034)
+    at t (https://cdn.babylonjs.com/babylon.js:0:2934461)
+    at e._disposeList (https://cdn.babylonjs.com/babylon.js:0:2934512)
+    at e.dispose (https://cdn.babylonjs.com/babylon.js:0:2931336)
+    at document.getElementById.onclick (http://localhost:8888/js/main.js?v=76:473:10)

@@ -1,0 +1,6 @@
+[  199020ms] [ERROR] `DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog @ https://chatgpt.com/cdn/assets/2340486e-h114sxj33pi48cph.js:0
+[  218500ms] [WARNING] Datadog Browser SDK: Customer data exceeds the recommended 3KiB threshold. More details: https://docs.datadoghq.com/real_user_monitoring/browser/troubleshooting/#customer-data-exceeds-the-recommended-threshold-warning @ https://auth-cdn.oaistatic.com/assets/datadog-BTgRrIvw.js:6

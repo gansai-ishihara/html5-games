@@ -1,0 +1,2 @@
+[  117773ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://huggingface.co/api/billing/subscription/payment-intent:0
+[  209149ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://huggingface.co/api/billing/subscription/payment-intent:0

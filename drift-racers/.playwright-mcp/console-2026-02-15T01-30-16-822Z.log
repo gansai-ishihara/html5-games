@@ -1,0 +1,35 @@
+[    1923ms] [WARNING] [AuthError] NO_TOKEN: undefined @ https://cdn.meshy.ai/webapp-build-assets/production/_next/static/chunks/06756f5f43399107.js:37
+[    1933ms] [WARNING] Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently @ https://www.meshy.ai/ingest/static/posthog-recorder.js?v=1.335.2:0
+[    2368ms] [WARNING] window.intercomSettings.user_id is set to undefined. This value should either be a string or not set at all. @ https://js.intercomcdn.com/frame-modern.840c8491.js:0
+[    2529ms] [ERROR] Not signed in with the identity provider. @ https://www.meshy.ai/:0
+[    2913ms] [ERROR] Sending form data to 'https://www.facebook.com/tr/' violates the following Content Security Policy directive: "form-action 'self'". The request has been blocked.
+ @ https://www.googletagmanager.com/:0
+[    9281ms] [ERROR] [GSI_LOGGER]: FedCM get() rejects with NetworkError: Error retrieving a token. @ https://accounts.google.com/gsi/client:81
+[   10846ms] [WARNING] [Meta Pixel] - You are sending a non-standard event 'UserSignupIntent'. The preferred way to send these events is using trackCustom. See 'https://developers.facebook.com/docs/ads-for-websites/pixel-events/#events' for more information. @ https://connect.facebook.net/en_US/fbevents.js:173
+[   10951ms] [ERROR] Sending form data to 'https://www.facebook.com/tr/' violates the following Content Security Policy directive: "form-action 'self'". The request has been blocked.
+ @ https://www.googletagmanager.com/:0
+[   10953ms] [ERROR] Sending form data to 'https://www.facebook.com/tr/' violates the following Content Security Policy directive: "form-action 'self'". The request has been blocked.
+ @ https://www.googletagmanager.com/:0
+[   11121ms] [ERROR] Attestation check for Attribution Reporting on https://www.facebook.com failed. @ https://www.meshy.ai/:0
+[   13407ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://api.meshy.ai/web/public/auth/verify-sso-email:0
+[   26333ms] [ERROR] Sending form data to 'https://www.facebook.com/tr/' violates the following Content Security Policy directive: "form-action 'self'". The request has been blocked.
+ @ https://www.googletagmanager.com/:0
+[   26447ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://api.meshy.ai/web/public/auth/verify-sso-email:0
+[  169543ms] [ERROR] Sending form data to 'https://www.facebook.com/tr/' violates the following Content Security Policy directive: "form-action 'self'". The request has been blocked.
+ @ https://www.googletagmanager.com/:0
+[  170717ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://api.meshy.ai/web/v1/customer:0
+[  172798ms] [ERROR] Sending form data to 'https://www.facebook.com/tr/' violates the following Content Security Policy directive: "form-action 'self'". The request has been blocked.
+ @ https://www.googletagmanager.com/:0
+[  173230ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://api.meshy.ai/web/v1/me/subscription-intent:0
+[  237944ms] [ERROR] Sending form data to 'https://www.facebook.com/tr/' violates the following Content Security Policy directive: "form-action 'self'". The request has been blocked.
+ @ https://www.googletagmanager.com/:0
+[  257329ms] [ERROR] Sending form data to 'https://www.facebook.com/tr/' violates the following Content Security Policy directive: "form-action 'self'". The request has been blocked.
+ @ https://www.googletagmanager.com/:0
+[  314181ms] [ERROR] Sending form data to 'https://www.facebook.com/tr/' violates the following Content Security Policy directive: "form-action 'self'". The request has been blocked.
+ @ https://www.googletagmanager.com/:0
+[  314471ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://api.meshy.ai/web/v1/customer:0
+[  340270ms] [ERROR] Sending form data to 'https://www.facebook.com/tr/' violates the following Content Security Policy directive: "form-action 'self'". The request has been blocked.
+ @ https://www.googletagmanager.com/:0
+[  340996ms] [WARNING] Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently @ https://www.meshy.ai/ingest/static/posthog-recorder.js?v=1.335.2:0
+[  368159ms] [ERROR] Sending form data to 'https://www.facebook.com/tr/' violates the following Content Security Policy directive: "form-action 'self'". The request has been blocked.
+ @ https://www.googletagmanager.com/:0

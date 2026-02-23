@@ -1,0 +1,3 @@
+[   24652ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://identitytoolkit.googleapis.com/v1/projects?key=AIzaSyB-RecxXYzniXGxmBOFNdZB7aEnYPZTizc:0
+[   25993ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://www.googleapis.com/identitytoolkit/v3/relyingparty/getProjectConfig?key=AIzaSyB-RecxXYzniXGxmBOFNdZB7aEnYPZTizc&cb=1771498140300:0
+[   25995ms] [WARNING] {"error":{"code":400,"message":"CONFIGURATION_NOT_FOUND","errors":[{"message":"CONFIGURATION_NOT_FOUND","domain":"global","reason":"invalid"}]}} @ https://drift-racers-game.firebaseapp.com/__/auth/iframe.js:310

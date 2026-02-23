@@ -1,0 +1,4 @@
+[     375ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'pointer-lock'. @ :0
+[     888ms] [WARNING] react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next {code: NO_I18NEXT_INSTANCE} @ https://grok.com/_next/static/chunks/eb2f62688f36aebd.js:2
+[   92752ms] [ERROR] Access to fetch at 'https://imagine-public.x.ai/imagine-public/images/19a2421f-88c1-4caf-b409-40850d45052b.jpg?cache=1&dl=1' from origin 'https://grok.com' has been blocked by CORS policy: The value of the 'Access-Control-Allow-Credentials' header in the response is '' which must be 'true' when the request's credentials mode is 'include'. @ https://grok.com/imagine/post/19a2421f-88c1-4caf-b409-40850d45052b:0
+[   92752ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://imagine-public.x.ai/imagine-public/images/19a2421f-88c1-4caf-b409-40850d45052b.jpg?cache=1&dl=1:0

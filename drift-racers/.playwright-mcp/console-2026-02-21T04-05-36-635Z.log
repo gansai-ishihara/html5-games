@@ -1,0 +1,13 @@
+[    2287ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:8888/favicon.ico:0
+[    2368ms] [WARNING] [.WebGL-0x381404880600] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[    2368ms] [WARNING] [.WebGL-0x381404880600] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[    2368ms] [WARNING] [.WebGL-0x381404880600] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[    2368ms] [WARNING] [.WebGL-0x381404880600] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[    2368ms] [WARNING] [.WebGL-0x381404880600] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[    2368ms] [WARNING] [.WebGL-0x381404880600] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[    2368ms] [WARNING] [.WebGL-0x381404880600] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[    2369ms] [WARNING] [.WebGL-0x381404880600] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[    2369ms] [WARNING] [.WebGL-0x381404880600] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[    2369ms] [WARNING] [.WebGL-0x381404880600] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[    2369ms] [WARNING] [.WebGL-0x381404880600] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[    2369ms] [WARNING] [.WebGL-0x381404880600] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0

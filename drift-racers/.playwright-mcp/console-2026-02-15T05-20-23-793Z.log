@@ -1,0 +1,19 @@
+[    1229ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vast-ai-triposg.hf.space/static/fonts/ui-sans-serif/ui-sans-serif-Regular.woff2:0
+[    1232ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vast-ai-triposg.hf.space/static/fonts/ui-sans-serif/ui-sans-serif-Bold.woff2:0
+[    1464ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vast-ai-triposg.hf.space/static/fonts/system-ui/system-ui-Bold.woff2:0
+[    1497ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vast-ai-triposg.hf.space/static/fonts/system-ui/system-ui-Regular.woff2:0
+[    3275ms] [WARNING] Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://huggingface.co') does not match the recipient window's origin ('https://vast-ai-triposg.hf.space'). @ https://vast-ai-triposg.hf.space/_app/immutable/chunks/2.Cy8pFCNp.js:57882
+[    4537ms] [WARNING] Unrecognized feature: 'ambient-light-sensor'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:288
+[    4537ms] [WARNING] Unrecognized feature: 'battery'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:288
+[    4537ms] [WARNING] Unrecognized feature: 'document-domain'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:288
+[    4537ms] [WARNING] Unrecognized feature: 'layout-animations'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:288
+[    4537ms] [WARNING] Unrecognized feature: 'legacy-image-formats'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:288
+[    4537ms] [WARNING] Unrecognized feature: 'oversized-images'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:288
+[    4537ms] [WARNING] Unrecognized feature: 'vr'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:288
+[    4537ms] [WARNING] Unrecognized feature: 'wake-lock'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:288
+[    4734ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/ui-sans-serif/ui-sans-serif-Regular.woff2:0
+[    4759ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/system-ui/system-ui-Regular.woff2:0
+[    7560ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/ui-sans-serif/ui-sans-serif-Regular.woff2:0
+[    7793ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/system-ui/system-ui-Regular.woff2:0
+[    8838ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/ui-sans-serif/ui-sans-serif-Bold.woff2:0
+[   10029ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/system-ui/system-ui-Bold.woff2:0

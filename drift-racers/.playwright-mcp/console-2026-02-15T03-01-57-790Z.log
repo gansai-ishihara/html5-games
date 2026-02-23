@@ -1,0 +1,12 @@
+[    4010ms] [ERROR] The request has been aborted. @ https://x.com/i/flow/login?redirect_after_login=%2Fi%2Fgrok%3Ffocus%3D1:0
+[    4010ms] [ERROR] [GSI_LOGGER]: FedCM get() rejects with AbortError: signal is aborted without reason @ https://accounts.google.com/gsi/client:81
+[    4015ms] [ERROR] The request has been aborted. @ https://x.com/i/flow/login?redirect_after_login=%2Fi%2Fgrok%3Ffocus%3D1:0
+[    4016ms] [ERROR] [GSI_LOGGER]: FedCM get() rejects with AbortError: signal is aborted without reason @ https://accounts.google.com/gsi/client:81
+[    4905ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://api.x.com/graphql/zCYojd6h_gVXYjFlaAk4bA/useDirectCallSetupQuery?variables=%7B%7D:0
+[    8336ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://api.x.com/1.1/graphql/error_log.json:0
+[   24379ms] [ERROR] User declined or dismissed prompt. API exponential cool down triggered. @ https://x.com/i/flow/login?redirect_after_login=%2Fi%2Fgrok%3Ffocus%3D1:0
+[   24380ms] [ERROR] [GSI_LOGGER]: FedCM get() rejects with NetworkError: Error retrieving a token. @ https://accounts.google.com/gsi/client:81
+[   35878ms] [ERROR] Cross-Origin-Opener-Policy policy would block the window.postMessage call. @ https://accounts.google.com/gsi/client:347
+[   35878ms] [ERROR] Cross-Origin-Opener-Policy policy would block the window.postMessage call. @ https://accounts.google.com/gsi/client:347
+[   66614ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://api.x.com/1.1/onboarding/task.json:0
+[   74018ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://api.x.com/1.1/onboarding/task.json:0

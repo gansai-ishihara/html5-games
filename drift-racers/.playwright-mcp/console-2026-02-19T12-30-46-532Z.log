@@ -1,0 +1,10 @@
+[     245ms] ReferenceError: scene is not defined
+    at http://localhost:8080/js/track.js?v=52:901:17
+[   66316ms] ReferenceError: callback is not defined
+    at buildTrackDecorations (http://localhost:8080/js/track.js?v=52:657:5)
+    at startRace (http://localhost:8080/js/main.js?v=52:24:3)
+    at checkAllDone (http://localhost:8080/js/main.js?v=52:427:9)
+    at http://localhost:8080/js/main.js?v=52:435:54
+    at http://localhost:8080/js/kart.js?v=52:283:25
+    at https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js:97:7
+    at https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js:1819:6

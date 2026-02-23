@@ -1,0 +1,13 @@
+[    1977ms] [WARNING] [AuthError] NO_TOKEN: undefined @ https://cdn.meshy.ai/webapp-build-assets/production/_next/static/chunks/06756f5f43399107.js:37
+[    1985ms] [WARNING] Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently @ https://www.meshy.ai/ingest/static/posthog-recorder.js?v=1.335.2:0
+[    2272ms] [ERROR] Not signed in with the identity provider. @ https://www.meshy.ai/:0
+[    2416ms] [ERROR] [GSI_LOGGER]: FedCM get() rejects with NetworkError: Error retrieving a token. @ https://accounts.google.com/gsi/client:81
+[    2798ms] [WARNING] window.intercomSettings.user_id is set to undefined. This value should either be a string or not set at all. @ https://js.intercomcdn.com/frame-modern.840c8491.js:0
+[    2906ms] [ERROR] Sending form data to 'https://www.facebook.com/tr/' violates the following Content Security Policy directive: "form-action 'self'". The request has been blocked.
+ @ https://www.googletagmanager.com/:0
+[    8338ms] [WARNING] [Meta Pixel] - You are sending a non-standard event 'UserSignupIntent'. The preferred way to send these events is using trackCustom. See 'https://developers.facebook.com/docs/ads-for-websites/pixel-events/#events' for more information. @ https://connect.facebook.net/en_US/fbevents.js:173
+[    8452ms] [ERROR] Sending form data to 'https://www.facebook.com/tr/' violates the following Content Security Policy directive: "form-action 'self'". The request has been blocked.
+ @ https://www.googletagmanager.com/:0
+[    8453ms] [ERROR] Sending form data to 'https://www.facebook.com/tr/' violates the following Content Security Policy directive: "form-action 'self'". The request has been blocked.
+ @ https://www.googletagmanager.com/:0
+[    8579ms] [ERROR] Attestation check for Attribution Reporting on https://www.facebook.com failed. @ https://www.meshy.ai/:0

@@ -1,0 +1,565 @@
+[ 2204512ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[ 2204512ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[ 2204512ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[ 2204512ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[ 2204512ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[ 2204512ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[ 2204512ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[ 2204512ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[ 2204512ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[ 2204512ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[ 2204512ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[ 2204512ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[ 2204513ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[ 2204513ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[ 2204513ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[ 2204513ms] [ERROR] BJS - [16:52:42]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[12512516ms] [WARNING] WebGL: CONTEXT_LOST_WEBGL: loseContext: context lost @ http://localhost:8888/:0
+[12512516ms] [WARNING] WebGL: CONTEXT_LOST_WEBGL: loseContext: context lost @ http://localhost:8888/:0
+[12512527ms] [WARNING] BJS - [19:44:30]: WebGL context lost. @ https://cdn.babylonjs.com/babylon.js:0
+[12513603ms] [WARNING] WebGL: INVALID_OPERATION: bindBuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513603ms] [WARNING] WebGL: INVALID_OPERATION: bufferSubData: no buffer @ https://cdn.babylonjs.com/babylon.js:0
+[12513603ms] [WARNING] WebGL: INVALID_OPERATION: bindBuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513603ms] [WARNING] WebGL: INVALID_OPERATION: bufferSubData: no buffer @ https://cdn.babylonjs.com/babylon.js:0
+[12513603ms] [WARNING] WebGL: INVALID_OPERATION: bindBuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513604ms] [WARNING] WebGL: INVALID_OPERATION: bufferSubData: no buffer @ https://cdn.babylonjs.com/babylon.js:0
+[12513604ms] [WARNING] WebGL: INVALID_OPERATION: bindBuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513604ms] [WARNING] WebGL: INVALID_OPERATION: bufferSubData: no buffer @ https://cdn.babylonjs.com/babylon.js:0
+[12513604ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513604ms] [WARNING] WebGL: INVALID_OPERATION: framebufferTexture2D: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513605ms] [WARNING] WebGL: INVALID_OPERATION: bindBuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513605ms] [WARNING] WebGL: INVALID_OPERATION: bufferSubData: no buffer @ https://cdn.babylonjs.com/babylon.js:0
+[12513605ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513606ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513606ms] [WARNING] WebGL: INVALID_OPERATION: bindBufferBase: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513606ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513606ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513606ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513606ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513606ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513606ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513606ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513607ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513608ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513609ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513610ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513610ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513610ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513610ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513610ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513610ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513610ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513610ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513610ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513610ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513610ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513610ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513610ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513610ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513611ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513611ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513611ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513611ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513611ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513611ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513611ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513611ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513611ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513611ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513611ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513611ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513611ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513612ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513612ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513612ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513612ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513612ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513612ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513612ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513612ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513612ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513612ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513612ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513612ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513612ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513612ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513613ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513613ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513613ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513613ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513613ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513613ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513613ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513613ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513613ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513613ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513613ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513613ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513613ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513614ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513614ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513614ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513614ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513614ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513614ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513614ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513614ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513614ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513614ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513615ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513615ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513615ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513615ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513615ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513615ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513615ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513615ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513615ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513615ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513615ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513615ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513615ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513615ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513615ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513616ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513616ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513616ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513616ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513616ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513616ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513616ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513616ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513616ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513616ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513616ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513616ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513617ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513617ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513617ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513617ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513617ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513617ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513617ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513617ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513617ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513617ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513617ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513617ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513617ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513617ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513618ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513618ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513618ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513618ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513618ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513618ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513618ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513618ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513618ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513618ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513618ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513618ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513618ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513618ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513618ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513619ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513619ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513619ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513619ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513619ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513619ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513619ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513619ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513619ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513619ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513619ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513619ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513619ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513619ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513620ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513620ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513620ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513620ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513620ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513620ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513620ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513620ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513620ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513620ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513620ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513620ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513620ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513621ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513621ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513621ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513621ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513621ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513621ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513621ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513621ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513621ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513622ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513622ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513622ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513622ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513623ms] [WARNING] WebGL: INVALID_OPERATION: uniform4f: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513623ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513623ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513623ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513623ms] [WARNING] WebGL: INVALID_OPERATION: uniform4f: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513623ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513623ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513623ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513623ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513623ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513623ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513623ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513623ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513624ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513624ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513624ms] [WARNING] WebGL: INVALID_OPERATION: bindBuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513624ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513624ms] [WARNING] WebGL: INVALID_OPERATION: uniform4f: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513624ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[12513624ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[12513624ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[12513625ms] [WARNING] WebGL: too many errors, no more errors will be reported to the console for this context. @ https://cdn.babylonjs.com/babylon.js:0
+[12525619ms] [WARNING] BJS - [19:44:43]: WebGL context successfully restored. @ https://cdn.babylonjs.com/babylon.js:0
+[13462567ms] [WARNING] BJS - [20:00:20]: WebGL context lost. @ https://cdn.babylonjs.com/babylon.js:0
+[13463635ms] [WARNING] WebGL: INVALID_OPERATION: bindBuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463635ms] [WARNING] WebGL: INVALID_OPERATION: bufferSubData: no buffer @ https://cdn.babylonjs.com/babylon.js:0
+[13463635ms] [WARNING] WebGL: INVALID_OPERATION: bindBuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463635ms] [WARNING] WebGL: INVALID_OPERATION: bufferSubData: no buffer @ https://cdn.babylonjs.com/babylon.js:0
+[13463635ms] [WARNING] WebGL: INVALID_OPERATION: bindBuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463635ms] [WARNING] WebGL: INVALID_OPERATION: bufferSubData: no buffer @ https://cdn.babylonjs.com/babylon.js:0
+[13463635ms] [WARNING] WebGL: INVALID_OPERATION: bindBuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463635ms] [WARNING] WebGL: INVALID_OPERATION: bufferSubData: no buffer @ https://cdn.babylonjs.com/babylon.js:0
+[13463635ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463635ms] [WARNING] WebGL: INVALID_OPERATION: framebufferTexture2D: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463635ms] [WARNING] WebGL: INVALID_OPERATION: bindBuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463635ms] [WARNING] WebGL: INVALID_OPERATION: bufferSubData: no buffer @ https://cdn.babylonjs.com/babylon.js:0
+[13463636ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463636ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463636ms] [WARNING] WebGL: INVALID_OPERATION: bindBufferBase: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463636ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463636ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463636ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463636ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463636ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463636ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463637ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463637ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463637ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463637ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463637ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463637ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463637ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463637ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463637ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463638ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463638ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463638ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463638ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463638ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463638ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463638ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463638ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463638ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463638ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463638ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463638ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463639ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463639ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463639ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463639ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463639ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463639ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463639ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463639ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463639ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463639ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463639ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463640ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463640ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463640ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463640ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463640ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463640ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463640ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463640ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463640ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463640ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463640ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463640ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463640ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463640ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463640ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463641ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463641ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463641ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463641ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463641ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463641ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463641ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463641ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463641ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463641ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463641ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463641ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463642ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463642ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463642ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463642ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463642ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463642ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463642ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463642ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463642ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463642ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463642ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463642ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463642ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463642ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463643ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463643ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463643ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463643ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463643ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463643ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463643ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463643ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463643ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463644ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463644ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463644ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463644ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463644ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463644ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463644ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463644ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463644ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463644ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463644ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463645ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463645ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463645ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463645ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463645ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463645ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463645ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463645ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463646ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463646ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463646ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463646ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463646ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463646ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463646ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463646ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463646ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463646ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463646ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463646ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463646ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463647ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463647ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463647ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463647ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463647ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463647ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463647ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463647ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463647ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463647ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463647ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463647ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463648ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463648ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463648ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463648ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463648ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463648ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463648ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463648ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463648ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463648ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463648ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463648ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463648ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463648ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463649ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463649ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463649ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463649ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463649ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463649ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463649ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463649ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463649ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463649ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463649ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463649ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463649ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463649ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463649ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463650ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463650ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463650ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463650ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463650ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463650ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463650ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463650ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463650ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463650ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463650ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463650ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463650ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463651ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463652ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463652ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463652ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463652ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463652ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463652ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463652ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463652ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463652ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463652ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463652ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463652ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463652ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463652ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463653ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463653ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463653ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463653ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463653ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463653ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463653ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463654ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463654ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463654ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463654ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463654ms] [WARNING] WebGL: INVALID_OPERATION: bindFramebuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463655ms] [WARNING] WebGL: INVALID_OPERATION: useProgram: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463655ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463655ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463655ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463656ms] [WARNING] WebGL: INVALID_OPERATION: uniform4f: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463656ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463656ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463656ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463656ms] [WARNING] WebGL: INVALID_OPERATION: uniform4f: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463656ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463656ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463656ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463656ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463656ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463657ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463657ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463657ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463657ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463657ms] [WARNING] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463657ms] [WARNING] WebGL: INVALID_OPERATION: bindBuffer: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463657ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463657ms] [WARNING] WebGL: INVALID_OPERATION: uniform4f: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463658ms] [WARNING] WebGL: INVALID_OPERATION: drawArrays: no valid shader program in use @ https://cdn.babylonjs.com/babylon.js:0
+[13463658ms] [WARNING] WebGL: INVALID_OPERATION: bindVertexArray: object does not belong to this context @ https://cdn.babylonjs.com/babylon.js:0
+[13463658ms] [WARNING] WebGL: INVALID_OPERATION: uniformMatrix4fv: location is not from the associated program @ https://cdn.babylonjs.com/babylon.js:0
+[13463658ms] [WARNING] WebGL: too many errors, no more errors will be reported to the console for this context. @ https://cdn.babylonjs.com/babylon.js:0
+[13475861ms] [WARNING] BJS - [20:00:34]: WebGL context successfully restored. @ https://cdn.babylonjs.com/babylon.js:0
+[13477300ms] [WARNING] BJS - [20:00:35]: WebGL context lost. @ https://cdn.babylonjs.com/babylon.js:0
+[14999876ms] [WARNING] [.WebGL-0x3814014ff800] GL_INVALID_OPERATION: glGetProgramiv: Expected a program name, but found a shader name. @ http://localhost:8888/:0
+[14999876ms] [WARNING] [.WebGL-0x3814014ff800] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[14999876ms] [WARNING] [.WebGL-0x3814014ff800] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[14999876ms] [WARNING] [.WebGL-0x3814014ff800] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[14999876ms] [WARNING] [.WebGL-0x3814014ff800] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[14999876ms] [WARNING] [.WebGL-0x3814014ff800] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[14999876ms] [WARNING] [.WebGL-0x3814014ff800] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[14999876ms] [WARNING] [.WebGL-0x3814014ff800] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[14999877ms] [WARNING] [.WebGL-0x3814014ff800] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[14999877ms] [WARNING] [.WebGL-0x3814014ff800] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[14999877ms] [WARNING] [.WebGL-0x3814014ff800] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[14999877ms] [WARNING] [.WebGL-0x3814014ff800] GL_INVALID_VALUE: glGetProgramiv: Program object expected. @ http://localhost:8888/:0
+[17256282ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[17256282ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[17256282ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[17256282ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[17256282ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[17256282ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[17256282ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[17256282ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[17256282ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[17256282ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[17256282ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[17256282ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[17256282ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[17256282ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[17256283ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0
+[17256283ms] [ERROR] BJS - [21:03:34]: No scene available to import mesh to @ https://cdn.babylonjs.com/babylon.js:0

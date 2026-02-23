@@ -1,0 +1,29 @@
+[38228657ms] ReferenceError: timeScale is not defined
+    at Racer.updateMesh (http://localhost:8082/js/kart.js?v=42:1557:38)
+    at Racer.createMesh (http://localhost:8082/js/kart.js?v=42:864:8)
+    at buildPreviewKart (http://localhost:8082/js/hud.js?v=42:66:13)
+    at initPreview3D (http://localhost:8082/js/hud.js?v=42:51:3)
+    at http://localhost:8082/js/main.js?v=42:271:1
+[38244627ms] ReferenceError: timeScale is not defined
+    at Racer.updateMesh (http://localhost:8082/js/kart.js?v=42:1557:38)
+    at Racer.createMesh (http://localhost:8082/js/kart.js?v=42:864:8)
+    at buildPreviewKart (http://localhost:8082/js/hud.js?v=42:66:13)
+    at initPreview3D (http://localhost:8082/js/hud.js?v=42:51:3)
+    at http://localhost:8082/js/main.js?v=42:271:1
+[38247074ms] ReferenceError: timeScale is not defined
+    at Racer.updateMesh (http://localhost:8082/js/kart.js?v=42:1557:38)
+    at Racer.createMesh (http://localhost:8082/js/kart.js?v=42:864:8)
+    at buildPreviewKart (http://localhost:8082/js/hud.js?v=42:66:13)
+    at card.onclick (http://localhost:8082/js/hud.js?v=42:436:7)
+[38317489ms] ReferenceError: timeScale is not defined
+    at Racer.updateMesh (http://localhost:8082/js/kart.js?v=42:1557:38)
+    at Racer.createMesh (http://localhost:8082/js/kart.js?v=42:864:8)
+    at buildPreviewKart (http://localhost:8082/js/hud.js?v=42:66:13)
+    at initPreview3D (http://localhost:8082/js/hud.js?v=42:51:3)
+    at http://localhost:8082/js/main.js?v=42:271:1
+[38331276ms] ReferenceError: timeScale is not defined
+    at Racer.updateMesh (http://localhost:8082/js/kart.js?v=42:1557:38)
+    at Racer.createMesh (http://localhost:8082/js/kart.js?v=42:864:8)
+    at buildPreviewKart (http://localhost:8082/js/hud.js?v=42:66:13)
+    at initPreview3D (http://localhost:8082/js/hud.js?v=42:51:3)
+    at http://localhost:8082/js/main.js?v=42:271:1

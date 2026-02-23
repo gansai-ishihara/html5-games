@@ -1,0 +1,4 @@
+[    1293ms] [ERROR] Hydration completed but contains mismatches. @ https://chatbox.copilot.livex.ai/livex.min.js:152
+[    1489ms] [WARNING] camera-controls: `verticalDragToForward` was removed. Use `mouseButtons.left = CameraControls.ACTION.SCREEN_PAN` instead. @ https://studio.tripo3d.ai/_nuxt/BTwsbKnR.js:1360
+[    2482ms] [ERROR] Attestation check for Attribution Reporting on https://www.google-analytics.com failed. @ https://studio.tripo3d.ai/workspace/generate/3c50a358-5b6c-4fa4-a308-9a24f599aa6b:0
+[    2482ms] [ERROR] Attestation check for Attribution Reporting on https://www.google-analytics.com failed. @ https://studio.tripo3d.ai/workspace/generate/3c50a358-5b6c-4fa4-a308-9a24f599aa6b:0

@@ -1,0 +1,6 @@
+[     399ms] TypeError: (intermediate value).translateX(...).translateY(...).translateZ(...).scaleZ is not a function
+    at Racer.createMesh (http://localhost:8888/js/kart.js?v=29:500:119)
+    at buildPreviewKart (http://localhost:8888/js/hud.js?v=29:66:13)
+    at initPreview3D (http://localhost:8888/js/hud.js?v=29:51:3)
+    at http://localhost:8888/js/main.js?v=29:263:1
+[     552ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8888/favicon.ico:0

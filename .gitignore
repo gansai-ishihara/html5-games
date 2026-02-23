@@ -10,22 +10,13 @@ desktop.ini
 *.swo
 *~
 
-# Node (if you add npm later)
+# Node
 node_modules/
-package-lock.json
-
-# Logs
-*.log
-npm-debug.log*
 
 # Temp files
 *.tmp
 *.bak
 *.cache
-
-# Playwright MCP test artifacts
-.playwright-mcp/
-*.png
 
 # Claude Code
 .claude/
@@ -33,10 +24,9 @@ npm-debug.log*
 # Windows device files
 nul
 
-# Build outputs (if you add a build process)
+# Build outputs
 dist/
 build/
 
-# Environment
-.env
-.env.local
+# Large binaries (GitHub 100MB limit)
+*.exe

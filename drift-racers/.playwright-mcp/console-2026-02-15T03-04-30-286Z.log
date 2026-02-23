@@ -1,0 +1,22 @@
+[    7936ms] [WARNING] Unrecognized feature: 'ambient-light-sensor'. @ https://huggingface.co/spaces/jainarham/trellis-3d-api:256
+[    7936ms] [WARNING] Unrecognized feature: 'battery'. @ https://huggingface.co/spaces/jainarham/trellis-3d-api:256
+[    7936ms] [WARNING] Unrecognized feature: 'document-domain'. @ https://huggingface.co/spaces/jainarham/trellis-3d-api:256
+[    7936ms] [WARNING] Unrecognized feature: 'layout-animations'. @ https://huggingface.co/spaces/jainarham/trellis-3d-api:256
+[    7936ms] [WARNING] Unrecognized feature: 'legacy-image-formats'. @ https://huggingface.co/spaces/jainarham/trellis-3d-api:256
+[    7936ms] [WARNING] Unrecognized feature: 'oversized-images'. @ https://huggingface.co/spaces/jainarham/trellis-3d-api:256
+[    7936ms] [WARNING] Unrecognized feature: 'vr'. @ https://huggingface.co/spaces/jainarham/trellis-3d-api:256
+[    7936ms] [WARNING] Unrecognized feature: 'wake-lock'. @ https://huggingface.co/spaces/jainarham/trellis-3d-api:256
+[   18798ms] [WARNING] Method not implemented. @ https://jainarham-trellis-3d-api.hf.space/_app/immutable/chunks/D2RdMstj.js:3
+[   18812ms] [WARNING] Method not implemented. @ https://jainarham-trellis-3d-api.hf.space/_app/immutable/chunks/D2RdMstj.js:3
+[  290530ms] [WARNING] Unrecognized feature: 'ambient-light-sensor'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:269
+[  290530ms] [WARNING] Unrecognized feature: 'battery'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:269
+[  290530ms] [WARNING] Unrecognized feature: 'document-domain'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:269
+[  290530ms] [WARNING] Unrecognized feature: 'layout-animations'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:269
+[  290530ms] [WARNING] Unrecognized feature: 'legacy-image-formats'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:269
+[  290530ms] [WARNING] Unrecognized feature: 'oversized-images'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:269
+[  290530ms] [WARNING] Unrecognized feature: 'vr'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:269
+[  290530ms] [WARNING] Unrecognized feature: 'wake-lock'. @ https://huggingface.co/spaces/trellis-community/TRELLIS:269
+[  291480ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/ui-sans-serif/ui-sans-serif-Regular.woff2:0
+[  291704ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/system-ui/system-ui-Regular.woff2:0
+[  292760ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/ui-sans-serif/ui-sans-serif-Bold.woff2:0
+[  292998ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://trellis-community-trellis.hf.space/static/fonts/system-ui/system-ui-Bold.woff2:0
