@@ -64,8 +64,8 @@ function initScene() {
     scene.clearColor = new BABYLON.Color4(0.024, 0.035, 0.09, 1.0);
     scene.ambientColor = new BABYLON.Color3(0.22, 0.18, 0.38);
     scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
-    scene.fogDensity = 0.0003;
-    scene.fogColor = new BABYLON.Color3(0.06, 0.05, 0.12);
+    scene.fogDensity = 0.0008; // Denser fog to hide distant white-out
+    scene.fogColor = new BABYLON.Color3(0.04, 0.03, 0.10);
   } else {
     scene.clearColor = new BABYLON.Color4(0.051, 0.102, 0.208, 1.0);
     scene.ambientColor = new BABYLON.Color3(0.1, 0.1, 0.2);
@@ -187,11 +187,11 @@ function initPostProcessing() {
 
   pipeline = new BABYLON.DefaultRenderingPipeline('default', true, scene, [camera]);
 
-  // Bloom (enhanced for Crystal Kingdom glow)
+  // Bloom (toned down to prevent white-out from bright GLB models)
   pipeline.bloomEnabled = true;
-  pipeline.bloomWeight = CRYSTAL_KINGDOM ? 0.4 : 0.45;
-  pipeline.bloomKernel = CRYSTAL_KINGDOM ? 64 : 64;
-  pipeline.bloomThreshold = CRYSTAL_KINGDOM ? 0.7 : 0.85;
+  pipeline.bloomWeight = CRYSTAL_KINGDOM ? 0.20 : 0.30;
+  pipeline.bloomKernel = CRYSTAL_KINGDOM ? 48 : 64;
+  pipeline.bloomThreshold = CRYSTAL_KINGDOM ? 0.92 : 0.85;
 
   // FXAA
   pipeline.fxaaEnabled = true;
@@ -239,7 +239,7 @@ function initPostProcessing() {
       mainTextureFixedSize: 512,
       blurKernelSize: 64
     });
-    glowLayer.intensity = 0.90;
+    glowLayer.intensity = 0.45;
     window._glowLayer = glowLayer;
 
     // Reflection texture for water - disabled to prevent _currentLOD crash
@@ -248,22 +248,88 @@ function initPostProcessing() {
 
     // Volumetric Light Scattering (God Rays)
     if (!isMobile) {
-      var vlsMesh = BABYLON.MeshBuilder.CreateSphere('vlsMesh', { diameter: 400, segments: 16 }, scene);
+      var vlsMesh = BABYLON.MeshBuilder.CreateSphere('vlsMesh', { diameter: 15, segments: 12 }, scene);
       var vlsMat = new BABYLON.StandardMaterial('vlsMat', scene);
-      vlsMat.emissiveColor = new BABYLON.Color3(1, 1, 1);
+      vlsMat.emissiveColor = new BABYLON.Color3(0.7, 0.65, 0.9);
       vlsMat.disableLighting = true;
+      vlsMat.alpha = 0.3; // Mostly transparent - just a glow source
       vlsMesh.material = vlsMat;
-      vlsMesh.position = new BABYLON.Vector3(0, 150, 400); // Background castle direction
+      vlsMesh.position = new BABYLON.Vector3(0, 300, 600); // Higher and further away
 
       var godrays = new BABYLON.VolumetricLightScatteringPostProcess('godrays', 1.0, camera, vlsMesh, 100, BABYLON.Texture.BILINEAR_SAMPLINGMODE, engine, false);
-      godrays.exposure = 0.3;
-      godrays.decay = 0.96;
-      godrays.weight = 0.5;
-      godrays.density = 0.9;
+      godrays.exposure = 0.15;
+      godrays.decay = 0.95;
+      godrays.weight = 0.25;
+      godrays.density = 0.8;
       window._godrays = godrays;
       window._vlsMesh = vlsMesh;
     }
+
+    if (CRYSTAL_KINGDOM) {
+      addGroundMist(scene);
+    }
   }
+}
+
+// === MAGICAL GROUND MIST ===
+function addGroundMist(scene) {
+  if (!scene) return;
+
+  var fogCanvas = document.createElement('canvas');
+  fogCanvas.width = 256;
+  fogCanvas.height = 256;
+  var ctx = fogCanvas.getContext('2d');
+  var grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  grad.addColorStop(0, 'rgba(200, 230, 255, 0.25)');
+  grad.addColorStop(0.4, 'rgba(150, 180, 255, 0.15)');
+  grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 256);
+  // Add noise
+  for (var n = 0; n < 2000; n++) {
+    var nx = Math.random() * 256;
+    var ny = Math.random() * 256;
+    var dist = Math.sqrt((nx - 128) * (nx - 128) + (ny - 128) * (ny - 128));
+    if (dist < 128) {
+      ctx.fillStyle = 'rgba(255, 255, 255, ' + (Math.random() * 0.1 * (1.0 - dist / 128)) + ')';
+      ctx.fillRect(nx, ny, 4, 4);
+    }
+  }
+
+  var fogTex = new BABYLON.Texture(fogCanvas.toDataURL(), scene);
+  var mist = new BABYLON.ParticleSystem("mist", 1000, scene);
+  mist.particleTexture = fogTex;
+
+  var mistEmitter = BABYLON.MeshBuilder.CreateBox("mistE", { size: 1 }, scene);
+  mistEmitter.position.copyFromFloats(0, -0.5, 0); // At water level
+  mistEmitter.isVisible = false;
+  mist.emitter = mistEmitter;
+
+  var boxEmitter = mist.createBoxEmitter(new BABYLON.Vector3(-1, 0, -1), new BABYLON.Vector3(1, 0, 1), new BABYLON.Vector3(-400, -1.0, -400), new BABYLON.Vector3(400, 3.0, 400));
+
+  mist.color1 = new BABYLON.Color4(0.8, 0.9, 1.0, 0.25);
+  mist.color2 = new BABYLON.Color4(0.4, 0.6, 0.9, 0.10);
+  mist.colorDead = new BABYLON.Color4(0.1, 0.1, 0.3, 0.0);
+
+  mist.minSize = 30.0;
+  mist.maxSize = 70.0;
+  mist.minLifeTime = 8.0;
+  mist.maxLifeTime = 16.0;
+  mist.emitRate = 80;
+
+  mist.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+  mist.gravity = new BABYLON.Vector3(0, 0, 0);
+  mist.direction1 = new BABYLON.Vector3(-1.0, 0.1, -1.0);
+  mist.direction2 = new BABYLON.Vector3(1.0, 0.2, 1.0);
+  mist.minAngularSpeed = -0.1;
+  mist.maxAngularSpeed = 0.1;
+  mist.minEmitPower = 0.5;
+  mist.maxEmitPower = 2.0;
+  mist.updateSpeed = 0.01;
+  mist.preWarmStepOffset = 100;
+  mist.preWarmCycles = 150;
+
+  mist.start();
 }
 
 // Simple noise function for terrain generation
@@ -292,6 +358,23 @@ function distToTrackCenter(wx, wz) {
 // Get terrain height at world position, considering track clearance
 function getTerrainHeight(wx, wz) {
   var baseNoise = terrainNoise(wx, wz);
+
+  if (CRYSTAL_KINGDOM) {
+    var distFromCenter = Math.sqrt(wx * wx + wz * wz);
+    var lakeDepth = -2.5; // Enough for the y=-1.0 water to show completely
+    var lakeRadius = 400;
+    var lakeTransition = 150;
+
+    var lakeBlend = 0;
+    if (distFromCenter < lakeRadius) {
+      lakeBlend = 1.0;
+    } else if (distFromCenter < lakeRadius + lakeTransition) {
+      var lt = (distFromCenter - lakeRadius) / lakeTransition;
+      lakeBlend = 1.0 - (lt * lt * (3 - 2 * lt));
+    }
+    baseNoise = baseNoise * (1.0 - lakeBlend) + (lakeDepth + baseNoise * 0.3) * lakeBlend;
+  }
+
   var trackD = distToTrackCenter(wx, wz);
   var trackClearance = TRACK_WIDTH * 0.7;
   var transitionZone = 30;
@@ -319,19 +402,19 @@ function buildGround() {
 
   if (CRYSTAL_KINGDOM) {
     // Crystal Kingdom ground - rich purple/indigo crystalline landscape
-    ctx.fillStyle = '#1E1840';
+    ctx.fillStyle = '#0E0A1E'; // Deep purple-indigo base (brighter than before)
     ctx.fillRect(0, 0, 512, 512);
 
-    // Purple/blue/teal terrain patches - vivid
-    for (var i = 0; i < 60; i++) {
+    // Purple/blue/teal terrain patches - visible crystal landscape
+    for (var i = 0; i < 50; i++) {
       var px = Math.random() * 512;
       var py = Math.random() * 512;
       var pr = 50 + Math.random() * 120;
       var pg = ctx.createRadialGradient(px, py, 0, px, py, pr);
       var hue = 220 + Math.random() * 60;
-      var sat = 50 + Math.random() * 20;
-      var light = 15 + Math.random() * 18;
-      pg.addColorStop(0, 'hsla(' + hue + ',' + sat + '%,' + light + '%,0.6)');
+      var sat = 50 + Math.random() * 25;
+      var light = 14 + Math.random() * 12;
+      pg.addColorStop(0, 'hsla(' + hue + ',' + sat + '%,' + light + '%,0.5)');
       pg.addColorStop(1, 'hsla(' + hue + ',' + sat + '%,' + light + '%,0)');
       ctx.fillStyle = pg;
       ctx.fillRect(px - pr, py - pr, pr * 2, pr * 2);
@@ -429,10 +512,10 @@ function buildGround() {
       var hFactor = Math.max(0, Math.min(1, (wy + 4) / 20));
       var r, g, b;
       if (CRYSTAL_KINGDOM) {
-        // Vivid indigo/purple terrain with teal highlights at elevation
-        r = 0.12 + hFactor * 0.12;
-        g = 0.10 + hFactor * 0.14;
-        b = 0.22 + hFactor * 0.18;
+        // Rich purple/indigo ground - visible but atmospheric
+        r = 0.08 + hFactor * 0.12;
+        g = 0.06 + hFactor * 0.14;
+        b = 0.18 + hFactor * 0.20;
       } else {
         r = 0.3 + hFactor * 0.25;
         g = 0.6 - hFactor * 0.15;
@@ -458,9 +541,34 @@ function buildGround() {
   var groundMat = new BABYLON.StandardMaterial('groundMat', scene);
   groundMat.diffuseTexture = grassTex;
   if (CRYSTAL_KINGDOM) {
-    groundMat.specularColor = new BABYLON.Color3(0.15, 0.12, 0.2);
-    groundMat.specularPower = 24;
-    groundMat.emissiveColor = new BABYLON.Color3(0.10, 0.08, 0.18);
+    // Highly specular, polished crystal look
+    groundMat.specularColor = new BABYLON.Color3(0.5, 0.4, 0.7);
+    groundMat.specularPower = 64;
+    groundMat.emissiveColor = new BABYLON.Color3(0.04, 0.03, 0.08);
+
+    // Procedural bump map for faceted crystalline reflections
+    var bumpCvs = document.createElement('canvas');
+    bumpCvs.width = 1024; bumpCvs.height = 1024;
+    var bCtx = bumpCvs.getContext('2d');
+    bCtx.fillStyle = '#808080';
+    bCtx.fillRect(0, 0, 1024, 1024);
+    for (var bi = 0; bi < 15000; bi++) {
+      var bx = Math.random() * 1024, by = Math.random() * 1024;
+      var bv = Math.floor(128 + (Math.random() - 0.5) * 60);
+      bCtx.strokeStyle = 'rgb(' + bv + ',' + bv + ',' + bv + ')';
+      bCtx.lineWidth = 1 + Math.random() * 4;
+      bCtx.beginPath();
+      bCtx.moveTo(bx, by);
+      bCtx.lineTo(bx + (Math.random() - 0.5) * 40, by + (Math.random() - 0.5) * 40);
+      bCtx.stroke();
+    }
+    var groundBump = new BABYLON.DynamicTexture('groundBump', bumpCvs, scene, false, BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
+    groundBump.uScale = 60;
+    groundBump.vScale = 60;
+    groundBump.wrapU = BABYLON.Texture.WRAP_ADDRESSMODE;
+    groundBump.wrapV = BABYLON.Texture.WRAP_ADDRESSMODE;
+    groundMat.bumpTexture = groundBump;
+    groundMat.bumpTexture.level = 0.4;
   } else {
     groundMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
   }
@@ -509,8 +617,15 @@ function buildFlowerPatches() {
 // Build cliff faces near the track
 function buildTerrainCliffs() {
   var cliffMat = new BABYLON.StandardMaterial('cliffMat', scene);
-  cliffMat.diffuseColor = c3(0x554433);
+  if (CRYSTAL_KINGDOM) {
+    cliffMat.diffuseColor = c3(0x1A1525);
+    cliffMat.emissiveColor = new BABYLON.Color3(0.05, 0.04, 0.10);
+    cliffMat.alpha = 0.85; // Slightly transparent to reduce visual blockage
+  } else {
+    cliffMat.diffuseColor = c3(0x554433);
+  }
   cliffMat.specularColor = BABYLON.Color3.Black();
+  cliffMat.environmentIntensity = 0; // Prevent IBL gold reflections
 
   for (var i = 0; i < trackNodes.length; i += 4) {
     var node = trackNodes[i];
@@ -519,15 +634,17 @@ function buildTerrainCliffs() {
     var perpZ = Math.cos(angle);
 
     for (var side = -1; side <= 1; side += 2) {
-      var cliffDist = TRACK_WIDTH * 0.7 + 5;
+      var cliffDist = TRACK_WIDTH * 1.2 + 10; // Well outside track + shoulder
       var cx = node.x + perpX * cliffDist * side;
       var cz = node.z + perpZ * cliffDist * side;
       var terrainH = terrainNoise(cx, cz);
+      var heightDiff = node.y - terrainH;
 
-      if (terrainH < node.y - 2) {
-        var cliffH = node.y - terrainH + 1;
-        var cliffW = 6 + Math.random() * 4;
-        var cliffD = 3 + Math.random() * 2;
+      // Skip if height difference is too large (causes wall-blocking at mountain zone)
+      if (heightDiff > 3 && heightDiff < 12) {
+        var cliffH = Math.min(heightDiff + 1, 10);
+        var cliffW = 4 + Math.random() * 3;
+        var cliffD = 2 + Math.random() * 1.5;
 
         var cliff = BABYLON.MeshBuilder.CreateBox('cliff_' + i + '_' + side,
           { width: cliffW, height: cliffH, depth: cliffD }, scene);
@@ -544,8 +661,9 @@ function buildTerrainCliffs() {
 // Build bridge supports under elevated road sections
 function buildBridgePillars(sc) {
   var pillarMat = new BABYLON.StandardMaterial('pillarMat', sc);
-  pillarMat.diffuseColor = c3(0x8899aa);
-  pillarMat.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+  pillarMat.diffuseColor = CRYSTAL_KINGDOM ? c3(0x2A2040) : c3(0x8899aa);
+  pillarMat.specularColor = BABYLON.Color3.Black();
+  pillarMat.environmentIntensity = 0;
 
   for (var i = 0; i < trackNodes.length; i += 8) {
     if (i < 6 || i > trackNodes.length - 6) continue;
@@ -580,17 +698,20 @@ function buildBridgePillars(sc) {
 // Build tunnel/arch structures
 function buildTunnels(sc) {
   var tunnelSpots = [
-    { start: 25, end: 30 },
-    { start: 70, end: 75 }
+    { start: 26, end: 29 },
+    { start: 71, end: 73 }
   ];
 
   var tunnelMat = new BABYLON.StandardMaterial('tunnelMat', sc);
-  tunnelMat.diffuseColor = c3(0x556688);
-  tunnelMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+  tunnelMat.diffuseColor = CRYSTAL_KINGDOM ? c3(0x1A1530) : c3(0x556688);
+  tunnelMat.specularColor = BABYLON.Color3.Black();
+  tunnelMat.environmentIntensity = 0; // Prevent IBL gold reflections
+  if (CRYSTAL_KINGDOM) tunnelMat.emissiveColor = new BABYLON.Color3(0.04, 0.03, 0.08);
 
   var innerMat = new BABYLON.StandardMaterial('innerMat', sc);
-  innerMat.diffuseColor = c3(0x334466);
+  innerMat.diffuseColor = CRYSTAL_KINGDOM ? c3(0x150E28) : c3(0x334466);
   innerMat.backFaceCulling = false;
+  innerMat.environmentIntensity = 0;
 
   for (var t = 0; t < tunnelSpots.length; t++) {
     var spot = tunnelSpots[t];
@@ -972,21 +1093,45 @@ function buildSunDecor() {
 // Distant mountains
 function buildDistantMountains() {
   var mtMat = new BABYLON.StandardMaterial('mtMat', scene);
-  mtMat.diffuseColor = CRYSTAL_KINGDOM ? c3(0x110E22) : c3(0x223355);
-  if (CRYSTAL_KINGDOM) mtMat.emissiveColor = c3(0x0A0815);  // dark silhouette with slight glow
+  mtMat.diffuseColor = CRYSTAL_KINGDOM ? c3(0x0A0515) : c3(0x223355);
+  if (CRYSTAL_KINGDOM) mtMat.emissiveColor = c3(0x05020B);  // Very dark silhouette
   mtMat.specularColor = BABYLON.Color3.Black();
 
-  for (var i = 0; i < 8; i++) {
-    var ang = (i / 8) * Math.PI * 2;
-    var dist = 900 + Math.random() * 200;
-    var scale = 200 + Math.random() * 200;
-    var h = 150 + Math.random() * 150;
+  var numMountains = CRYSTAL_KINGDOM ? 120 : 8;
+  var mtMeshes = [];
+
+  for (var i = 0; i < numMountains; i++) {
+    var ang = (i / numMountains) * Math.PI * 2 + (Math.random() - 0.5) * 0.1;
+    var dist = CRYSTAL_KINGDOM ? 1000 + Math.random() * 400 : 900 + Math.random() * 200;
+    var scale = CRYSTAL_KINGDOM ? (100 + Math.random() * 200) : (200 + Math.random() * 200);
+    var h = CRYSTAL_KINGDOM ? (300 + Math.random() * 500) : (150 + Math.random() * 150);
+    var tess = CRYSTAL_KINGDOM ? 3 : 4; // Sharp jagged shards
 
     var mt = BABYLON.MeshBuilder.CreateCylinder('mt_' + i,
-      { height: h, diameterTop: 0, diameterBottom: scale * 2, tessellation: 4 }, scene);
-    mt.position.set(Math.cos(ang) * dist, h / 2 - 20, Math.sin(ang) * dist);
+      { height: h, diameterTop: 0, diameterBottom: scale * (CRYSTAL_KINGDOM ? 1.0 : 2.0), tessellation: tess }, scene);
+
+    var yPos = CRYSTAL_KINGDOM ? (h / 2 - 100 - Math.random() * 100) : (h / 2 - 20);
+    mt.position.set(Math.cos(ang) * dist, yPos, Math.sin(ang) * dist);
+
     mt.rotation.y = Math.random() * Math.PI;
-    mt.material = mtMat;
+    if (CRYSTAL_KINGDOM) {
+      mt.rotation.z = (Math.random() - 0.5) * 0.8; // Jagged leaning peaks
+      mt.rotation.x = (Math.random() - 0.5) * 0.5;
+    }
+
+    if (CRYSTAL_KINGDOM) {
+      mtMeshes.push(mt);
+    } else {
+      mt.material = mtMat;
+    }
+  }
+
+  // Merge the mountain ring for performance
+  if (CRYSTAL_KINGDOM && mtMeshes.length > 0) {
+    var mergedMt = BABYLON.Mesh.MergeMeshes(mtMeshes, true, true, undefined, false, false);
+    if (mergedMt) {
+      mergedMt.material = mtMat;
+    }
   }
 }
 
@@ -1042,12 +1187,18 @@ function updateEnvParticles(dt) {
 function updateCamera(pl) {
   if (!pl || !camera) return;
 
+  // Fixed camera distance - NO speed-dependent pullback
   var camDist = 5.0, camH = 2.8;
 
   var fwdX = Math.cos(pl.ang);
   var fwdZ = Math.sin(pl.ang);
-  var idealX = pl.x - fwdX * camDist;
-  var idealZ = pl.z - fwdZ * camDist;
+
+  // Camera always stays behind the kart (no reverse flip)
+  var camDirX = -fwdX;
+  var camDirZ = -fwdZ;
+
+  var idealX = pl.x + camDirX * camDist;
+  var idealZ = pl.z + camDirZ * camDist;
   var idealY = pl.y + camH;
 
   if (pl.boostTimer > 0) {
@@ -1058,9 +1209,11 @@ function updateCamera(pl) {
     cameraShake.y *= 0.85;
   }
 
-  // Fixed lerp factor - no speed-dependent camera lag
-  var lerpFactor = 0.22;
-  if (pl.boostTimer > 0) lerpFactor = 0.35;
+  // Camera sticks tightly to player - no lag at any speed
+  var absSpd = Math.abs(pl.spd || 0);
+  var lerpFactor = 0.45 + absSpd * 0.25; // 0.45 at rest, ~0.90 at max speed
+  if (pl.boostTimer > 0) lerpFactor = Math.max(lerpFactor, 0.85);
+  if (lerpFactor > 0.95) lerpFactor = 0.95;
   camera.position.x += (idealX - camera.position.x) * lerpFactor + cameraShake.x;
   camera.position.y += (idealY - camera.position.y) * lerpFactor + cameraShake.y;
   camera.position.z += (idealZ - camera.position.z) * lerpFactor;

@@ -388,14 +388,23 @@ function placeEnvModel(sc, envType, x, y, z, scale, rotY) {
 
   // Crystal Kingdom: add glow to vegetation and castle
   if (CRYSTAL_KINGDOM) {
-    var needsGlow = envType.indexOf('tree') >= 0 || envType === 'flowerbed' || envType === 'castle' || envType === 'fountain' || envType === 'archgate';
+    var isCrystal = envType.indexOf('crystal') >= 0;
+    var isFloral = envType.indexOf('tree') >= 0 || envType === 'flowerbed' || envType === 'flower-garden';
+    var isStructure = envType === 'castle' || envType === 'fountain' || envType === 'archgate';
+    var needsGlow = isCrystal || isFloral || isStructure;
     if (needsGlow) {
       var childMeshes = clone.getChildMeshes();
       for (var ei = 0; ei < childMeshes.length; ei++) {
         var eMat = childMeshes[ei].material;
-        if (eMat && eMat.emissiveColor) {
+        if (eMat && eMat.emissiveColor !== undefined) {
           eMat = eMat.clone(eMat.name + '_glow');
-          if (envType === 'castle') {
+          if (isCrystal) {
+            // Crystal models: strong inner glow (concept art: translucent glowing crystals)
+            eMat.emissiveColor = new BABYLON.Color3(0.15, 0.12, 0.30);
+            if (envType === 'floating-crystals') {
+              eMat.emissiveColor = new BABYLON.Color3(0.20, 0.18, 0.40);
+            }
+          } else if (envType === 'castle') {
             eMat.emissiveColor = new BABYLON.Color3(0.12, 0.1, 0.2);
           } else if (envType === 'fountain') {
             eMat.emissiveColor = new BABYLON.Color3(0.08, 0.1, 0.18);

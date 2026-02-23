@@ -186,60 +186,40 @@ function createAsphaltTexture() {
     canvas.width = 1024; canvas.height = 1024;
     var ctx = canvas.getContext('2d');
     if (CRYSTAL_KINGDOM) {
-        // Dark crystalline road surface
-        ctx.fillStyle = '#12101E';
+        // Dark asphalt with visible purple-blue tint (concept art: sleek dark road)
+        ctx.fillStyle = '#10101E';
         ctx.fillRect(0, 0, 1024, 1024);
-        // Subtle crystal texture
-        for (var i = 0; i < 40000; i++) {
-            var x = Math.random() * 1024;
-            var y = Math.random() * 1024;
-            var v = Math.random();
-            ctx.fillStyle = v < 0.3 ? 'rgba(0,0,0,0.2)' :
-                v < 0.7 ? 'rgba(60,50,100,0.08)' : 'rgba(100,120,180,0.05)';
-            ctx.fillRect(x, y, 2, 2);
+
+        // Subtle noise for asphalt aggregate
+        ctx.fillStyle = 'rgba(180,170,220,0.03)';
+        for (var i = 0; i < 80000; i++) {
+            ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 1.5, 1.5);
         }
-        // Broad road surface glow - subtle inner luminescence
-        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        for (var i = 0; i < 30000; i++) {
+            ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2);
+        }
+
+        // Crystal-purple wet sheen across road
         var roadGlow = ctx.createLinearGradient(0, 0, 1024, 0);
-        roadGlow.addColorStop(0, 'rgba(0,180,255,0.06)');
-        roadGlow.addColorStop(0.15, 'rgba(80,60,180,0.03)');
-        roadGlow.addColorStop(0.5, 'rgba(40,30,80,0.02)');
-        roadGlow.addColorStop(0.85, 'rgba(80,60,180,0.03)');
-        roadGlow.addColorStop(1, 'rgba(180,60,255,0.06)');
+        roadGlow.addColorStop(0, 'rgba(0,180,255,0.02)');
+        roadGlow.addColorStop(0.5, 'rgba(120,160,255,0.06)');
+        roadGlow.addColorStop(1, 'rgba(255,100,210,0.02)');
         ctx.fillStyle = roadGlow;
         ctx.fillRect(0, 0, 1024, 1024);
 
-        // Multi-lane neon road
-        ctx.shadowBlur = 30;
-        // Outer lanes - wider, brighter
-        ctx.shadowColor = '#00ccff'; ctx.fillStyle = '#00bbff';
-        ctx.fillRect(4, 0, 16, 1024);
-        ctx.shadowColor = '#cc44ff'; ctx.fillStyle = '#bb44ff';
-        ctx.fillRect(1004, 0, 16, 1024);
-        // Inner lanes (30% in from edges) - brighter
-        ctx.shadowColor = '#00ffcc'; ctx.fillStyle = '#00ffbb';
-        ctx.fillRect(248, 0, 10, 1024);
-        ctx.shadowColor = '#ff44aa'; ctx.fillStyle = '#ff4499';
-        ctx.fillRect(764, 0, 10, 1024);
-        ctx.shadowBlur = 0;
+        // Thin sharp dashed line in the center of the road
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.shadowColor = '#00ffff';
+        ctx.shadowBlur = 4;
+        ctx.lineWidth = 4;
+        ctx.setLineDash([80, 80]); // Sharp dashed pattern
+        ctx.beginPath();
+        ctx.moveTo(512, 0); // Moved from 850 to 512 (true center)
+        ctx.lineTo(512, 1024);
+        ctx.stroke();
 
-        // Center dashed line (brighter cyan glow)
-        ctx.strokeStyle = 'rgba(140,220,255,0.7)';
-        ctx.lineWidth = 7;
-        ctx.setLineDash([60, 40]);
-        ctx.beginPath(); ctx.moveTo(512, 0); ctx.lineTo(512, 1024); ctx.stroke();
-        // Surface energy pulses
-        for (var ep = 0; ep < 12; ep++) {
-            var epY = ep * 85;
-            var epGrad = ctx.createLinearGradient(200, epY, 824, epY + 40);
-            epGrad.addColorStop(0, 'rgba(80,120,255,0)');
-            epGrad.addColorStop(0.3, 'rgba(80,120,255,0.04)');
-            epGrad.addColorStop(0.5, 'rgba(120,80,200,0.06)');
-            epGrad.addColorStop(0.7, 'rgba(80,120,255,0.04)');
-            epGrad.addColorStop(1, 'rgba(80,120,255,0)');
-            ctx.fillStyle = epGrad;
-            ctx.fillRect(200, epY, 624, 40);
-        }
+        ctx.shadowBlur = 0;
     } else {
         ctx.fillStyle = '#2a2a35';
         ctx.fillRect(0, 0, 1024, 1024);
@@ -271,7 +251,7 @@ function createAsphaltTexture() {
     tex.wrapU = BABYLON.Texture.WRAP_ADDRESSMODE;
     tex.wrapV = BABYLON.Texture.WRAP_ADDRESSMODE;
     tex.uScale = 1;
-    tex.vScale = 40;
+    tex.vScale = CRYSTAL_KINGDOM ? 30 : 40;
     tex.anisotropicFilteringLevel = 16;
     return tex;
 }
@@ -354,19 +334,22 @@ function buildTrackMesh(sc) {
     var mat = new BABYLON.StandardMaterial('trackRoad', scene);
     mat.diffuseTexture = asphaltTex;
     mat.bumpTexture = bumpTex;
-    mat.bumpTexture.level = 0.15;
-    mat.specularColor = new BABYLON.Color3(0.3, 0.3, 0.4);
-    mat.specularPower = 32;
+    mat.bumpTexture.level = 0.08; // Just enough for street grain
     if (CRYSTAL_KINGDOM) {
-        mat.emissiveColor = new BABYLON.Color3(0.08, 0.06, 0.15);
+        mat.specularColor = new BABYLON.Color3(0.9, 0.9, 1.0); // Very strong, bright reflection for the sleek look
+        mat.specularPower = 128; // Very tight, glassy highlight
+        mat.emissiveColor = new BABYLON.Color3(0.04, 0.03, 0.08); // Darker base to contrast with the bright shine
         if (typeof reflectionTexture !== 'undefined' && reflectionTexture) {
             mat.reflectionTexture = reflectionTexture;
             mat.reflectionFresnelParameters = new BABYLON.FresnelParameters();
-            mat.reflectionFresnelParameters.bias = 0.4;
-            mat.reflectionFresnelParameters.power = 1.6;
-            mat.reflectionFresnelParameters.leftColor = BABYLON.Color3.White();
-            mat.reflectionFresnelParameters.rightColor = BABYLON.Color3.Black();
+            mat.reflectionFresnelParameters.bias = 0.5; // High mirror reflection
+            mat.reflectionFresnelParameters.power = 1.0;
+            mat.reflectionFresnelParameters.leftColor = new BABYLON.Color3(1, 1, 1);
+            mat.reflectionFresnelParameters.rightColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         }
+    } else {
+        mat.specularColor = new BABYLON.Color3(0.15, 0.15, 0.2); // Subtle specular for normal asphalt
+        mat.specularPower = 32; // Broader, softer highlight
     }
 
     var trackMesh = createCustomMesh('trackSurface', positions, indices, uvs, null, sc);
@@ -377,59 +360,222 @@ function buildTrackMesh(sc) {
     }
 
     buildRoadWalls(sc);
-    buildCurbs(sc);
-    if (CRYSTAL_KINGDOM) buildNeonEdges(sc);
+
+    // Only generate the generic checkered curbs in normal environments
+    if (CRYSTAL_KINGDOM) {
+        buildNeonEdges(sc);
+    } else {
+        buildCurbs(sc);
+    }
+
     buildStartFinish(sc);
 }
 
 // Neon light stripes along road edges (Crystal Kingdom)
-// Thin bright neon lines like concept art: cyan, dark blue, pink in parallel
+// Matches concept art: Segmented, parallel bright glowing lines with Cyan -> Magenta -> Blue longitudinal gradients.
 function buildNeonEdges(sc) {
-    var halfWidth = TRACK_WIDTH / 2;
-    // 3 thin neon lines per side matching concept art
-    var lineColors = [0x44EEFF, 0x3355CC, 0xFF55BB];
-    var lineGlow =   [0.8,      0.3,      0.7];
-    var lineW = 0.4; // thin neon line width
-    var lineGap = 0.6; // gap between lines
+    if (!CRYSTAL_KINGDOM) return;
 
+    var halfWidth = TRACK_WIDTH / 2;
+    var shoulderWidth = 4.0; // Tighter shoulder so the lines pack closely to the edge
+
+    // Create the texture for the shoulder
+    if (!window._neonShoulderTex) {
+        var canvas = document.createElement('canvas');
+        canvas.width = 1024; // High-res Cross-section (U) for 5 distinct lines
+        canvas.height = 2048; // Track length (V)
+        var ctx = canvas.getContext('2d');
+
+        // Black out everything (creates the crucial gaps between neon lines)
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, 1024, 2048);
+
+        // Standard compositing ('source-over') prevents the excessive white-out glare on inner edges.
+
+        // 1. Smooth Pulsing Neon (Aura) - For the thick flowing edges, wide soft glow
+        var vPulseNeonAura = ctx.createLinearGradient(0, 0, 0, 2048);
+        var vPulseNeonCore = ctx.createLinearGradient(0, 0, 0, 2048);
+
+        // They want blocky segments, but the gaps must be strongly blue, not black!
+        var bGapAura = 'rgba(20, 100, 255, 0.9)'; // Luminous blue aura for gap
+        var cAura = 'rgba(0, 255, 255, 1.0)';
+        var mAura = 'rgba(255, 0, 255, 1.0)';
+
+        var bGapCore = '#88ccff'; // Bright light blue core for gap
+        var cCore = '#ffffff';
+        var mCore = '#ffffff';
+
+        // Aura Stops - BLOCKY (sharp transitions)
+        vPulseNeonAura.addColorStop(0.00, bGapAura);
+
+        vPulseNeonAura.addColorStop(0.10, bGapAura);
+        vPulseNeonAura.addColorStop(0.15, cAura);
+        vPulseNeonAura.addColorStop(0.35, cAura);
+        vPulseNeonAura.addColorStop(0.40, bGapAura);
+
+        vPulseNeonAura.addColorStop(0.60, bGapAura);
+        vPulseNeonAura.addColorStop(0.65, mAura);
+        vPulseNeonAura.addColorStop(0.85, mAura);
+        vPulseNeonAura.addColorStop(0.90, bGapAura);
+
+        vPulseNeonAura.addColorStop(1.00, bGapAura);
+
+
+        // Core Stops - BLOCKY
+        vPulseNeonCore.addColorStop(0.00, bGapCore);
+
+        vPulseNeonCore.addColorStop(0.10, bGapCore);
+        vPulseNeonCore.addColorStop(0.15, cCore);
+        vPulseNeonCore.addColorStop(0.35, cCore);
+        vPulseNeonCore.addColorStop(0.40, bGapCore);
+
+        vPulseNeonCore.addColorStop(0.60, bGapCore);
+        vPulseNeonCore.addColorStop(0.65, mCore);
+        vPulseNeonCore.addColorStop(0.85, mCore);
+        vPulseNeonCore.addColorStop(0.90, bGapCore);
+
+        vPulseNeonCore.addColorStop(1.00, bGapCore);
+
+        // 2. Silver Gradient
+        var vGradSilver = ctx.createLinearGradient(0, 0, 0, 2048);
+        vGradSilver.addColorStop(0.00, '#ffffff');
+        vGradSilver.addColorStop(0.50, '#aaddff'); // Slight icy blue/silver tint
+        vGradSilver.addColorStop(1.00, '#ffffff');
+
+        var faintWhiteAura = 'rgba(150, 180, 255, 1.0)';
+
+        // Glow Layering Helper to simulate natural bloom without Babylon blowing it out
+        function drawNeonLine(x, width, isDashed, dashLen, gapLen, maxGlowWidth, auraStyle, coreStyle, maxGlowAlpha) {
+            var layers = 6;
+            for (var i = layers; i >= 0; i--) {
+                var currentWidth = width + (i * maxGlowWidth / layers);
+                var currentX = x - (currentWidth - width) / 2;
+
+                ctx.globalAlpha = (i === 0) ? 1.0 : (maxGlowAlpha / layers);
+
+                if (isDashed) {
+                    for (var y = 0; y < 2048; y += (dashLen + gapLen)) {
+                        ctx.fillStyle = (i === 0) ? coreStyle : auraStyle;
+                        ctx.fillRect(currentX, y, currentWidth, dashLen);
+                    }
+                } else {
+                    ctx.fillStyle = (i === 0) ? coreStyle : auraStyle;
+                    ctx.fillRect(currentX, 0, currentWidth, 2048);
+                }
+            }
+            ctx.globalAlpha = 1.0;
+        }
+
+        // --- DRAW THE NEON TUBE (1024 total width, tracking inner left/right edges) ---
+        // X = 1024 is inner edge touching the asphalt, X = 0 is outer empty edge
+
+        // 1. Inner thin line bounds the track perfectly (Solid bright white/cyan)
+        drawNeonLine(960, 12, false, 0, 0, 30, vGradSilver, '#ffffff', 0.8);
+
+        // 2. Main Thick Glowing Segmented Tube (Wide, fills a large part of the edge)
+        drawNeonLine(650, 220, false, 0, 0, 180, vPulseNeonAura, vPulseNeonCore, 1.0);
+
+        // 3. Outer thin line mirroring the main colors
+        drawNeonLine(350, 16, false, 0, 0, 50, vPulseNeonAura, '#ffffff', 0.7);
+
+        // 4. Outermost thin faint boundary line
+        drawNeonLine(200, 8, false, 0, 0, 30, faintWhiteAura, '#ffffff', 0.5);
+
+        window._neonShoulderTex = texFromCanvas('neonShoulder', canvas);
+        window._neonShoulderTex.hasAlpha = false;
+        window._neonShoulderTex.wrapU = BABYLON.Texture.WRAP_ADDRESSMODE;
+        window._neonShoulderTex.wrapV = BABYLON.Texture.WRAP_ADDRESSMODE;
+        // Do NOT use high vScale. We want the segments to stretch elegantly
+        window._neonShoulderTex.vScale = 1.0;
+    }
+
+    var sMat = new BABYLON.StandardMaterial('neonShoulderMat', scene);
+    sMat.diffuseTexture = window._neonShoulderTex;
+    sMat.emissiveTexture = window._neonShoulderTex;
+    sMat.specularColor = BABYLON.Color3.Black(); // No specular, pure glow
+
+    // NO ALPHA_ADD. We explicitly painted the bloom. Just output the colors straight.
+    sMat.emissiveColor = new BABYLON.Color3(1.0, 1.0, 1.0);
+    sMat.disableLighting = true;
+    sMat.backFaceCulling = false;
+    // Standard blending
+    sMat.alphaMode = BABYLON.Engine.ALPHA_COMBINE;
+    sMat.alpha = 1.0;
+
+    // Build the shoulder meshes left and right
     for (var sideIdx = 0; sideIdx < 2; sideIdx++) {
         var side = sideIdx === 0 ? -1 : 1;
+        var ev = [], ei = [], eu = [];
 
-        for (var li = 0; li < lineColors.length; li++) {
-            var ev = [], ei = [];
-            // Each line at increasing distance from track edge
-            var dist = halfWidth - 0.5 + li * (lineW + lineGap);
+        var cumulativeDistance = 0;
 
-            for (var i = 0; i < trackNodes.length; i++) {
-                var node = trackNodes[i];
-                var angle = getTrackAngle(i);
-                var perpX = -Math.sin(angle);
-                var perpZ = Math.cos(angle);
-                var cx = node.x + perpX * side * dist;
-                var cz = node.z + perpZ * side * dist;
-                ev.push(cx - perpX * side * lineW * 0.5, node.y + 0.06, cz - perpZ * side * lineW * 0.5);
-                ev.push(cx + perpX * side * lineW * 0.5, node.y + 0.06, cz + perpZ * side * lineW * 0.5);
+        for (var i = 0; i <= trackNodes.length; i++) { // UV mapping seam fix: <= instead of <
+            var nodeIdx = i % trackNodes.length;
+            var node = trackNodes[nodeIdx];
+
+            // Calculate physical distance from the previous node to ensure uniform UV texture mapping
+            if (i > 0) {
+                var prevNodeIdx = (i - 1) % trackNodes.length;
+                var prevNode = trackNodes[prevNodeIdx];
+                var dx = node.x - prevNode.x;
+                var dz = node.z - prevNode.z;
+                cumulativeDistance += Math.sqrt(dx * dx + dz * dz);
             }
 
-            for (var i = 0; i < trackNodes.length; i++) {
-                var next = (i + 1) % trackNodes.length;
-                var i0 = i * 2, i1 = i * 2 + 1;
-                var n0 = next * 2, n1 = next * 2 + 1;
-                ei.push(i0, i1, n0);
-                ei.push(i1, n1, n0);
+            var angle = getTrackAngle(nodeIdx);
+            var perpX = -Math.sin(angle);
+            var perpZ = Math.cos(angle);
+
+            // Inner vertex (touching track edge)
+            var ix = node.x + perpX * side * halfWidth;
+            var iz = node.z + perpZ * side * halfWidth;
+            // Outer vertex
+            var ox = node.x + perpX * side * (halfWidth + shoulderWidth);
+            var oz = node.z + perpZ * side * (halfWidth + shoulderWidth);
+
+            var yRender = node.y + 0.05; // Slightly above asphalt to avoid z-fight
+
+            if (side === -1) {
+                // Left side: ox is further left. 
+                // We want outer band (U=0) at ox. Inner band (U=1) at ix.
+                ev.push(ox, yRender, oz);
+                ev.push(ix, yRender, iz);
+            } else {
+                // Right side: ix is left-most relative to the shoulder outwards.
+                // We want Inner band (U=1) at ix. Outer band (U=0) at ox.
+                ev.push(ix, yRender, iz);
+                ev.push(ox, yRender, oz);
             }
 
-            var col = lineColors[li];
-            var eMat = new BABYLON.StandardMaterial('neonLine' + sideIdx + '_' + li, scene);
-            eMat.diffuseColor = c3(col);
-            eMat.emissiveColor = c3(col).scale(lineGlow[li]);
-            eMat.disableLighting = true;
-            eMat.backFaceCulling = false;
+            // V repeats based on actual distance, not node index. 
+            // 0.15 creates the chunky repeating segments the user requested earlier.
+            var v = cumulativeDistance * 0.15;
 
-            var eMesh = createCustomMesh('neonLine' + sideIdx + '_' + li, ev, ei, null, null, sc);
-            eMesh.material = eMat;
-            trackMeshes.push(eMesh);
-            addToReflections(eMesh);
+            if (side === -1) {
+                eu.push(0, v, 1, v);
+            } else {
+                eu.push(1, v, 0, v);
+            }
+        }
+
+        for (var i = 0; i < trackNodes.length; i++) {
+            var next = i + 1; // Direct next, no modulo because node[0] is cloned at end
+            var i0 = i * 2, i1 = i * 2 + 1;
+            var n0 = next * 2, n1 = next * 2 + 1;
+            ei.push(i0, i1, n0);
+            ei.push(i1, n1, n0);
+        }
+
+        var sMesh = createCustomMesh('neonShoulderMesh_' + sideIdx, ev, ei, eu, null, sc);
+        sMesh.material = sMat;
+        trackMeshes.push(sMesh);
+
+        // EXCLUDE FROM GLOW LAYER:
+        // We carefully painted our own bloom on the 2D canvas for exact 5-line separation.
+        // If we don't exclude this mesh, Babylon's global GlowLayer will see the high emissiveColor
+        // and indiscriminately blast the entire shoulder with additive whiteout glare, destroying the lines.
+        if (window._glowLayer) {
+            window._glowLayer.addExcludedMesh(sMesh);
         }
     }
 }
@@ -447,18 +593,32 @@ function buildRoadWalls(sc) {
 
     // Underside
     var uv = [], uu = [], ui = [];
-    for (var i = 0; i < trackNodes.length; i++) {
-        var node = trackNodes[i];
-        var angle = getTrackAngle(i);
+    var cumulativeDistance = 0;
+
+    for (var i = 0; i <= trackNodes.length; i++) {
+        var nodeIdx = i % trackNodes.length;
+        var node = trackNodes[nodeIdx];
+
+        if (i > 0) {
+            var prevNodeIdx = (i - 1) % trackNodes.length;
+            var prevNode = trackNodes[prevNodeIdx];
+            var dx = node.x - prevNode.x;
+            var dz = node.z - prevNode.z;
+            cumulativeDistance += Math.sqrt(dx * dx + dz * dz);
+        }
+
+        var angle = getTrackAngle(nodeIdx);
         var perpX = -Math.sin(angle);
         var perpZ = Math.cos(angle);
         uv.push(node.x + perpX * halfWidth, node.y - wallDepth, node.z + perpZ * halfWidth);
         uv.push(node.x - perpX * halfWidth, node.y - wallDepth, node.z - perpZ * halfWidth);
-        var v = i / trackNodes.length;
+
+        // Use exact distance for consistent mapping
+        var v = cumulativeDistance * 0.01;
         uu.push(0, v, 1, v);
     }
     for (var i = 0; i < trackNodes.length; i++) {
-        var next = (i + 1) % trackNodes.length;
+        var next = i + 1;
         var i0 = i * 2, i1 = i * 2 + 1, n0 = next * 2, n1 = next * 2 + 1;
         ui.push(i0, i1, n0); ui.push(i1, n1, n0);
     }
@@ -619,43 +779,18 @@ function buildTrackDecorations(sc) {
         } else {
             py = getTerrainHeight(px, pz);
         }
-        callback(px, py, pz, angle, node);
+        // Bury base slightly so geometric intersections on sloped terrain are hidden
+        callback(px, py - 0.7, pz, angle, node);
     }
 
     // === SMALL DETAIL HELPERS ===
 
     function createCrystalShard(sc, x, y, z, color) {
-        var h = 1.5 + Math.random() * 1.5;
-        var r = 0.35 + Math.random() * 0.2;
-        var mat;
-        if (CRYSTAL_KINGDOM) {
-            mat = new BABYLON.StandardMaterial(tn(), scene);
-            var gTex = getCrystalGradientTex(color);
-            mat.diffuseTexture = gTex;
-            mat.emissiveTexture = gTex;
-            mat.emissiveColor = new BABYLON.Color3(0.35, 0.35, 0.35);
-            mat.specularColor = c3(color).scale(0.6);
-            mat.specularPower = 8;
-            mat.alpha = 0.75;
-            mat.emissiveFresnelParameters = new BABYLON.FresnelParameters();
-            mat.emissiveFresnelParameters.bias = 0.35;
-            mat.emissiveFresnelParameters.power = 1.5;
-            mat.emissiveFresnelParameters.leftColor = c3(color);
-            mat.emissiveFresnelParameters.rightColor = BABYLON.Color3.Black();
-        } else {
-            mat = smat(color, color, 0.4, 0.85);
+        // Use Trellis crystal-pillars for small roadside crystals (small scale to avoid overlapping track)
+        var model = envModelCache['crystal-pillars'] ? 'crystal-pillars' : 'crystal';
+        if (envModelCache[model]) {
+            placeEnvModel(sc, model, x, y, z, 0.6 + Math.random() * 0.4, Math.random() * Math.PI * 2);
         }
-        var s = mkCyl({ diameterTop: r * 0.3, diameterBottom: r * 2, height: h, tessellation: 6 }, mat);
-        s.position.copyFromFloats(x, y + h * 0.4, z);
-        s.rotation.z = (Math.random() - 0.5) * 0.3;
-        s.rotation.y = Math.random() * Math.PI;
-        addToReflections(s);
-        var h2 = h * 0.7;
-        var r2 = 0.2 + Math.random() * 0.15;
-        var s2 = mkCyl({ diameterTop: r2 * 0.25, diameterBottom: r2 * 2, height: h2, tessellation: 6 }, mat);
-        s2.position.copyFromFloats(x + (Math.random() - 0.5) * 0.8, y + h2 * 0.35, z + (Math.random() - 0.5) * 0.8);
-        s2.rotation.copyFromFloats(0.2 + Math.random() * 0.3, Math.random() * Math.PI, (Math.random() - 0.5) * 0.4);
-        addToReflections(s2);
     }
 
     function createBush(sc, x, y, z, color) {
@@ -692,57 +827,19 @@ function buildTrackDecorations(sc) {
     }
 
     function createCrystal(sc, x, y, z, size, color, emColor) {
-        var mat = new BABYLON.StandardMaterial(tn(), scene);
-        if (CRYSTAL_KINGDOM) {
-            var gTex = getCrystalGradientTex(color);
-            mat.diffuseTexture = gTex;
-            mat.emissiveTexture = gTex;
-            mat.emissiveColor = new BABYLON.Color3(0.35, 0.35, 0.35);
-            mat.specularColor = c3(color).scale(0.7);
-            mat.specularPower = 8;
-            mat.emissiveFresnelParameters = new BABYLON.FresnelParameters();
-            mat.emissiveFresnelParameters.bias = 0.35;
-            mat.emissiveFresnelParameters.power = 1.5;
-            mat.emissiveFresnelParameters.leftColor = c3(color);
-            mat.emissiveFresnelParameters.rightColor = BABYLON.Color3.Black();
-        } else {
-            mat.diffuseColor = c3(color);
-            mat.emissiveColor = c3(emColor).scale(0.55);
-            mat.specularColor = c3(color).scale(0.4);
-            mat.specularPower = 16;
+        // Use Trellis crystal-pillars (concept art quality)
+        var model = envModelCache['crystal-pillars'] ? 'crystal-pillars' : 'crystal';
+        if (envModelCache[model]) {
+            placeEnvModel(sc, model, x, y, z, size * 0.8, Math.random() * Math.PI * 2);
         }
-        mat.alpha = CRYSTAL_KINGDOM ? 0.7 : 0.85;
-        // Main hexagonal prism with tapered tip
-        var mainR = size * 0.35;
-        var c1 = mkCyl({ diameterTop: mainR * 0.25, diameterBottom: mainR * 2, height: size, tessellation: 6 }, mat);
-        c1.position.copyFromFloats(x, y + size / 2, z);
-        c1.rotation.copyFromFloats(Math.random() * 0.25, Math.random() * Math.PI, Math.random() * 0.25);
-        // 2-3 secondary prisms
-        var numShards = 2 + Math.floor(Math.random() * 2);
-        for (var ns = 0; ns < numShards; ns++) {
-            var nsAng = (ns / numShards) * Math.PI * 2 + Math.random();
-            var nsH = size * (0.45 + Math.random() * 0.35);
-            var nsR = size * (0.12 + Math.random() * 0.12);
-            var nsDist = size * (0.25 + Math.random() * 0.25);
-            var shard = mkCyl({ diameterTop: nsR * 0.2, diameterBottom: nsR * 2, height: nsH, tessellation: 6 }, mat);
-            shard.position.copyFromFloats(
-                x + Math.cos(nsAng) * nsDist, y + nsH * 0.4,
-                z + Math.sin(nsAng) * nsDist
-            );
-            shard.rotation.copyFromFloats(
-                Math.cos(nsAng) * 0.3, Math.random() * Math.PI,
-                Math.sin(nsAng) * 0.3 + (Math.random() - 0.5) * 0.3
-            );
-            addToReflections(shard);
-        }
+        // No procedural fallback - cones removed per user request
     }
 
     function createFloatingOrb(sc, x, y, z, color, size) {
         var orbSize = CRYSTAL_KINGDOM ? size * 1.5 : size;
-        var orb = mkSph({ diameter: orbSize * 2, segments: 6 }, umat(color, 0.85));
+        var orb = mkSph({ diameter: orbSize * 2, segments: 12 }, umat(color, 0.95));
         orb.position.copyFromFloats(x, y, z);
-        var glow = mkSph({ diameter: orbSize * 5, segments: 6 }, umat(color, CRYSTAL_KINGDOM ? 0.12 : 0.08));
-        glow.position.copyFromFloats(x, y, z);
+        // Removed the fake glow sphere; post-process bloom will handle the halo naturally.
     }
 
     function createLampPost(sc, x, y, z, color) {
@@ -776,9 +873,6 @@ function buildTrackDecorations(sc) {
             );
             flower.scaling.y = 0.6 + Math.random() * 0.3;
         }
-        // Green leaf base - bigger
-        var leaf = mkCyl({ diameterTop: spread, diameterBottom: spread + 1, height: 0.2, tessellation: 8 }, smat(0x3A8855, 0x225533, 0.2));
-        leaf.position.copyFromFloats(x, y + 0.05, z);
         // Extra tiny accent flowers
         for (var t = 0; t < 4; t++) {
             var tc = flowerPalette[Math.floor(Math.random() * flowerPalette.length)];
@@ -811,192 +905,178 @@ function buildTrackDecorations(sc) {
     }
 
     function createMegaCrystal(sc, x, y, z, color, scale, emission) {
-        var mat = new BABYLON.StandardMaterial(tn(), sc);
-        mat.diffuseTexture = getAICrystalTex(sc);
-        mat.emissiveTexture = getAICrystalTex(sc);
-        mat.diffuseColor = c3(color);
-        mat.emissiveColor = c3(color).scale(emission || 0.6);
-        mat.specularColor = BABYLON.Color3.White();
-        mat.specularPower = 32;
-        mat.alpha = 0.95;
-
-        var numFacets = 5 + Math.floor(Math.random() * 3);
-        var c = mkCyl({ diameterTop: scale * 0.1, diameterBottom: scale * 1.8, height: scale * 6, tessellation: numFacets }, mat);
-        c.position.copyFromFloats(x, y + scale * 3, z);
-        c.rotation.copyFromFloats((Math.random() - 0.5) * 0.15, Math.random() * Math.PI, (Math.random() - 0.5) * 0.15);
-        addToReflections(c);
-
-        var numShards = 4 + Math.floor(Math.random() * 4);
-        for (var s = 0; s < numShards; s++) {
-            var sH = scale * (2 + Math.random() * 2);
-            var sR = scale * (0.4 + Math.random() * 0.6);
-            var sD = scale * 1.2;
-            var sAng = (s / numShards) * Math.PI * 2;
-            var c2 = mkCyl({ diameterTop: 0.05, diameterBottom: sR, height: sH, tessellation: numFacets - 1 }, mat);
-            c2.position.copyFromFloats(
-                x + Math.cos(sAng) * sD,
-                y + sH * 0.4,
-                z + Math.sin(sAng) * sD
-            );
-            c2.rotation.copyFromFloats(
-                Math.cos(sAng) * 0.4, Math.random() * Math.PI, Math.sin(sAng) * 0.4
-            );
-            addToReflections(c2);
+        // Use Trellis crystal-pillars model (from concept art crop)
+        var model = envModelCache['crystal-pillars'] ? 'crystal-pillars' : 'crystal';
+        if (envModelCache[model]) {
+            placeEnvModel(sc, model, x, y, z, scale * 2.0, Math.random() * Math.PI * 2);
+            // Smaller crystal-pillars around
+            var numShards = 2 + Math.floor(Math.random() * 2);
+            for (var s = 0; s < numShards; s++) {
+                var sD = scale * 1.5;
+                var sAng = (s / numShards) * Math.PI * 2;
+                var sScale = scale * (0.5 + Math.random() * 0.6);
+                placeEnvModel(sc, model,
+                    x + Math.cos(sAng) * sD, y, z + Math.sin(sAng) * sD,
+                    sScale, Math.random() * Math.PI * 2);
+            }
         }
     }
 
     function createCrystalCastle(sc, x, y, z) {
         if (!CRYSTAL_KINGDOM) return;
-        var mat = new BABYLON.StandardMaterial('castleMat', sc);
-        mat.diffuseTexture = getAICastleTex(sc);
-        mat.emissiveTexture = getAICastleTex(sc);
-        // Use a low generic tint so the vivid AI texture shows clearly without blowing out to white
-        mat.emissiveColor = new BABYLON.Color3(0.3, 0.35, 0.5);
-        mat.specularColor = BABYLON.Color3.White();
-        mat.specularPower = 64;
-        mat.alpha = 0.98;
-
-        var heights = [220, 150, 150, 110, 110, 80, 80, 80, 60, 60, 60, 60];
-        var radii = [25, 16, 16, 12, 12, 14, 14, 14, 10, 10, 10, 10];
-        var angles = [0, 1.2, -1.2, 2.5, -2.5, 0.8, 3.8, -0.8, 0, 1.5, 3.14, 4.5];
-        var dists = [0, 30, 30, 50, 50, 60, 60, 60, 80, 80, 80, 80];
-
-        for (var i = 0; i < heights.length; i++) {
-            var h = heights[i];
-            var r = radii[i];
-            var ang = angles[i];
-            var d = dists[i];
-            var px = x + Math.cos(ang) * d;
-            var pz = z + Math.sin(ang) * d;
-
-            var spire = mkCyl({ diameterTop: 1, diameterBottom: r * 2, height: h, tessellation: 8 }, mat);
-            spire.position.copyFromFloats(px, y + h / 2, pz);
-            spire.rotation.y = Math.random() * Math.PI;
-            addToReflections(spire);
-
-            var baseH = h * 0.3;
-            var box = mkBox({ width: r * 2.5, height: baseH, depth: r * 2.5 }, mat);
-            box.position.copyFromFloats(px, y + baseH / 2, pz);
-            box.rotation.y = spire.rotation.y;
-            addToReflections(box);
+        // Use GLB castle model if available, with crystal GLB spires around it
+        if (envModelCache['crystal-castle-b']) {
+            placeEnvModel(sc, 'crystal-castle-b', x, y, z, 40, 0);
         }
-
+        // Surround with Trellis crystal-pillars (concept art quality)
+        var cpModel = envModelCache['crystal-pillars'] ? 'crystal-pillars' : 'crystal';
+        if (envModelCache[cpModel]) {
+            var spireAngles = [1.2, -1.2, 2.5, -2.5, 0.8, 3.8, -0.8];
+            var spireDists = [30, 30, 50, 50, 60, 60, 60];
+            var spireScales = [35, 35, 25, 25, 20, 20, 20];
+            for (var i = 0; i < spireAngles.length; i++) {
+                var px = x + Math.cos(spireAngles[i]) * spireDists[i];
+                var pz = z + Math.sin(spireAngles[i]) * spireDists[i];
+                placeEnvModel(sc, cpModel, px, y, pz, spireScales[i], Math.random() * Math.PI * 2);
+            }
+        }
         if (window._vlsMesh) {
             window._vlsMesh.position.copyFromFloats(x, y + 100, z);
         }
     }
 
-    // === GROUND CRYSTAL LIGHTS (concept art: many small glowing orbs lining the road) ===
+    // === GROUND CRYSTAL LIGHTS (reduced: every 5th point, one side, smaller, dimmer) ===
     if (CRYSTAL_KINGDOM) {
         var lightColors = [0x44BBFF, 0xBB66FF, 0xFF77AA, 0x66FFAA, 0xFFCC44];
-        for (var li = 0; li < TRACK_POINTS; li += 1) {
-            for (var ls = -1; ls <= 1; ls += 2) {
-                var lNode = trackNodes[li];
-                var lAngle = getTrackAngle(li);
-                var lPerpX = -Math.sin(lAngle) * ls;
-                var lPerpZ = Math.cos(lAngle) * ls;
-                var lDist = HW + 1.5;
-                var lx = lNode.x + lPerpX * lDist;
-                var lz = lNode.z + lPerpZ * lDist;
-                var lCol = lightColors[(li + (ls > 0 ? 0 : 2)) % lightColors.length];
-                // Small ground crystal light
-                var crystLight = mkSph({ diameter: 0.5, segments: 4 }, umat(lCol, 0.9));
-                crystLight.position.copyFromFloats(lx, lNode.y + 0.3, lz);
-                // Subtle glow halo
-                if (li % 3 === 0) {
-                    var halo = mkSph({ diameter: 2.5, segments: 4 }, umat(lCol, 0.08));
-                    halo.position.copyFromFloats(lx, lNode.y + 0.4, lz);
-                }
-            }
+        for (var li = 0; li < TRACK_POINTS; li += 5) {
+            var ls = (li % 10 < 5) ? -1 : 1; // Alternate sides
+            var lNode = trackNodes[li];
+            var lAngle = getTrackAngle(li);
+            var lPerpX = -Math.sin(lAngle) * ls;
+            var lPerpZ = Math.cos(lAngle) * ls;
+            var lDist = HW + 1.5;
+            var lx = lNode.x + lPerpX * lDist;
+            var lz = lNode.z + lPerpZ * lDist;
+            var lCol = lightColors[li % lightColors.length];
+            var crystLight = mkSph({ diameter: 0.35, segments: 4 }, umat(lCol, 0.4));
+            crystLight.position.copyFromFloats(lx, lNode.y + 0.2, lz);
         }
     }
 
-    // === GROUND ZONE TILES ===
-    for (var gi = 0; gi < TRACK_POINTS; gi += 3) {
-        var gNode = trackNodes[gi];
-        var gAngle = getTrackAngle(gi);
-        var gPerpX = -Math.sin(gAngle);
-        var gPerpZ = Math.cos(gAngle);
-        var gZone = getZone(gi);
-        for (var gSide = -1; gSide <= 1; gSide += 2) {
-            var tileW = 12;
-            var tileDist = HW + 3 + tileW / 2;
-            var tx = gNode.x + gPerpX * gSide * tileDist;
-            var tz = gNode.z + gPerpZ * gSide * tileDist;
-            var tileColor;
-            if (CRYSTAL_KINGDOM) {
-                switch (gZone) {
-                    case 'forest': tileColor = 0x0A0D1A; break;
-                    case 'castle': tileColor = 0x120E1E; break;
-                    case 'lake': tileColor = 0x0A1020; break;
-                    case 'mountain': tileColor = 0x0E0A18; break;
-                    case 'garden': tileColor = 0x100A1A; break;
-                    default: tileColor = 0x0A0D18; break;
-                }
-            } else {
-                switch (gZone) {
-                    case 'forest': tileColor = 0x1A5533; break;
-                    case 'castle': tileColor = 0x887766; break;
-                    case 'lake': tileColor = 0x334466; break;
-                    case 'mountain': tileColor = 0x554455; break;
-                    case 'garden': tileColor = 0x557744; break;
-                    default: tileColor = 0x336644; break;
-                }
-            }
-            var tile = mkGnd({ width: tileW, height: 8 }, smat(tileColor));
-            tile.rotation.y = -gAngle;
-            tile.position.copyFromFloats(tx, gNode.y - 1.8, tz);
-        }
-    }
+    // Ground zone tiles removed - they were nearly invisible dark patches adding draw calls
 
-    // === FLOATING CRYSTAL ISLANDS (enhanced detail) ===
-    var islandPositions = [];
-    if (CRYSTAL_KINGDOM) {
-        for (var fl = 0; fl < 25; fl++) {
-            var ang = Math.random() * Math.PI * 2;
-            var dist = 80 + Math.random() * 250;
-            islandPositions.push({
-                x: Math.cos(ang) * dist,
-                z: Math.sin(ang) * dist,
-                y: 40 + Math.random() * 80,
-                s: 15 + Math.random() * 25
-            });
-        }
-    } else {
-        islandPositions = [
+    // Floating island platforms removed (concept art has floating crystals, not platforms)
+    // Non-CK floating islands kept
+    if (!CRYSTAL_KINGDOM) {
+        var islandPositions = [
             { x: 150, z: 200, y: 35, s: 25 }, { x: -200, z: 100, y: 45, s: 30 },
             { x: 100, z: -250, y: 40, s: 22 }, { x: -150, z: -200, y: 50, s: 28 },
             { x: 250, z: -100, y: 38, s: 20 }, { x: -300, z: -150, y: 42, s: 26 },
             { x: 350, z: 200, y: 36, s: 24 }
         ];
-    }
-    for (var ii = 0; ii < islandPositions.length; ii++) {
-        var ip = islandPositions[ii];
-        var platMat = smat(0x6677AA, 0x334466, 0.25, 0.9);
-        // Rough platform (low tessellation = angular)
-        var plat = mkCyl(
-            { diameterTop: ip.s * 1.2, diameterBottom: ip.s * 0.5, height: ip.s * 0.35, tessellation: 5 },
-            platMat
-        );
-        plat.position.copyFromFloats(ip.x, ip.y, ip.z);
-        // Underside stalactites
-        for (var ust = 0; ust < 3; ust++) {
-            var ustAng = Math.random() * Math.PI * 2;
-            var ustDist = ip.s * (0.1 + Math.random() * 0.3);
-            var ustH = ip.s * (0.15 + Math.random() * 0.2);
-            var ustR = ip.s * 0.04;
-            var stal = mkCyl({ diameterTop: ustR * 2, diameterBottom: 0, height: ustH, tessellation: 3 }, platMat);
-            stal.position.copyFromFloats(
-                ip.x + Math.cos(ustAng) * ustDist,
-                ip.y - ip.s * 0.17 - ustH / 2,
-                ip.z + Math.sin(ustAng) * ustDist
+        for (var ii = 0; ii < islandPositions.length; ii++) {
+            var ip = islandPositions[ii];
+            var platMat = smat(0x6677AA, 0x334466, 0.25, 0.9);
+            var plat = mkCyl(
+                { diameterTop: ip.s * 1.2, diameterBottom: ip.s * 0.5, height: ip.s * 0.35, tessellation: 5 },
+                platMat
             );
+            plat.position.copyFromFloats(ip.x, ip.y, ip.z);
+            for (var ust = 0; ust < 3; ust++) {
+                var ustAng = Math.random() * Math.PI * 2;
+                var ustDist = ip.s * (0.1 + Math.random() * 0.3);
+                var ustH = ip.s * (0.15 + Math.random() * 0.2);
+                var ustR = ip.s * 0.04;
+                var stal = mkCyl({ diameterTop: ustR * 2, diameterBottom: 0, height: ustH, tessellation: 3 }, platMat);
+                stal.position.copyFromFloats(
+                    ip.x + Math.cos(ustAng) * ustDist,
+                    ip.y - ip.s * 0.17 - ustH / 2,
+                    ip.z + Math.sin(ustAng) * ustDist
+                );
+            }
+            if (useGLB && envModelCache['crystal']) {
+                placeEnvModel(sc, 'crystal', ip.x, ip.y + ip.s * 0.15, ip.z, ip.s * 0.8, ii * 1.5);
+            }
         }
-        // Top crystal (GLB model on each island)
-        if (useGLB && envModelCache['crystal']) {
-            placeEnvModel(sc, 'crystal', ip.x, ip.y + ip.s * 0.15, ip.z, ip.s * 0.8, ii * 1.5);
-        } else if (CRYSTAL_KINGDOM) {
-            createMegaCrystal(sc, ip.x, ip.y + ip.s * 0.1, ip.z, 0x88CCFF, ip.s * 0.4, 0.7);
+    }
+
+    // === DENSE FLOWER & CRYSTAL CARPET (fill ALL space around track - NO GAPS!) ===
+    if (CRYSTAL_KINGDOM) {
+        var carpetFlMats = flowerPalette.map(function (fc) {
+            var m = smat(fc, fc, 0.35);
+            m.emissiveColor = c3(fc).scale(0.20); // Visible but not bloom white-out
+            return m;
+        });
+        var carpetGrassMat = smat(0x3A8855, 0x225533, 0.2);
+
+        // Collect carpet meshes for merging (massive perf boost)
+        var _carpetGrass = [];
+        var _carpetFlowers = [[], [], [], [], [], [], []]; // per color
+
+        // Carpet-only mesh creators (NOT added to trackMeshes - will be merged)
+        function _ccyl(opts, mat) {
+            var m = BABYLON.MeshBuilder.CreateCylinder(tn(), opts, scene);
+            if (mat) m.material = mat;
+            return m;
+        }
+        function _csph(opts, mat) {
+            var m = BABYLON.MeshBuilder.CreateSphere(tn(), opts, scene);
+            if (mat) m.material = mat;
+            return m;
+        }
+
+        function miniPatch(px, py, pz, spread) {
+            var n = 2 + Math.floor(Math.random() * 3);
+            for (var mp = 0; mp < n; mp++) {
+                var ci = Math.floor(Math.random() * carpetFlMats.length);
+                var fsz = 0.5 + Math.random() * 1.0;
+                var fl = _csph({ diameter: fsz, segments: 3 }, carpetFlMats[ci]);
+                fl.position.copyFromFloats(
+                    px + (Math.random() - 0.5) * spread * 2,
+                    py + 0.1 + Math.random() * 0.35,
+                    pz + (Math.random() - 0.5) * spread * 2
+                );
+                fl.scaling.y = 0.4;
+                _carpetFlowers[ci].push(fl);
+            }
+        }
+
+        var carpetBands = [
+            { d: HW + 1, sp: 7, ch: 1.0 },
+            { d: HW + 5, sp: 7, ch: 1.0 },
+            { d: HW + 10, sp: 8, ch: 1.0 },
+            { d: HW + 16, sp: 8, ch: 0.9 },
+            { d: HW + 23, sp: 9, ch: 0.8 },
+            { d: HW + 31, sp: 9, ch: 0.7 },
+            { d: HW + 40, sp: 10, ch: 0.6 },
+            { d: HW + 50, sp: 10, ch: 0.5 },
+        ];
+
+        for (var cpi = 0; cpi < TRACK_POINTS; cpi += 1) {
+            var cpZc = getZoneColors(getZone(cpi));
+            for (var cps = -1; cps <= 1; cps += 2) {
+                for (var cpb = 0; cpb < carpetBands.length; cpb++) {
+                    if (Math.random() > carpetBands[cpb].ch) continue;
+                    var cpDist = carpetBands[cpb].d + (Math.random() - 0.5) * 3;
+                    var cpSp = carpetBands[cpb].sp;
+                    placeAtTrack(cpi, cps, cpDist, function (px, py, pz) {
+                        var r = Math.random();
+                        if (r < 0.75) {
+                            miniPatch(px, py, pz, cpSp);
+                        } else {
+                            createCrystalShard(sc, px, py, pz, cpZc.pri);
+                        }
+                    });
+                }
+            }
+        }
+
+        // Merge carpet meshes for performance (thousands of meshes → ~8 draw calls)
+        for (var cfi = 0; cfi < _carpetFlowers.length; cfi++) {
+            if (_carpetFlowers[cfi].length > 1) {
+                var mergedF = BABYLON.Mesh.MergeMeshes(_carpetFlowers[cfi], true, true, undefined, false, true);
+                if (mergedF) { mergedF.material = carpetFlMats[cfi]; trackMeshes.push(mergedF); }
+            }
         }
     }
 
@@ -1005,31 +1085,31 @@ function buildTrackDecorations(sc) {
         // Centerpiece Castle
         createCrystalCastle(sc, 0, getTerrainHeight(0, 400), 400);
 
-        // Background Mega Crystals
-        for (var m = 0; m < TRACK_POINTS; m += 4) {
+        // Background Mega Crystals (well behind track edge)
+        for (var m = 0; m < TRACK_POINTS; m += 5) {
             var mNode = trackNodes[m];
             var mAngle = getTrackAngle(m);
-            var mSide = (m % 8 < 4) ? 1 : -1;
-            var mDist = 60 + Math.random() * 80; // Far background
+            var mSide = (m % 10 < 5) ? 1 : -1;
+            var mDist = 80 + Math.random() * 100; // Far background (min 80 from center)
             var mPx = mNode.x - Math.sin(mAngle) * mSide * mDist;
             var mPz = mNode.z + Math.cos(mAngle) * mSide * mDist;
             var mPy = getTerrainHeight(mPx, mPz);
             var mZc = getZoneColors(getZone(m));
-            var mScale = 15 + Math.random() * 20;
+            var mScale = 12 + Math.random() * 15;
             createMegaCrystal(sc, mPx, mPy - 10, mPz, mZc.pri, mScale, 0.5);
         }
 
-        // Midground Mega Crystals
-        for (var mm = 0; mm < TRACK_POINTS; mm += 7) {
+        // Midground Mega Crystals (outside track shoulder)
+        for (var mm = 2; mm < TRACK_POINTS; mm += 8) {
             var mmNode = trackNodes[mm];
             var mmAngle = getTrackAngle(mm);
             var mmSide = (mm % 2 === 0) ? -1 : 1;
-            var mmDist = 30 + Math.random() * 20; // Mid distance
+            var mmDist = 50 + Math.random() * 25; // Min 50 from center (was 30)
             var mmPx = mmNode.x - Math.sin(mmAngle) * mmSide * mmDist;
             var mmPz = mmNode.z + Math.cos(mmAngle) * mmSide * mmDist;
             var mmPy = getTerrainHeight(mmPx, mmPz);
             var mmZc = getZoneColors(getZone(mm));
-            var mmScale = 8 + Math.random() * 10;
+            var mmScale = 6 + Math.random() * 8;
             createMegaCrystal(sc, mmPx, mmPy - 5, mmPz, mmZc.sec, mmScale, 0.6);
         }
     }
@@ -1039,28 +1119,15 @@ function buildTrackDecorations(sc) {
         var zone = getZone(i);
         var zc = getZoneColors(zone);
 
-        if (CRYSTAL_KINGDOM) {
-            // High density small crystals on BOTH sides
-            for (var ds = -1; ds <= 1; ds += 2) {
-                if (Math.random() > 0.3) {
-                    placeAtTrack(i, ds, HW + 2.5 + Math.random() * 3, function (px, py, pz) {
-                        createCrystal(sc, px, py, pz, 1.5 + Math.random() * 2, zc.pri, zc.sec);
-                    });
-                }
-                if (Math.random() > 0.5) {
-                    placeAtTrack(i, ds, HW + 6 + Math.random() * 5, function (px, py, pz) {
-                        createCrystal(sc, px, py, pz, 3 + Math.random() * 3, zc.sec, zc.pri);
-                    });
-                }
-            }
-        }
-
-        // LAYER 1: NEAR (flowers, bushes, rocks - no crystal shards on road edge)
-        if (i % 2 === 0) {
-            placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 3 + (i % 3), function (px, py, pz) {
-                createBush(sc, px, py, pz, zc.bush);
+        if (CRYSTAL_KINGDOM && i % 3 === 0) {
+            // Road-side GLB crystals (reduced density for GLB models)
+            var ds = (i % 6 < 3) ? 1 : -1;
+            placeAtTrack(i, ds, HW + 4 + Math.random() * 4, function (px, py, pz) {
+                createCrystal(sc, px, py, pz, 2 + Math.random() * 2, zc.pri, zc.sec);
             });
         }
+
+        // LAYER 1: NEAR (flowers + crystal shards only - concept art has no green bushes/rocks)
         if (i % 2 === 0) {
             placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 2.5, function (px, py, pz) {
                 createFlowerCluster(sc, px, py, pz, zc.pri, zc.sec);
@@ -1071,40 +1138,11 @@ function buildTrackDecorations(sc) {
                 createFlowerCluster(sc, px, py, pz, zc.sec, flowerPalette[i % flowerPalette.length]);
             });
         }
-        if (i % 5 === 0) {
-            placeAtTrack(i, (i % 2 === 0) ? 1 : -1, HW + 4 + (i % 3), function (px, py, pz) {
-                createRock(sc, px, py, pz);
-            });
-        }
-        if (i % 5 === 0) {
-            placeAtTrack(i, (i % 10 < 5) ? 1 : -1, HW + 2.5, function (px, py, pz, a, nd) {
-                if (useGLB && envModelCache['lamp']) {
-                    placeEnvModel(sc, 'lamp', px, nd.y, pz, 8, a + Math.PI / 2);
-                } else {
-                    createLampPost(sc, px, nd.y, pz, zc.lamp);
-                }
-            });
-        }
 
-        // LAYER 2: MID
-        if (i % 2 === 0) {
-            placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 10 + (i % 5) * 2, function (px, py, pz) {
-                createBush(sc, px, py, pz, zc.bush);
-            });
-        }
-        if (i % 3 === 0) {
-            placeAtTrack(i, (i % 2 === 0) ? -1 : 1, HW + 12 + (i % 4) * 3, function (px, py, pz) {
-                createRock(sc, px, py, pz);
-            });
-        }
+        // LAYER 2: MID (flowers only)
         if (i % 4 === 0) {
             placeAtTrack(i, (i % 8 < 4) ? 1 : -1, HW + 9 + (i % 3) * 3, function (px, py, pz) {
                 createFlowerCluster(sc, px, py, pz, zc.sec, 0xFFFFFF);
-            });
-        }
-        if (i % 4 === 0) {
-            placeAtTrack(i, (i % 2 ? 1 : -1), HW + 2, function (px, py, pz, a, nd) {
-                createFloatingOrb(sc, px, nd.y + 4 + (i % 4), pz, zc.pri, 0.2);
             });
         }
 
@@ -1129,11 +1167,7 @@ function buildTrackDecorations(sc) {
                     else createCrystal(sc, px, py, pz, 2 + (i % 3), 0x4488DD, 0x2266AA);
                 });
             }
-            if (i % 2 === 0) {
-                placeAtTrack(i, (i % 2 ? 1 : -1), HW + 5 + (i % 4) * 3, function (px, py, pz, a, nd) {
-                    createFloatingOrb(sc, px, nd.y + 3 + (i % 4), pz, 0x4488DD, 0.25);
-                });
-            }
+            // Floating orbs removed
             if ((i === 8 || i === 14 || i === 20) && useGLB && envModelCache['obelisk']) {
                 placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 35 + (i % 3) * 4, function (px, py, pz) {
                     placeEnvModel(sc, 'obelisk', px, py, pz, 10, i * 0.9);
@@ -1142,6 +1176,12 @@ function buildTrackDecorations(sc) {
             if (i % 3 === 0 && useGLB && envModelCache['flowerbed']) {
                 placeAtTrack(i, (i % 6 < 3) ? 1 : -1, HW + 5 + (i % 3) * 2, function (px, py, pz) {
                     placeEnvModel(sc, 'flowerbed', px, py, pz, 8 + (i % 3) * 2, i * 0.8);
+                });
+            }
+            // Trellis crystal pillars in forest
+            if (i % 5 === 0 && useGLB && envModelCache['crystal-pillars']) {
+                placeAtTrack(i, (i % 10 < 5) ? 1 : -1, 50 + (i % 3) * 8, function (px, py, pz) {
+                    placeEnvModel(sc, 'crystal-pillars', px, py, pz, 14 + (i % 3) * 3, i * 1.2);
                 });
             }
         }
@@ -1166,7 +1206,7 @@ function buildTrackDecorations(sc) {
                             }
                         });
                         addToReflections(castle);
-                    } else {
+                    } else if (!CRYSTAL_KINGDOM) {
                         createBuilding(sc, px, py, pz);
                     }
                 });
@@ -1174,7 +1214,7 @@ function buildTrackDecorations(sc) {
             if (i === 27 || i === 31 || i === 33 || i === 36 || i === 38 || i === 43) {
                 placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 45, function (px, py, pz) {
                     if (useGLB && envModelCache['house-a']) placeEnvModel(sc, 'house-a', px, py, pz, 16, i * 1.05);
-                    else createBuilding(sc, px, py, pz);
+                    else if (!CRYSTAL_KINGDOM) createBuilding(sc, px, py, pz);
                 });
             }
             if (i === 35) {
@@ -1187,6 +1227,24 @@ function buildTrackDecorations(sc) {
             if ((i === 26 || i === 29 || i === 32 || i === 37 || i === 41 || i === 44) && useGLB && envModelCache['flowerbed']) {
                 placeAtTrack(i, (i % 2 === 0) ? 1 : -1, HW + 6, function (px, py, pz) {
                     placeEnvModel(sc, 'flowerbed', px, py, pz, 10, i * 1.2);
+                });
+            }
+            // Trellis crystal castle in castle zone
+            if ((i === 33 || i === 38) && useGLB && envModelCache['crystal-castle-b']) {
+                placeAtTrack(i, (i === 33) ? 1 : -1, 70, function (px, py, pz) {
+                    placeEnvModel(sc, 'crystal-castle-b', px, py, pz, 18, i * 0.8);
+                });
+            }
+            // Trellis crystal arch in castle zone
+            if ((i === 28 || i === 42) && useGLB && envModelCache['crystal-arch-b']) {
+                placeAtTrack(i, (i === 28) ? -1 : 1, 50, function (px, py, pz) {
+                    placeEnvModel(sc, 'crystal-arch-b', px, py, pz, 16, i * 0.7);
+                });
+            }
+            // Trellis flower garden in castle zone
+            if (i % 4 === 0 && useGLB && envModelCache['flower-garden']) {
+                placeAtTrack(i, (i % 8 < 4) ? 1 : -1, HW + 25 + (i % 3) * 5, function (px, py, pz) {
+                    placeEnvModel(sc, 'flower-garden', px, py, pz, 8, i * 0.9);
                 });
             }
         }
@@ -1205,11 +1263,7 @@ function buildTrackDecorations(sc) {
                     else createCrystal(sc, px, py, pz, 3 + (i % 3), 0xE8EEFF, 0x6688CC);
                 });
             }
-            if (i % 2 === 0) {
-                placeAtTrack(i, (i % 4 < 2) ? 1 : -1, HW + 4 + (i % 5) * 2, function (px, py, pz, a, nd) {
-                    createFloatingOrb(sc, px, nd.y + 2 + (i % 5), pz, 0xE8EEFF, 0.22 + (i % 3) * 0.06);
-                });
-            }
+            // Floating orbs removed (user: 白い丸が気に食わない)
             if ((i === 48 || i === 55 || i === 62) && useGLB && envModelCache['obelisk']) {
                 placeAtTrack(i, (i % 2 === 0) ? -1 : 1, 35 + (i % 3) * 5, function (px, py, pz) {
                     placeEnvModel(sc, 'obelisk', px, py, pz, 10, i * 0.75);
@@ -1218,6 +1272,18 @@ function buildTrackDecorations(sc) {
             if (i % 4 === 0 && useGLB && envModelCache['flowerbed']) {
                 placeAtTrack(i, (i % 8 < 4) ? 1 : -1, HW + 5, function (px, py, pz) {
                     placeEnvModel(sc, 'flowerbed', px, py, pz, 9, i * 0.65);
+                });
+            }
+            // Trellis floating crystals in lake zone
+            if (i % 4 === 0 && useGLB && envModelCache['floating-crystals']) {
+                placeAtTrack(i, (i % 8 < 4) ? 1 : -1, 45 + (i % 3) * 8, function (px, py, pz) {
+                    placeEnvModel(sc, 'floating-crystals', px, py, pz, 10 + (i % 3) * 2, i * 0.6);
+                });
+            }
+            // Trellis crystal pillars in lake zone
+            if (i % 6 === 0 && useGLB && envModelCache['crystal-pillars']) {
+                placeAtTrack(i, (i % 12 < 6) ? -1 : 1, 55 + (i % 4) * 5, function (px, py, pz) {
+                    placeEnvModel(sc, 'crystal-pillars', px, py, pz, 16, i * 1.1);
                 });
             }
         }
@@ -1246,6 +1312,18 @@ function buildTrackDecorations(sc) {
                     placeEnvModel(sc, 'flowerbed', px, py, pz, 8, i * 1.0);
                 });
             }
+            // Trellis floating crystals in mountain zone
+            if (i % 5 === 0 && useGLB && envModelCache['floating-crystals']) {
+                placeAtTrack(i, (i % 10 < 5) ? 1 : -1, 50 + (i % 3) * 6, function (px, py, pz) {
+                    placeEnvModel(sc, 'floating-crystals', px, py, pz, 10, i * 0.8);
+                });
+            }
+            // Trellis crystal pillars in mountain
+            if ((i === 68 || i === 75 || i === 82) && useGLB && envModelCache['crystal-pillars']) {
+                placeAtTrack(i, (i % 2 === 0) ? 1 : -1, 55, function (px, py, pz) {
+                    placeEnvModel(sc, 'crystal-pillars', px, py, pz, 18, i * 1.3);
+                });
+            }
         }
 
         else if (zone === 'garden') {
@@ -1270,161 +1348,50 @@ function buildTrackDecorations(sc) {
                     placeEnvModel(sc, 'flowerbed', px, py, pz, 10, i * 1.1);
                 });
             }
-        }
-    }
-
-    // === CRYSTAL BRIDGE ARCHES (concept art: illuminated crystal arches over water) ===
-    if (CRYSTAL_KINGDOM) {
-        var bridgePositions = [
-            { idx: 50, side: 1, span: 40 },   // lake zone bridge
-            { idx: 35, side: -1, span: 35 },  // castle zone bridge
-        ];
-        for (var bi = 0; bi < bridgePositions.length; bi++) {
-            var bp = bridgePositions[bi];
-            var bNode = trackNodes[bp.idx];
-            var bAngle = getTrackAngle(bp.idx);
-            var bPerpX = -Math.sin(bAngle) * bp.side;
-            var bPerpZ = Math.cos(bAngle) * bp.side;
-            var archCenterX = bNode.x + bPerpX * (bp.span + 20);
-            var archCenterZ = bNode.z + bPerpZ * (bp.span + 20);
-            var archBaseY = bNode.y - 2;
-            var archHeight = 18;
-            var archSpan = bp.span;
-            // Crystal arch - two angled pillars meeting at top
-            var pillarMat = new BABYLON.StandardMaterial(tn(), scene);
-            var pillarCol = bi === 0 ? 0x88CCFF : 0xBB88FF;
-            var gTex = getCrystalGradientTex(pillarCol);
-            pillarMat.diffuseTexture = gTex;
-            pillarMat.emissiveTexture = gTex;
-            pillarMat.emissiveColor = new BABYLON.Color3(0.15, 0.15, 0.2);
-            pillarMat.specularColor = c3(pillarCol).scale(0.4);
-            pillarMat.alpha = 0.75;
-            pillarMat.emissiveFresnelParameters = new BABYLON.FresnelParameters();
-            pillarMat.emissiveFresnelParameters.bias = 0.3;
-            pillarMat.emissiveFresnelParameters.power = 2.0;
-            pillarMat.emissiveFresnelParameters.leftColor = c3(pillarCol);
-            pillarMat.emissiveFresnelParameters.rightColor = BABYLON.Color3.Black();
-            // Left pillar
-            var lPillar = mkCyl({ diameterTop: 1.5, diameterBottom: 3, height: archHeight + 5, tessellation: 6 }, pillarMat);
-            lPillar.position.copyFromFloats(
-                archCenterX - Math.cos(bAngle) * archSpan * 0.5,
-                archBaseY + archHeight / 2,
-                archCenterZ - Math.sin(bAngle) * archSpan * 0.5
-            );
-            lPillar.rotation.z = 0.25;
-            addToReflections(lPillar);
-            // Right pillar
-            var rPillar = mkCyl({ diameterTop: 1.5, diameterBottom: 3, height: archHeight + 5, tessellation: 6 }, pillarMat);
-            rPillar.position.copyFromFloats(
-                archCenterX + Math.cos(bAngle) * archSpan * 0.5,
-                archBaseY + archHeight / 2,
-                archCenterZ + Math.sin(bAngle) * archSpan * 0.5
-            );
-            rPillar.rotation.z = -0.25;
-            addToReflections(rPillar);
-            // Keystone crystal at apex
-            var keystone = mkCyl({ diameterTop: 0.8, diameterBottom: 4, height: 6, tessellation: 6 }, pillarMat);
-            keystone.position.copyFromFloats(archCenterX, archBaseY + archHeight + 4, archCenterZ);
-            keystone.rotation.z = Math.PI;
-            addToReflections(keystone);
-            // Glow orb at arch apex
-            var archOrb = mkSph({ diameter: 3, segments: 6 }, umat(pillarCol, 0.85));
-            archOrb.position.copyFromFloats(archCenterX, archBaseY + archHeight + 2, archCenterZ);
-            var archGlow = mkSph({ diameter: 10, segments: 6 }, umat(pillarCol, 0.1));
-            archGlow.position.copyFromFloats(archCenterX, archBaseY + archHeight + 2, archCenterZ);
-            // Small crystal shards decorating the arch
-            for (var as = 0; as < 6; as++) {
-                var asT = as / 5;
-                var asX = archCenterX + Math.cos(bAngle) * archSpan * (asT - 0.5);
-                var asZ = archCenterZ + Math.sin(bAngle) * archSpan * (asT - 0.5);
-                var asY = archBaseY + archHeight * (1 - 4 * (asT - 0.5) * (asT - 0.5)) + 2;
-                var shard = mkCyl({ diameterTop: 0.2, diameterBottom: 1.2, height: 2.5, tessellation: 6 }, pillarMat);
-                shard.position.copyFromFloats(asX, asY, asZ);
-                shard.rotation.z = (Math.random() - 0.5) * 0.5;
-                shard.rotation.y = Math.random() * Math.PI;
+            // Trellis flower garden in garden zone
+            if (i % 3 === 0 && useGLB && envModelCache['flower-garden']) {
+                placeAtTrack(i, (i % 6 < 3) ? 1 : -1, HW + 22 + (i % 4) * 4, function (px, py, pz) {
+                    placeEnvModel(sc, 'flower-garden', px, py, pz, 8, i * 0.95);
+                });
+            }
+            // Trellis crystal arch in garden zone
+            if ((i === 90 || i === 97) && useGLB && envModelCache['crystal-arch-b']) {
+                placeAtTrack(i, (i === 90) ? 1 : -1, 48, function (px, py, pz) {
+                    placeEnvModel(sc, 'crystal-arch-b', px, py, pz, 15, i * 0.65);
+                });
             }
         }
     }
 
-    // === CRYSTAL ARCHES OVER THE ROAD (concept art: arch spanning the track) ===
-    if (CRYSTAL_KINGDOM) {
-        var roadArchNodes = [15, 55, 80]; // forest, lake, mountain zones
-        for (var rai = 0; rai < roadArchNodes.length; rai++) {
-            var raIdx = roadArchNodes[rai];
-            var raNode = trackNodes[raIdx];
-            var raAngle = getTrackAngle(raIdx);
-            var raPerpX = -Math.sin(raAngle);
-            var raPerpZ = Math.cos(raAngle);
-            var raHW = TRACK_WIDTH / 2 + 2; // slightly wider than road
-            var raHeight = 12;
-            var raColors = [0x66CCFF, 0xBB88FF, 0xAA66EE];
-            var raCol = raColors[rai];
-            var raMat = new BABYLON.StandardMaterial(tn(), scene);
-            var raGTex = getCrystalGradientTex(raCol);
-            raMat.diffuseTexture = raGTex;
-            raMat.emissiveTexture = raGTex;
-            raMat.emissiveColor = new BABYLON.Color3(0.2, 0.2, 0.25);
-            raMat.specularColor = c3(raCol).scale(0.5);
-            raMat.alpha = 0.8;
-            raMat.emissiveFresnelParameters = new BABYLON.FresnelParameters();
-            raMat.emissiveFresnelParameters.bias = 0.3;
-            raMat.emissiveFresnelParameters.power = 1.5;
-            raMat.emissiveFresnelParameters.leftColor = c3(raCol);
-            raMat.emissiveFresnelParameters.rightColor = BABYLON.Color3.Black();
-            // Left pillar
-            var raLP = mkCyl({ diameterTop: 1.0, diameterBottom: 2.5, height: raHeight, tessellation: 6 }, raMat);
-            raLP.position.copyFromFloats(
-                raNode.x + raPerpX * raHW, raNode.y + raHeight / 2, raNode.z + raPerpZ * raHW
-            );
-            raLP.rotation.z = -0.15;
-            // Right pillar
-            var raRP = mkCyl({ diameterTop: 1.0, diameterBottom: 2.5, height: raHeight, tessellation: 6 }, raMat);
-            raRP.position.copyFromFloats(
-                raNode.x - raPerpX * raHW, raNode.y + raHeight / 2, raNode.z - raPerpZ * raHW
-            );
-            raRP.rotation.z = 0.15;
-            // Horizontal crystal beam across
-            var raBeam = mkCyl({ diameterTop: 0.8, diameterBottom: 0.8, height: raHW * 2 + 2, tessellation: 6 }, raMat);
-            raBeam.position.copyFromFloats(raNode.x, raNode.y + raHeight + 0.5, raNode.z);
-            raBeam.rotation.z = Math.PI / 2;
-            raBeam.rotation.y = -raAngle;
-            // Keystone crystal on top
-            var raKey = mkCyl({ diameterTop: 0.3, diameterBottom: 1.5, height: 3, tessellation: 6 }, raMat);
-            raKey.position.copyFromFloats(raNode.x, raNode.y + raHeight + 2.5, raNode.z);
-            // Glow orb at apex
-            var raOrb = mkSph({ diameter: 2.0, segments: 6 }, umat(raCol, 0.8));
-            raOrb.position.copyFromFloats(raNode.x, raNode.y + raHeight + 1.5, raNode.z);
-            var raGlow = mkSph({ diameter: 6, segments: 6 }, umat(raCol, 0.08));
-            raGlow.position.copyFromFloats(raNode.x, raNode.y + raHeight + 1.5, raNode.z);
-        }
-    }
+    // Crystal bridge arches and road arches removed (overlapped road, not in concept art)
 
     // === GIANT CRYSTAL FORMATIONS (Crystal Kingdom) ===
     if (CRYSTAL_KINGDOM) {
-        // Place MASSIVE crystals near track using GLB models
-        if (useGLB && envModelCache['crystal']) {
-            // Regular giant crystals every 10 nodes
-            for (var gi = 0; gi < TRACK_POINTS; gi += 10) {
-                var gSide = ((gi / 10 | 0) % 2 === 0) ? 1 : -1;
-                var gDist = 45 + (gi % 7) * 12;
+        // Place MASSIVE crystals near track using Trellis crystal-pillars (concept art)
+        var giantModel = envModelCache['crystal-pillars'] ? 'crystal-pillars' : 'crystal';
+        if (useGLB && envModelCache[giantModel]) {
+            // Regular giant crystals every 12 nodes (pushed further from track)
+            for (var gi = 0; gi < TRACK_POINTS; gi += 12) {
+                var gSide = ((gi / 12 | 0) % 2 === 0) ? 1 : -1;
+                var gDist = 80 + (gi % 7) * 10; // Min 80 from center (was 45)
                 var gNode = trackNodes[gi];
                 var gAngle = getTrackAngle(gi);
                 var gPerpX = -Math.sin(gAngle);
                 var gPerpZ = Math.cos(gAngle);
                 var gx = gNode.x + gPerpX * gSide * gDist;
                 var gz = gNode.z + gPerpZ * gSide * gDist;
-                var gScale = 30 + (gi % 5) * 15;
-                placeEnvModel(sc, 'crystal', gx, gNode.y, gz, gScale, gi * 0.73);
+                var gScale = 20 + (gi % 5) * 8; // Smaller (was 30+15)
+                placeEnvModel(sc, giantModel, gx, gNode.y, gz, gScale, gi * 0.73);
             }
-            // Hero crystals at key viewpoints
+            // Hero crystals at key viewpoints (further from track, moderate scale)
             var heroCrystals = [
-                { idx: 12, side: 1, dist: 80, scale: 60 },
-                { idx: 37, side: -1, dist: 90, scale: 55 },
-                { idx: 55, side: 1, dist: 85, scale: 70 },
-                { idx: 78, side: -1, dist: 80, scale: 58 },
-                { idx: 25, side: 1, dist: 120, scale: 75 },
-                { idx: 42, side: -1, dist: 130, scale: 85 },
-                { idx: 90, side: 1, dist: 110, scale: 65 },
+                { idx: 12, side: 1, dist: 130, scale: 45 },
+                { idx: 37, side: -1, dist: 140, scale: 40 },
+                { idx: 55, side: 1, dist: 135, scale: 50 },
+                { idx: 78, side: -1, dist: 150, scale: 42 },
+                { idx: 25, side: 1, dist: 160, scale: 50 },
+                { idx: 42, side: -1, dist: 170, scale: 55 },
+                { idx: 90, side: 1, dist: 150, scale: 45 },
             ];
             for (var hi = 0; hi < heroCrystals.length; hi++) {
                 var hc = heroCrystals[hi];
@@ -1434,7 +1401,7 @@ function buildTrackDecorations(sc) {
                 var hPerpZ = Math.cos(hAngle);
                 var hx = hNode.x + hPerpX * hc.side * hc.dist;
                 var hz = hNode.z + hPerpZ * hc.side * hc.dist;
-                placeEnvModel(sc, 'crystal', hx, hNode.y, hz, hc.scale, hi * 1.37);
+                placeEnvModel(sc, giantModel, hx, hNode.y, hz, hc.scale, hi * 1.37);
             }
         }
 
@@ -1453,34 +1420,43 @@ function buildTrackDecorations(sc) {
             { x: 350, y: 80, z: -50, s: 20 },
             { x: -300, y: 85, z: -200, s: 26 },
         ];
-        if (useGLB && envModelCache['crystal']) {
+        var floatModel = envModelCache['floating-crystals'] ? 'floating-crystals' :
+            envModelCache['crystal-pillars'] ? 'crystal-pillars' : 'crystal';
+        if (useGLB && envModelCache[floatModel]) {
             for (var fi = 0; fi < floatingCrystals.length; fi++) {
                 var fc = floatingCrystals[fi];
-                placeEnvModel(sc, 'crystal', fc.x, fc.y, fc.z, fc.s, fi * 1.2);
+                placeEnvModel(sc, floatModel, fc.x, fc.y, fc.z, fc.s, fi * 1.2);
             }
         }
     }
 
-    // === Background mountains ===
+    // === Background mountains (pushed far back, silhouette only) ===
     var mountainPositions = [
-        { x: 450, z: 450 }, { x: -450, z: 450 }, { x: 450, z: -450 }, { x: -450, z: -450 },
-        { x: 0, z: 550 }, { x: 550, z: 0 }, { x: -550, z: 0 }, { x: 0, z: -550 },
-        { x: 350, z: 550 }, { x: -350, z: -550 }, { x: 550, z: 350 }, { x: -550, z: -350 }
+        { x: 900, z: 900 }, { x: -900, z: 900 }, { x: 900, z: -900 }, { x: -900, z: -900 },
+        { x: 0, z: 1050 }, { x: 1050, z: 0 }, { x: -1050, z: 0 }, { x: 0, z: -1050 },
+        { x: 650, z: 1050 }, { x: -650, z: -1050 }, { x: 1050, z: 650 }, { x: -1050, z: -650 }
     ];
     for (var mi = 0; mi < mountainPositions.length; mi++) {
         var mp = mountainPositions[mi];
-        var mScale = 45 + mi * 3;
-        if (useGLB && envModelCache['mountain']) {
-            placeEnvModel(sc, 'mountain', mp.x, -2, mp.z, mScale, mi * 0.79);
+        var mH = 150 + Math.random() * 120;
+        var mR = 120 + Math.random() * 80;
+        var mMat = new BABYLON.StandardMaterial(tn(), scene);
+        if (CRYSTAL_KINGDOM) {
+            // Very faint purple silhouette mountains - atmosphere only
+            var mHue = 0.68 + Math.random() * 0.08;
+            mMat.diffuseColor = hslC3(mHue, 0.4, 0.10);
+            mMat.emissiveColor = hslC3(mHue, 0.6, 0.06 + Math.random() * 0.03);
+            mMat.specularColor = BABYLON.Color3.Black();
+            mMat.alpha = 0.2 + Math.random() * 0.1; // Very transparent
         } else {
-            var mH = 70 + Math.random() * 50;
-            var mR = 50 + Math.random() * 35;
-            var mMesh = mkCyl(
-                { diameterTop: 0, diameterBottom: mR * 2, height: mH, tessellation: 8 },
-                smat(hslC3(0.6, 0.3, 0.4))
-            );
-            mMesh.position.copyFromFloats(mp.x, mH / 2, mp.z);
+            mMat.diffuseColor = hslC3(0.7, 0.25, 0.15 + Math.random() * 0.08);
+            mMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         }
+        var mMesh = mkCyl(
+            { diameterTop: 8, diameterBottom: mR * 2, height: mH, tessellation: 10 },
+            mMat
+        );
+        mMesh.position.copyFromFloats(mp.x, mH / 2 - 25, mp.z);
     }
 
     // === WATER SURFACES ===
@@ -1539,10 +1515,7 @@ function buildTrackDecorations(sc) {
     BABYLON.Effect.ShadersStore['waterFragmentShader'] = waterFS;
 
     var waterPositions = CRYSTAL_KINGDOM ? [
-        { x: 200, z: 200, w: 200, h: 150 },
-        { x: -300, z: 150, w: 120, h: 160 },
-        { x: 100, z: -350, w: 140, h: 120 },
-        { x: -100, z: -100, w: 100, h: 100 },
+        { x: 0, z: 0, w: 550, h: 550 }, // Inside the track loop only
     ] : [
         { x: 200, z: 200, w: 150, h: 100 },
         { x: -300, z: 150, w: 80, h: 120 },
@@ -1562,18 +1535,19 @@ function buildTrackDecorations(sc) {
         waterMat.setFloat('uTime', 0);
         if (reflectionTexture) waterMat.setTexture('reflectionSampler', reflectionTexture);
         if (CRYSTAL_KINGDOM) {
-            waterMat.setColor3('uWaterColor', c3(0x88CCFF));
-            waterMat.setColor3('uDeepColor', c3(0x4466BB));
+            waterMat.setColor3('uWaterColor', c3(0x1A2844));
+            waterMat.setColor3('uDeepColor', c3(0x0A1020));
         } else {
             waterMat.setColor3('uWaterColor', c3(0x4477CC));
             waterMat.setColor3('uDeepColor', c3(0x1A2E4A));
         }
         waterMat.backFaceCulling = false;
 
+        var waterSubs = CRYSTAL_KINGDOM ? 128 : 32;
         var water = BABYLON.MeshBuilder.CreateGround('water' + wi, {
-            width: wp.w, height: wp.h, subdivisions: 32
+            width: wp.w, height: wp.h, subdivisions: waterSubs
         }, scene);
-        water.position.copyFromFloats(wp.x, -1.5, wp.z);
+        water.position.copyFromFloats(wp.x, -1.0, wp.z); // Raised slightly to ensure visibility
         water.material = waterMat;
         water.metadata = { isWater: true };
         trackMeshes.push(water);

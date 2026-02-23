@@ -86,18 +86,14 @@ function generateItemBoxes(sc) {
       hslToCol(rainbowHue, 0.9, 0.55, cubeCol);
 
       if (typeof CRYSTAL_KINGDOM !== 'undefined' && CRYSTAL_KINGDOM) {
-        // Floating crystal orb - original design (no question marks)
+        // Glowing crystal orb - bright, no Fresnel (was causing black rendering)
         var crystalMat = new BABYLON.StandardMaterial('cbox' + _itn, scene);
-        crystalMat.diffuseColor = cubeCol;
-        crystalMat.emissiveColor = cubeCol.scale(0.6);
-        crystalMat.specularColor = new BABYLON.Color3(0.8, 0.8, 1.0);
-        crystalMat.specularPower = 8;
-        crystalMat.alpha = 0.7;
-        crystalMat.emissiveFresnelParameters = new BABYLON.FresnelParameters();
-        crystalMat.emissiveFresnelParameters.bias = 0.2;
-        crystalMat.emissiveFresnelParameters.power = 2.0;
-        crystalMat.emissiveFresnelParameters.leftColor = cubeCol;
-        crystalMat.emissiveFresnelParameters.rightColor = BABYLON.Color3.Black();
+        crystalMat.diffuseColor = cubeCol.scale(0.3);
+        crystalMat.emissiveColor = cubeCol.scale(0.85); // Strong self-glow
+        crystalMat.specularColor = new BABYLON.Color3(0.5, 0.5, 0.8);
+        crystalMat.specularPower = 16;
+        crystalMat.alpha = 0.8;
+        crystalMat.disableLighting = true; // Fully emissive so always bright
 
         // Central glowing orb
         var orb = BABYLON.MeshBuilder.CreateSphere('ibo' + (++_itn), { diameter: 1.8, segments: 8 }, scene);
@@ -120,8 +116,8 @@ function generateItemBoxes(sc) {
         var haloMat = new BABYLON.StandardMaterial('ibh' + _itn, scene);
         haloMat.emissiveColor = cubeCol;
         haloMat.disableLighting = true;
-        haloMat.alpha = 0.1;
-        var halo = BABYLON.MeshBuilder.CreateSphere('ibhalo' + (++_itn), { diameter: 4.0, segments: 6 }, scene);
+        haloMat.alpha = 0.15;
+        var halo = BABYLON.MeshBuilder.CreateSphere('ibhalo' + (++_itn), { diameter: 3.5, segments: 6 }, scene);
         halo.material = haloMat;
         halo.parent = group;
       } else {

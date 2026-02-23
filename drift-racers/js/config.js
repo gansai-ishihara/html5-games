@@ -105,7 +105,12 @@ var ENV_MODEL_FILES = {
   'archgate': 'models/env-archgate.glb',
   'lamp':     'models/env-lamp.glb',
   'flowerbed':'models/env-flowerbed.glb',
-  'obelisk':  'models/env-obelisk.glb'
+  'obelisk':  'models/env-obelisk.glb',
+  'crystal-pillars': 'models/env-crystal-pillars.glb',
+  'crystal-castle-b':'models/env-crystal-castle-b.glb',
+  'crystal-arch-b':  'models/env-crystal-arch-b.glb',
+  'floating-crystals':'models/env-floating-crystals.glb',
+  'flower-garden':   'models/env-flower-garden.glb'
 };
 // Trellisで逆さに出力されたモデルのY反転フラグ
 var ENV_MODEL_FLIP_Y = {
